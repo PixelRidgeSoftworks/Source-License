@@ -5,7 +5,7 @@
 set -e
 
 # Default values
-RUBY_MIN_VERSION="2.7.0"
+RUBY_MIN_VERSION="3.4.4"
 SKIP_RUBY_CHECK=false
 SKIP_BUNDLER_CHECK=false
 

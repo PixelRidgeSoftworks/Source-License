@@ -582,37 +582,37 @@ OrderSuccessManager.prototype.copyLicenseKey = function(licenseKey) {
     });
 };
 
-// Mock API for demonstration
-if (!window.location.pathname.includes('/api/')) {
-    const originalFetch = window.fetch;
-    window.fetch = function(url, options) {
-        if (url.includes('/api/orders/')) {
-            // Extract order ID from URL
-            const orderId = url.split('/').pop();
-            
-            // Mock order data
-            return Promise.resolve({
-                ok: true,
-                json: () => Promise.resolve({
-                    id: orderId,
-                    status: 'completed',
-                    amount: 99.99,
-                    email: 'customer@example.com',
-                    customer_name: 'John Doe',
-                    payment_method: 'stripe',
-                    created_at: new Date().toISOString(),
-                    license_keys: [
-                        {
-                            key: 'SL-' + Math.random().toString(36).substring(2, 15).toUpperCase(),
-                            product_name: 'Premium Software Pro',
-                            max_activations: 5,
-                            expires_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
-                        }
-                    ]
-                })
-            });
+// Use server-side order data if available, otherwise fetch from API
+<% if @order %>
+// Server-side order data available
+window.orderData = {
+    id: <%= @order.id %>,
+    status: '<%= @order.status %>',
+    amount: <%= @order.amount %>,
+    email: '<%= @order.email %>',
+    customer_name: '<%= @order.customer_name || '' %>',
+    payment_method: '<%= @order.payment_method %>',
+    created_at: '<%= @order.created_at.iso8601 %>',
+    license_keys: <%= @order.licenses.map { |license|
+        {
+            key: license.license_key,
+            product_name: license.product&.name,
+            max_activations: license.effective_max_activations,
+            expires_at: license.effective_expires_at
         }
-        return originalFetch.apply(this, arguments);
-    };
-}
+    }.to_json %>
+};
+
+// Override loadOrderDetails to use server data
+OrderSuccessManager.prototype.loadOrderDetails = function() {
+    if (window.orderData) {
+        this.displayOrderDetails(window.orderData);
+        this.displayLicenseKeys(window.orderData.license_keys || []);
+    } else {
+        this.showOrderNotFound();
+    }
+};
+<% else %>
+// No server-side data, will fetch from API
+<% end %>
 </script>

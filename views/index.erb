@@ -21,11 +21,28 @@
                                 <i class="fas fa-boxes me-2"></i>
                                 Browse Products
                             </a>
-                            <a href="/my-licenses" class="btn btn-outline-primary btn-lg px-4 py-3">
-                                <i class="fas fa-key me-2"></i>
-                                My Licenses
+                            <% if user_logged_in? %>
+                                <a href="/dashboard" class="btn btn-outline-primary btn-lg px-4 py-3">
+                                    <i class="fas fa-tachometer-alt me-2"></i>
+                                    My Dashboard
+                                </a>
+                            <% else %>
+                                <a href="/register" class="btn btn-outline-success btn-lg px-4 py-3">
+                                    <i class="fas fa-user-plus me-2"></i>
+                                    Create Account
+                                </a>
+                            <% end %>
+                        </div>
+                        
+                        <!-- Quick Access for Non-Users -->
+                        <% unless user_logged_in? %>
+                        <div class="mb-4">
+                            <a href="/validate-license" class="btn btn-link text-decoration-none">
+                                <i class="fas fa-shield-alt me-2"></i>
+                                Just need to validate a license?
                             </a>
                         </div>
+                        <% end %>
                         
                         <!-- Trust Indicators -->
                         <div class="row g-4 text-center">
@@ -413,21 +430,34 @@
         </div>
         
         <div class="row g-4">
-            <!-- License Lookup -->
+            <!-- License Management -->
             <div class="col-lg-6">
                 <div class="card h-100">
                     <div class="card-body text-center p-4">
                         <div class="feature-icon mb-3" style="background: var(--gradient-primary);">
-                            <i class="fas fa-search"></i>
+                            <i class="fas fa-shield-alt"></i>
                         </div>
-                        <h5 class="fw-bold">License Lookup</h5>
+                        <h5 class="fw-bold">License Management</h5>
                         <p class="text-secondary mb-4">
-                            Check your license status, download your software, or manage your activations.
+                            Validate license keys, manage your software licenses, or access your secure dashboard.
                         </p>
-                        <a href="/my-licenses" class="btn btn-primary">
-                            <i class="fas fa-key me-2"></i>
-                            Check My Licenses
-                        </a>
+                        <div class="d-grid gap-2">
+                            <% if user_logged_in? %>
+                                <a href="/dashboard" class="btn btn-primary">
+                                    <i class="fas fa-tachometer-alt me-2"></i>
+                                    My Dashboard
+                                </a>
+                            <% else %>
+                                <a href="/validate-license" class="btn btn-primary">
+                                    <i class="fas fa-shield-alt me-2"></i>
+                                    Validate License
+                                </a>
+                                <a href="/login" class="btn btn-outline-primary">
+                                    <i class="fas fa-sign-in-alt me-2"></i>
+                                    Login for Full Access
+                                </a>
+                            <% end %>
+                        </div>
                     </div>
                 </div>
             </div>

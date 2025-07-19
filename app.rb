@@ -30,6 +30,7 @@ require_relative 'lib/payment_processor'
 require_relative 'lib/license_generator'
 require_relative 'lib/auth'
 require_relative 'lib/enhanced_auth'
+require_relative 'lib/user_auth'
 require_relative 'lib/security'
 require_relative 'lib/logger'
 require_relative 'lib/settings_manager'
@@ -109,6 +110,7 @@ class SourceLicenseApp < Sinatra::Base
   helpers do
     include AuthHelpers
     include EnhancedAuthHelpers
+    include UserAuthHelpers
     include TemplateHelpers
     include LicenseHelpers
     include CustomizationHelpers
@@ -159,28 +161,185 @@ class SourceLicenseApp < Sinatra::Base
 
   # Purchase success page
   get '/success' do
+    @order_id = params[:order_id]
+    @order = nil
+
+    @order = Order[params[:order_id]] if @order_id
+
     @page_title = 'Purchase Successful'
     erb :success, layout: :'layouts/main_layout'
   end
 
-  # License lookup/download page
+  # Public license validation (read-only, no sensitive info)
+  get '/validate-license' do
+    @page_title = 'Validate License'
+    erb :'licenses/validate', layout: :'layouts/main_layout'
+  end
+
+  # Public license validation API
+  post '/validate-license' do
+    license_key = params[:license_key]&.strip
+    halt 400, 'License key required' unless license_key
+
+    license = License.first(license_key: license_key)
+
+    @validation_result = if license
+                           {
+                             valid: license.valid?,
+                             status: license.status,
+                             product_name: license.product&.name,
+                             expires_at: license.expires_at,
+                             license_type: license.license_type,
+                           }
+                         else
+                           {
+                             valid: false,
+                             status: 'not_found',
+                             error: 'License not found',
+                           }
+                         end
+
+    @license_key = license_key
+    @page_title = 'License Validation Result'
+    erb :'licenses/validate', layout: :'layouts/main_layout'
+  end
+
+  # Redirect old insecure routes to secure versions
   get '/my-licenses' do
-    @page_title = 'My Licenses'
-    erb :'licenses/lookup', layout: :'layouts/main_layout'
+    redirect '/login' unless user_logged_in?
+    redirect '/licenses'
   end
 
-  # License details and download
   get '/license/:key' do
-    @license = License.first(license_key: params[:key])
-    halt 404 unless @license
-    @page_title = 'License Details'
-    erb :'licenses/show', layout: :'layouts/main_layout'
+    redirect '/login' unless user_logged_in?
+    # Try to find the license and redirect to secure version
+    license = License.first(license_key: params[:key])
+    if license && user_owns_license?(current_user, license)
+      redirect "/licenses/#{license.id}"
+    else
+      halt 404
+    end
   end
 
-  # Download product file
+  # Secure download route (old insecure route disabled)
   get '/download/:license_key/:file' do
-    license = License.first(license_key: params[:license_key])
-    halt 404 unless license&.valid?
+    halt 403, 'Direct downloads are no longer supported. Please log in to access your licenses.'
+  end
+
+  # ==================================================
+  # USER AUTHENTICATION ROUTES
+  # ==================================================
+
+  # User login page
+  get '/login' do
+    redirect '/dashboard' if user_logged_in?
+    @page_title = 'Login'
+    erb :'users/login', layout: :'layouts/main_layout'
+  end
+
+  # User login handler
+  post '/login' do
+    result = authenticate_user(params[:email], params[:password])
+
+    if result[:success]
+      user = result[:user]
+      create_user_session(user)
+
+      # Transfer any licenses from email to user account
+      transferred_count = transfer_licenses_to_user(user, params[:email])
+
+      if transferred_count.positive?
+        flash :info, "#{transferred_count} existing license(s) have been transferred to your account."
+      end
+
+      # Redirect to dashboard or return URL
+      redirect_url = session.delete(:return_to) || '/dashboard'
+      redirect redirect_url
+    else
+      @error = result[:error]
+      @page_title = 'Login'
+      erb :'users/login', layout: :'layouts/main_layout'
+    end
+  end
+
+  # User registration page
+  get '/register' do
+    redirect '/dashboard' if user_logged_in?
+    @page_title = 'Create Account'
+    erb :'users/register', layout: :'layouts/main_layout'
+  end
+
+  # User registration handler
+  post '/register' do
+    result = register_user(params[:email], params[:password], params[:name])
+
+    if result[:success]
+      user = result[:user]
+
+      # Transfer any existing licenses to the new account
+      transferred_count = transfer_licenses_to_user(user, params[:email])
+
+      # Create user session
+      create_user_session(user)
+
+      success_message = 'Account created successfully!'
+      if transferred_count.positive?
+        success_message += " #{transferred_count} existing license(s) have been transferred to your account."
+      end
+
+      flash :success, success_message
+      redirect '/dashboard'
+    else
+      @error = result[:error]
+      @page_title = 'Create Account'
+      erb :'users/register', layout: :'layouts/main_layout'
+    end
+  end
+
+  # User logout
+  post '/logout' do
+    clear_user_session
+    flash :success, 'You have been logged out successfully.'
+    redirect '/'
+  end
+
+  # User dashboard (secure)
+  get '/dashboard' do
+    require_user_auth
+    @user = current_user
+    @licenses = get_user_licenses(@user)
+    @page_title = 'My Dashboard'
+    erb :'users/dashboard', layout: :'layouts/main_layout'
+  end
+
+  # Secure license management (replaces the old insecure lookup)
+  get '/licenses' do
+    require_user_auth
+    @user = current_user
+    @licenses = get_user_licenses(@user)
+    @page_title = 'My Licenses'
+    erb :'users/licenses', layout: :'layouts/main_layout'
+  end
+
+  # Secure license details
+  get '/licenses/:id' do
+    require_user_auth
+    license = License[params[:id]]
+    halt 404 unless license
+    halt 403 unless user_owns_license?(current_user, license)
+
+    @license = license
+    @page_title = "License: #{@license.product.name}"
+    erb :'users/license_details', layout: :'layouts/main_layout'
+  end
+
+  # Secure download (requires authentication)
+  get '/secure-download/:license_id/:file' do
+    require_user_auth
+    license = License[params[:license_id]]
+    halt 404 unless license
+    halt 403 unless user_owns_license?(current_user, license)
+    halt 404 unless license.valid?
 
     file_path = File.join(ENV['DOWNLOADS_PATH'] || './downloads',
                           license.product.download_file)
@@ -191,6 +350,99 @@ class SourceLicenseApp < Sinatra::Base
                    last_downloaded_at: Time.now)
 
     send_file file_path, disposition: 'attachment'
+  end
+
+  # User profile page
+  get '/profile' do
+    require_user_auth
+    @user = current_user
+    @page_title = 'My Profile'
+    erb :'users/profile', layout: :'layouts/main_layout'
+  end
+
+  # Update user profile
+  post '/profile' do
+    require_user_auth
+    user = current_user
+
+    # Update basic info
+    user.name = params[:name]&.strip if params[:name]
+
+    # Handle password change if provided
+    if params[:current_password] && params[:new_password]
+      if user.password_matches?(params[:current_password])
+        if params[:new_password].length >= 8
+          user.password = params[:new_password]
+          flash :success, 'Profile and password updated successfully!'
+        else
+          flash :error, 'New password must be at least 8 characters long.'
+          @user = user
+          return erb :'users/profile', layout: :'layouts/main_layout'
+        end
+      else
+        flash :error, 'Current password is incorrect.'
+        @user = user
+        return erb :'users/profile', layout: :'layouts/main_layout'
+      end
+    else
+      flash :success, 'Profile updated successfully!'
+    end
+
+    user.save_changes
+    redirect '/profile'
+  end
+
+  # Password reset request page
+  get '/forgot-password' do
+    redirect '/dashboard' if user_logged_in?
+    @page_title = 'Forgot Password'
+    erb :'users/forgot_password', layout: :'layouts/main_layout'
+  end
+
+  # Password reset request handler
+  post '/forgot-password' do
+    result = generate_password_reset_token(params[:email])
+
+    if result
+      # Send reset email (if SMTP is configured)
+      if ENV['SMTP_HOST']
+        send_password_reset_email(result[:user], result[:token])
+        flash :success, 'Password reset instructions have been sent to your email.'
+      else
+        flash :info, "Reset token: #{result[:token]} (SMTP not configured - this would be emailed)"
+      end
+    else
+      flash :success, 'If an account with that email exists, password reset instructions have been sent.'
+    end
+
+    redirect '/login'
+  end
+
+  # Password reset form
+  get '/reset-password/:token' do
+    @user = verify_password_reset_token(params[:token])
+    halt 404 unless @user
+
+    @token = params[:token]
+    @page_title = 'Reset Password'
+    erb :'users/reset_password', layout: :'layouts/main_layout'
+  end
+
+  # Password reset handler
+  post '/reset-password/:token' do
+    result = reset_password_with_token(params[:token], params[:password])
+
+    if result[:success]
+      flash :success, 'Your password has been reset successfully. Please log in.'
+      redirect '/login'
+    else
+      @error = result[:error]
+      @user = verify_password_reset_token(params[:token])
+      halt 404 unless @user
+      @token = params[:token]
+      @page_title = 'Reset Password'
+      erb :'users/reset_password', layout: :'layouts/main_layout'
+    end
   end
 
   # ==================================================
@@ -1149,35 +1401,35 @@ class SourceLicenseApp < Sinatra::Base
   # Free order processing (for $0.00 orders)
   post '/api/orders/free' do
     content_type :json
-    
+
     begin
       order_data = JSON.parse(request.body.read)
-      
+
       # Validate required fields
       unless order_data['customer'] && order_data['customer']['email']
         status 400
         return { success: false, error: 'Customer email is required' }.to_json
       end
-      
+
       unless order_data['items']&.any?
         status 400
         return { success: false, error: 'Order must contain items' }.to_json
       end
-      
+
       # Verify the order is actually free
       total = 0
       order_data['items'].each do |item|
         product = Product[item['productId']]
         next unless product
-        
+
         total += (product.price.to_f + (product.setup_fee || 0).to_f) * item['quantity']
       end
-      
-      unless total == 0
+
+      unless total.zero?
         status 400
         return { success: false, error: 'This endpoint is only for free orders' }.to_json
       end
-      
+
       # Create order in database
       order = DB.transaction do
         new_order = Order.create(
@@ -1189,34 +1441,33 @@ class SourceLicenseApp < Sinatra::Base
           payment_method: 'free',
           completed_at: Time.now
         )
-        
+
         # Add order items
         order_data['items'].each do |item|
           product = Product[item['productId']]
           next unless product
-          
+
           new_order.add_order_item(
             product: product,
             quantity: item['quantity'] || 1,
-            price: 0  # Free items
+            price: 0 # Free items
           )
         end
-        
+
         new_order
       end
-      
+
       # Generate licenses for the free order
       generate_licenses_for_order(order)
-      
+
       # Send confirmation email if configured
       send_order_confirmation_email(order) if ENV['SMTP_HOST']
-      
+
       status 201
       {
         success: true,
-        order_id: order.id
+        order_id: order.id,
       }.to_json
-      
     rescue JSON::ParserError
       status 400
       { success: false, error: 'Invalid JSON' }.to_json
@@ -1669,5 +1920,21 @@ class SourceLicenseApp < Sinatra::Base
         order.add_license(license)
       end
     end
+  end
+
+  # Send password reset email
+  def send_password_reset_email(user, token)
+    reset_url = "#{request.scheme}://#{request.host_with_port}/reset-password/#{token}"
+
+    mail = Mail.new do
+      from ENV.fetch('SMTP_USERNAME', nil)
+      to user.email
+      subject 'Password Reset Instructions'
+      body "Click here to reset your password: #{reset_url}\n\nThis link will expire in 1 hour."
+    end
+
+    mail.deliver!
+  rescue StandardError => e
+    logger.error "Failed to send password reset email: #{e.message}"
   end
 end

@@ -1,0 +1,133 @@
+<div class="container my-5">
+  <div class="row justify-content-center">
+    <div class="col-md-6">
+      <div class="card shadow">
+        <div class="card-header bg-success text-white">
+          <h4 class="mb-0">
+            <i class="fas fa-user-plus me-2"></i>
+            Create Account
+          </h4>
+        </div>
+        <div class="card-body p-4">
+          <% if @error %>
+            <div class="alert alert-danger">
+              <i class="fas fa-exclamation-triangle me-2"></i>
+              <%= h(@error) %>
+            </div>
+          <% end %>
+
+          <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i>
+            <strong>Automatic License Transfer:</strong> If you have existing licenses with this email address, they will be automatically transferred to your new account.
+          </div>
+
+          <form method="POST" action="/register">
+            <div class="mb-3">
+              <label for="name" class="form-label">Full Name</label>
+              <input type="text" 
+                     class="form-control" 
+                     id="name" 
+                     name="name" 
+                     required 
+                     autofocus
+                     value="<%= h(params[:name] || '') %>">
+            </div>
+
+            <div class="mb-3">
+              <label for="email" class="form-label">Email Address</label>
+              <input type="email" 
+                     class="form-control" 
+                     id="email" 
+                     name="email" 
+                     required
+                     value="<%= h(params[:email] || '') %>">
+              <div class="form-text">
+                Use the same email address as your license purchases for automatic transfer.
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="password" class="form-label">Password</label>
+              <input type="password" 
+                     class="form-control" 
+                     id="password" 
+                     name="password" 
+                     required
+                     minlength="8">
+              <div class="form-text">
+                Must be at least 8 characters long.
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="password_confirm" class="form-label">Confirm Password</label>
+              <input type="password" 
+                     class="form-control" 
+                     id="password_confirm" 
+                     name="password_confirm" 
+                     required
+                     minlength="8">
+            </div>
+
+            <div class="mb-3">
+              <div class="form-check">
+                <input type="checkbox" class="form-check-input" id="terms" required>
+                <label class="form-check-label" for="terms">
+                  I agree to the <a href="#" target="_blank">Terms of Service</a> and <a href="#" target="_blank">Privacy Policy</a>
+                </label>
+              </div>
+            </div>
+
+            <div class="d-grid">
+              <button type="submit" class="btn btn-success btn-lg">
+                <i class="fas fa-user-plus me-2"></i>
+                Create Account
+              </button>
+            </div>
+          </form>
+
+          <hr class="my-4">
+
+          <div class="text-center">
+            <p class="text-muted">Already have an account?</p>
+            <a href="/login" class="btn btn-outline-primary">
+              <i class="fas fa-sign-in-alt me-2"></i>
+              Sign In
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="text-center mt-4">
+        <div class="small text-muted">
+          <p>
+            <i class="fas fa-shield-alt me-1"></i>
+            Your account information is secure and encrypted. We never share your personal data with third parties.
+          </p>
+          <p class="mt-2">
+            <a href="/validate-license">Just need to validate a license?</a>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Password confirmation validation
+document.addEventListener('DOMContentLoaded', function() {
+  const password = document.getElementById('password');
+  const passwordConfirm = document.getElementById('password_confirm');
+  
+  function validatePasswords() {
+    if (password.value !== passwordConfirm.value) {
+      passwordConfirm.setCustomValidity('Passwords do not match');
+    } else {
+      passwordConfirm.setCustomValidity('');
+    }
+  }
+  
+  password.addEventListener('input', validatePasswords);
+  passwordConfirm.addEventListener('input', validatePasswords);
+});
+</script>

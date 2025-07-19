@@ -788,26 +788,8 @@ window.fetch = function(url, options) {
             ok: true,
             json: () => Promise.resolve(window.checkoutProductsData)
         });
-    } else if (url === '/api/orders' && options?.method === 'POST') {
-        // Mock order creation - in real implementation, this would hit the actual API
-        return Promise.resolve({
-            ok: true,
-            json: () => Promise.resolve({
-                order_id: 'ORD-' + Date.now(),
-                client_secret: 'pi_mock_client_secret',
-                paypal_order_id: 'PAYPAL-' + Date.now()
-            })
-        });
-    } else if (url === '/api/orders/free' && options?.method === 'POST') {
-        // Mock free order creation
-        return Promise.resolve({
-            ok: true,
-            json: () => Promise.resolve({
-                success: true,
-                order_id: 'FREE-ORD-' + Date.now()
-            })
-        });
     }
+    // Let all other API calls (orders, etc.) go through to the real backend
     return originalFetch.apply(this, arguments);
 };
 </script>

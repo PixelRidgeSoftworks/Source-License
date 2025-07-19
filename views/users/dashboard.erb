@@ -1,0 +1,215 @@
+<div class="container my-4">
+  <!-- Welcome Header -->
+  <div class="row mb-4">
+    <div class="col">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <h2 class="mb-1">Welcome back, <%= h(@user.name || @user.email) %>!</h2>
+          <p class="text-muted mb-0">Manage your licenses and account settings</p>
+        </div>
+        <div class="dropdown">
+          <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+            <i class="fas fa-user me-2"></i>
+            Account
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end">
+            <li><a class="dropdown-item" href="/profile"><i class="fas fa-user-edit me-2"></i>Edit Profile</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li>
+              <form method="POST" action="/logout" class="d-inline">
+                <button type="submit" class="dropdown-item text-danger">
+                  <i class="fas fa-sign-out-alt me-2"></i>Logout
+                </button>
+              </form>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Stats -->
+  <div class="row mb-4">
+    <div class="col-md-4">
+      <div class="card bg-primary text-white">
+        <div class="card-body">
+          <div class="d-flex justify-content-between">
+            <div>
+              <h5 class="card-title">Total Licenses</h5>
+              <h3 class="mb-0"><%= @licenses.length %></h3>
+            </div>
+            <div class="align-self-center">
+              <i class="fas fa-key fa-2x opacity-75"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card bg-success text-white">
+        <div class="card-body">
+          <div class="d-flex justify-content-between">
+            <div>
+              <h5 class="card-title">Active Licenses</h5>
+              <h3 class="mb-0"><%= @licenses.count { |l| l.status == 'active' } %></h3>
+            </div>
+            <div class="align-self-center">
+              <i class="fas fa-check-circle fa-2x opacity-75"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card bg-info text-white">
+        <div class="card-body">
+          <div class="d-flex justify-content-between">
+            <div>
+              <h5 class="card-title">Downloads</h5>
+              <h3 class="mb-0"><%= @licenses.sum(&:download_count) %></h3>
+            </div>
+            <div class="align-self-center">
+              <i class="fas fa-download fa-2x opacity-75"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Actions -->
+  <div class="row mb-4">
+    <div class="col">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0">
+            <i class="fas fa-bolt me-2"></i>
+            Quick Actions
+          </h5>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-4 mb-2">
+              <a href="/licenses" class="btn btn-outline-primary w-100">
+                <i class="fas fa-list me-2"></i>
+                View All Licenses
+              </a>
+            </div>
+            <div class="col-md-4 mb-2">
+              <a href="/validate-license" class="btn btn-outline-info w-100">
+                <i class="fas fa-shield-alt me-2"></i>
+                Validate License
+              </a>
+            </div>
+            <div class="col-md-4 mb-2">
+              <a href="/profile" class="btn btn-outline-secondary w-100">
+                <i class="fas fa-user-edit me-2"></i>
+                Edit Profile
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Licenses -->
+  <div class="row">
+    <div class="col">
+      <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">
+            <i class="fas fa-history me-2"></i>
+            Your Licenses
+          </h5>
+          <% if @licenses.length > 5 %>
+            <a href="/licenses" class="btn btn-sm btn-outline-primary">View All</a>
+          <% end %>
+        </div>
+        <div class="card-body">
+          <% if @licenses.empty? %>
+            <div class="text-center py-4">
+              <i class="fas fa-key fa-3x text-muted mb-3"></i>
+              <h5 class="text-muted">No Licenses Found</h5>
+              <p class="text-muted">
+                You don't have any licenses yet. When you purchase software, your licenses will appear here.
+              </p>
+              <a href="/" class="btn btn-primary">
+                <i class="fas fa-shopping-cart me-2"></i>
+                Browse Products
+              </a>
+            </div>
+          <% else %>
+            <div class="table-responsive">
+              <table class="table table-hover">
+                <thead>
+                  <tr>
+                    <th>Product</th>
+                    <th>Status</th>
+                    <th>Expires</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% @licenses.first(5).each do |license| %>
+                    <tr>
+                      <td>
+                        <strong><%= h(license.product.name) %></strong>
+                        <br>
+                        <small class="text-muted">License: <%= h(license.license_key[0..15]) %>...</small>
+                      </td>
+                      <td>
+                        <% case license.status %>
+                        <% when 'active' %>
+                          <span class="badge bg-success">Active</span>
+                        <% when 'suspended' %>
+                          <span class="badge bg-warning">Suspended</span>
+                        <% when 'expired' %>
+                          <span class="badge bg-danger">Expired</span>
+                        <% else %>
+                          <span class="badge bg-secondary"><%= license.status.capitalize %></span>
+                        <% end %>
+                      </td>
+                      <td>
+                        <% if license.expires_at %>
+                          <%= license.expires_at.strftime('%m/%d/%Y') %>
+                          <% if license.expires_at < Time.now + 30*24*60*60 %>
+                            <br><small class="text-warning">Expires soon</small>
+                          <% end %>
+                        <% else %>
+                          <span class="text-success">Never</span>
+                        <% end %>
+                      </td>
+                      <td>
+                        <div class="btn-group btn-group-sm">
+                          <a href="/licenses/<%= license.id %>" class="btn btn-outline-primary">
+                            <i class="fas fa-eye"></i>
+                          </a>
+                          <% if license.valid? && license.product.download_file %>
+                            <a href="/secure-download/<%= license.id %>/<%= license.product.download_file %>" 
+                               class="btn btn-outline-success"
+                               title="Download">
+                              <i class="fas fa-download"></i>
+                            </a>
+                          <% end %>
+                        </div>
+                      </td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
+
+            <% if @licenses.length > 5 %>
+              <div class="text-center mt-3">
+                <a href="/licenses" class="btn btn-outline-primary">
+                  View All <%= @licenses.length %> Licenses
+                </a>
+              </div>
+            <% end %>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

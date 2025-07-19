@@ -1,0 +1,80 @@
+<div class="container my-5">
+  <div class="row justify-content-center">
+    <div class="col-md-6">
+      <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+          <h4 class="mb-0">
+            <i class="fas fa-sign-in-alt me-2"></i>
+            Sign In
+          </h4>
+        </div>
+        <div class="card-body p-4">
+          <% if @error %>
+            <div class="alert alert-danger">
+              <i class="fas fa-exclamation-triangle me-2"></i>
+              <%= h(@error) %>
+            </div>
+          <% end %>
+
+          <form method="POST" action="/login">
+            <div class="mb-3">
+              <label for="email" class="form-label">Email Address</label>
+              <input type="email" 
+                     class="form-control" 
+                     id="email" 
+                     name="email" 
+                     required 
+                     autofocus
+                     value="<%= h(params[:email] || '') %>">
+            </div>
+
+            <div class="mb-3">
+              <label for="password" class="form-label">Password</label>
+              <input type="password" 
+                     class="form-control" 
+                     id="password" 
+                     name="password" 
+                     required>
+            </div>
+
+            <div class="d-grid">
+              <button type="submit" class="btn btn-primary btn-lg">
+                <i class="fas fa-sign-in-alt me-2"></i>
+                Sign In
+              </button>
+            </div>
+          </form>
+
+          <hr class="my-4">
+
+          <div class="row text-center">
+            <div class="col-md-6">
+              <a href="/register" class="btn btn-outline-success w-100">
+                <i class="fas fa-user-plus me-2"></i>
+                Create Account
+              </a>
+            </div>
+            <div class="col-md-6">
+              <a href="/forgot-password" class="btn btn-outline-secondary w-100">
+                <i class="fas fa-key me-2"></i>
+                Forgot Password
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="text-center mt-4">
+        <div class="small text-muted">
+          <p>
+            <i class="fas fa-info-circle me-1"></i>
+            Don't have an account? Existing licenses will be automatically transferred when you create an account with the same email address.
+          </p>
+          <p class="mt-2">
+            <a href="/validate-license">Just need to validate a license?</a>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

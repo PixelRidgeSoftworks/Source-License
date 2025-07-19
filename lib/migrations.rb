@@ -20,6 +20,9 @@ class Migrations
       run_migration(8, :create_settings_table)
       run_migration(9, :enhance_licensing_system)
       run_migration(10, :add_missing_product_fields)
+      run_migration(11, :add_customer_name_to_orders)
+      run_migration(12, :create_users_table)
+      run_migration(13, :add_user_id_to_licenses)
 
       puts '✓ All migrations completed successfully'
     end
@@ -127,10 +130,11 @@ class Migrations
       DB.create_table :orders do
         primary_key :id
         String :email, null: false, size: 255
+        String :customer_name, size: 255 # customer's full name
         Decimal :amount, size: [10, 2], null: false
         String :currency, default: 'USD', size: 3
         String :status, null: false, default: 'pending' # pending, completed, failed, refunded
-        String :payment_method, size: 50 # stripe, paypal
+        String :payment_method, size: 50 # stripe, paypal, free, manual
         String :payment_intent_id, size: 255 # external payment ID
         String :transaction_id, size: 255 # final transaction ID
         Text :payment_details # JSON field for additional payment info
@@ -346,6 +350,82 @@ class Migrations
       end
 
       puts '✓ Added missing product fields'
+    end
+
+    # Migration 11: Add customer_name to orders table
+    def add_customer_name_to_orders
+      puts 'Adding customer_name field to orders table...'
+
+      # Add customer_name field if it doesn't exist
+      unless DB.schema(:orders).any? { |col| col[0] == :customer_name }
+        DB.alter_table :orders do
+          add_column :customer_name, String, size: 255
+        end
+      end
+
+      puts '✓ Added customer_name field to orders table'
+    end
+
+    # Migration 12: Create users table
+    def create_users_table
+      puts 'Creating users table for customer accounts...'
+
+      DB.create_table :users do
+        primary_key :id
+        String :email, null: false, unique: true, size: 255
+        String :name, size: 255
+        String :password_hash, null: false, size: 255
+        String :status, default: 'active', size: 50
+
+        # Email verification
+        Boolean :email_verified, default: false
+        String :email_verification_token, size: 255
+        DateTime :email_verification_sent_at
+        DateTime :email_verified_at
+
+        # Password management
+        DateTime :password_changed_at
+        String :password_reset_token, size: 255
+        DateTime :password_reset_sent_at
+
+        # Authentication tracking
+        DateTime :created_at, null: false, default: Sequel::CURRENT_TIMESTAMP
+        DateTime :updated_at, null: false, default: Sequel::CURRENT_TIMESTAMP
+        DateTime :last_login_at
+        String :last_login_ip, size: 45
+        String :last_login_user_agent, size: 500
+        Integer :login_count, default: 0
+
+        # Account status tracking
+        DateTime :activated_at
+        DateTime :deactivated_at
+        DateTime :suspended_at
+
+        index :email
+        index :status
+        index :email_verification_token
+        index :password_reset_token
+        index :last_login_at
+      end
+
+      puts '✓ Created users table'
+    end
+
+    # Migration 13: Add user_id to licenses table
+    def add_user_id_to_licenses
+      puts 'Adding user_id to licenses table...'
+
+      # Add user_id foreign key to licenses table
+      DB.alter_table :licenses do
+        add_foreign_key :user_id, :users, null: true # Allow null for backward compatibility
+      end
+
+      # Add index for user_id
+      DB.alter_table :licenses do
+        add_index :user_id
+      end
+
+      puts '✓ Added user_id to licenses table'
     end
   end
 end

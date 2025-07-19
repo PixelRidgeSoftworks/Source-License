@@ -1,0 +1,127 @@
+<div class="container my-5">
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+          <h4 class="mb-0">
+            <i class="fas fa-shield-alt me-2"></i>
+            Validate License
+          </h4>
+        </div>
+        <div class="card-body">
+          <% if defined?(@validation_result) %>
+            <!-- Validation Results -->
+            <div class="alert <%= @validation_result[:valid] ? 'alert-success' : 'alert-danger' %> mb-4">
+              <h5 class="alert-heading">
+                <% if @validation_result[:valid] %>
+                  <i class="fas fa-check-circle"></i> Valid License
+                <% else %>
+                  <i class="fas fa-times-circle"></i> Invalid License
+                <% end %>
+              </h5>
+              
+              <% if @validation_result[:valid] %>
+                <p class="mb-2">This license is valid and active.</p>
+                
+                <div class="mt-3">
+                  <strong>License Details:</strong>
+                  <ul class="list-unstyled mt-2 ms-3">
+                    <li><strong>Product:</strong> <%= h(@validation_result[:product_name]) %></li>
+                    <li><strong>Status:</strong> 
+                      <span class="badge bg-<%= @validation_result[:status] == 'active' ? 'success' : 'warning' %>">
+                        <%= @validation_result[:status].capitalize %>
+                      </span>
+                    </li>
+                    <li><strong>License Type:</strong> <%= h(@validation_result[:license_type] || 'Standard') %></li>
+                    <% if @validation_result[:expires_at] %>
+                      <li><strong>Expires:</strong> <%= @validation_result[:expires_at].strftime('%B %d, %Y') %></li>
+                    <% else %>
+                      <li><strong>Expires:</strong> <span class="text-success">Never (Lifetime License)</span></li>
+                    <% end %>
+                  </ul>
+                </div>
+              <% else %>
+                <p class="mb-0"><%= h(@validation_result[:error] || 'License could not be validated.') %></p>
+              <% end %>
+            </div>
+            
+            <!-- Search Again -->
+            <div class="text-center">
+              <a href="/validate-license" class="btn btn-outline-primary">
+                <i class="fas fa-search"></i> Validate Another License
+              </a>
+            </div>
+          <% else %>
+            <!-- Validation Form -->
+            <p class="text-muted mb-4">
+              Enter your license key below to verify its status and validity. This tool only shows basic license information and does not provide access to downloads or sensitive data.
+            </p>
+
+            <form method="POST" action="/validate-license">
+              <div class="mb-3">
+                <label for="license_key" class="form-label">License Key</label>
+                <input type="text" 
+                       class="form-control form-control-lg" 
+                       id="license_key" 
+                       name="license_key" 
+                       placeholder="Enter your license key..." 
+                       required 
+                       maxlength="255"
+                       style="font-family: monospace;">
+                <div class="form-text">
+                  Your license key is typically provided in your purchase confirmation email.
+                </div>
+              </div>
+
+              <div class="d-grid">
+                <button type="submit" class="btn btn-primary btn-lg">
+                  <i class="fas fa-shield-alt me-2"></i>
+                  Validate License
+                </button>
+              </div>
+            </form>
+
+            <hr class="my-4">
+
+            <div class="row">
+              <div class="col-md-6">
+                <div class="card bg-light">
+                  <div class="card-body text-center">
+                    <i class="fas fa-user-plus fa-2x text-primary mb-3"></i>
+                    <h6>Need Full Access?</h6>
+                    <p class="small text-muted mb-3">
+                      Create an account to manage all your licenses, download software, and access support.
+                    </p>
+                    <a href="/register" class="btn btn-sm btn-outline-primary">Create Account</a>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="card bg-light">
+                  <div class="card-body text-center">
+                    <i class="fas fa-sign-in-alt fa-2x text-success mb-3"></i>
+                    <h6>Already Have Account?</h6>
+                    <p class="small text-muted mb-3">
+                      Log in to access your complete license dashboard with downloads and support.
+                    </p>
+                    <a href="/login" class="btn btn-sm btn-outline-success">Sign In</a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      </div>
+
+      <div class="text-center mt-4">
+        <div class="small text-muted">
+          <p>
+            <i class="fas fa-info-circle me-1"></i>
+            This validation tool only shows basic license information. For downloads and full license management, please 
+            <a href="/login">sign in</a> or <a href="/register">create an account</a>.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

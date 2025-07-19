@@ -24,11 +24,11 @@
                        onmouseout="this.style.color='var(--text-secondary)'">
                         <i class="fas fa-boxes me-2"></i>Products
                     </a>
-                    <a class="text-decoration-none <%= 'text-warning' if request.path == '/my-licenses' %>" 
-                       href="/my-licenses" style="color: var(--text-secondary); transition: color 0.3s; white-space: nowrap; margin-right: 2rem;"
+                    <a class="text-decoration-none" 
+                       href="/validate-license" style="color: var(--text-secondary); transition: color 0.3s; white-space: nowrap; margin-right: 2rem;"
                        onmouseover="this.style.color='var(--accent-primary)'" 
-                       onmouseout="this.style.color='<%= request.path == '/my-licenses' ? 'var(--bs-warning)' : 'var(--text-secondary)' %>'">
-                        <i class="fas fa-key me-2"></i>My Licenses
+                       onmouseout="this.style.color='var(--text-secondary)'">
+                        <i class="fas fa-shield-alt me-2"></i>Validate License
                     </a>
                     <a class="text-decoration-none" 
                        href="#support" style="color: var(--text-secondary); transition: color 0.3s; white-space: nowrap;"
@@ -48,6 +48,46 @@
                         <i class="fas fa-shopping-cart me-2"></i>Cart
                         <span class="cart-badge" style="display: none;">0</span>
                     </a>
+                    
+                    <!-- User Authentication -->
+                    <% if user_logged_in? %>
+                        <!-- User Menu -->
+                        <div class="dropdown me-3">
+                            <a class="text-decoration-none dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
+                               style="color: var(--text-secondary); transition: color 0.3s; white-space: nowrap;"
+                               onmouseover="this.style.color='var(--accent-primary)'" 
+                               onmouseout="this.style.color='var(--text-secondary)'">
+                                <i class="fas fa-user me-2"></i><%= h(current_user.name || current_user.email.split('@').first) %>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="/dashboard"><i class="fas fa-tachometer-alt me-2"></i>Dashboard</a></li>
+                                <li><a class="dropdown-item" href="/licenses"><i class="fas fa-key me-2"></i>My Licenses</a></li>
+                                <li><a class="dropdown-item" href="/profile"><i class="fas fa-user-edit me-2"></i>Profile</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <form method="POST" action="/logout" class="d-inline">
+                                        <button type="submit" class="dropdown-item text-danger">
+                                            <i class="fas fa-sign-out-alt me-2"></i>Logout
+                                        </button>
+                                    </form>
+                                </li>
+                            </ul>
+                        </div>
+                    <% else %>
+                        <!-- Login/Register Links -->
+                        <a class="text-decoration-none" 
+                           href="/login" style="color: var(--text-secondary); transition: color 0.3s; white-space: nowrap; margin-right: 1rem;"
+                           onmouseover="this.style.color='var(--accent-primary)'" 
+                           onmouseout="this.style.color='var(--text-secondary)'">
+                            <i class="fas fa-sign-in-alt me-2"></i>Login
+                        </a>
+                        <a class="text-decoration-none btn btn-sm" 
+                           href="/register" style="background: var(--accent-primary); color: white; border: none; white-space: nowrap; margin-right: 1rem;"
+                           onmouseover="this.style.opacity='0.9'" 
+                           onmouseout="this.style.opacity='1'">
+                            <i class="fas fa-user-plus me-2"></i>Sign Up
+                        </a>
+                    <% end %>
                     
                     <!-- Admin Link -->
                     <% if admin_logged_in? %>

@@ -447,7 +447,393 @@ function generateCategoryForm(categoryId, data) {
             `;
             break;
             
-        case 'features':
+        case 'hero_section':
+            html = `
+                <div class="row g-3">
+                    <div class="col-12">
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" name="enabled" ${data.enabled ? 'checked' : ''}>
+                            <label class="form-check-label fw-bold">Enable Hero Section</label>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Hero Title</label>
+                        <input type="text" class="form-control" name="title" value="${data.title || ''}" placeholder="Professional Software Licensing Made Simple">
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Hero Subtitle</label>
+                        <textarea class="form-control" name="subtitle" rows="3" placeholder="Secure, reliable, and easy-to-manage...">${data.subtitle || ''}</textarea>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Primary Button Text</label>
+                        <input type="text" class="form-control" name="cta_primary_text" value="${data.cta_primary_text || ''}" placeholder="Browse Products">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Primary Button Link</label>
+                        <input type="text" class="form-control" name="cta_primary_link" value="${data.cta_primary_link || ''}" placeholder="#products">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Secondary Button Text</label>
+                        <input type="text" class="form-control" name="cta_secondary_text" value="${data.cta_secondary_text || ''}" placeholder="Create Account">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Secondary Button Link</label>
+                        <input type="text" class="form-control" name="cta_secondary_link" value="${data.cta_secondary_link || ''}" placeholder="/register">
+                    </div>
+                    
+                    <hr class="my-4">
+                    <h6 class="text-primary mb-3">Trust Indicators</h6>
+                    
+                    <div class="col-12">
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" name="show_trust_indicators" ${data.show_trust_indicators ? 'checked' : ''}>
+                            <label class="form-check-label">Show Trust Indicators</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Indicator 1 Icon</label>
+                        <input type="text" class="form-control" name="trust_indicator_1_icon" value="${data.trust_indicator_1_icon || ''}" placeholder="fas fa-shield-alt">
+                    </div>
+                    <div class="col-md-8">
+                        <label class="form-label">Indicator 1 Text</label>
+                        <input type="text" class="form-control" name="trust_indicator_1_text" value="${data.trust_indicator_1_text || ''}" placeholder="SSL Secured">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Indicator 2 Icon</label>
+                        <input type="text" class="form-control" name="trust_indicator_2_icon" value="${data.trust_indicator_2_icon || ''}" placeholder="fas fa-lock">
+                    </div>
+                    <div class="col-md-8">
+                        <label class="form-label">Indicator 2 Text</label>
+                        <input type="text" class="form-control" name="trust_indicator_2_text" value="${data.trust_indicator_2_text || ''}" placeholder="PCI Compliant">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Indicator 3 Icon</label>
+                        <input type="text" class="form-control" name="trust_indicator_3_icon" value="${data.trust_indicator_3_icon || ''}" placeholder="fas fa-clock">
+                    </div>
+                    <div class="col-md-8">
+                        <label class="form-label">Indicator 3 Text</label>
+                        <input type="text" class="form-control" name="trust_indicator_3_text" value="${data.trust_indicator_3_text || ''}" placeholder="24/7 Support">
+                    </div>
+                    
+                    <hr class="my-4">
+                    <h6 class="text-primary mb-3">Visual Elements</h6>
+                    
+                    <div class="col-md-4">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" name="show_license_card" ${data.show_license_card ? 'checked' : ''}>
+                            <label class="form-check-label">Show License Card</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" name="show_background_elements" ${data.show_background_elements ? 'checked' : ''}>
+                            <label class="form-check-label">Show Background Elements</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" name="animation_enabled" ${data.animation_enabled ? 'checked' : ''}>
+                            <label class="form-check-label">Enable Animations</label>
+                        </div>
+                    </div>
+                </div>
+            `;
+            break;
+            
+        case 'features_section':
+            html = `
+                <div class="row g-3">
+                    <div class="col-12">
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" name="enabled" ${data.enabled ? 'checked' : ''}>
+                            <label class="form-check-label fw-bold">Enable Features Section</label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Section Title</label>
+                        <input type="text" class="form-control" name="title" value="${data.title || ''}" placeholder="Why Choose Source License?">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Columns per Row</label>
+                        <select class="form-select" name="columns_per_row">
+                            <option value="2" ${data.columns_per_row == 2 ? 'selected' : ''}>2 Columns</option>
+                            <option value="3" ${data.columns_per_row == 3 ? 'selected' : ''}>3 Columns</option>
+                            <option value="4" ${data.columns_per_row == 4 ? 'selected' : ''}>4 Columns</option>
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Section Subtitle</label>
+                        <textarea class="form-control" name="subtitle" rows="2" placeholder="Built with modern technology...">${data.subtitle || ''}</textarea>
+                    </div>
+                    
+                    <hr class="my-4">
+                    <h6 class="text-primary mb-3">Features (Configure up to 6 features)</h6>
+                    
+                    ${[1,2,3,4,5,6].map(i => `
+                        <div class="col-12">
+                            <div class="card mb-3">
+                                <div class="card-header">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" name="feature_${i}_enabled" ${data[`feature_${i}_enabled`] ? 'checked' : ''}>
+                                        <label class="form-check-label fw-bold">Feature ${i}</label>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row g-3">
+                                        <div class="col-md-4">
+                                            <label class="form-label">Icon Class</label>
+                                            <input type="text" class="form-control" name="feature_${i}_icon" value="${data[`feature_${i}_icon`] || ''}" placeholder="fas fa-shield-alt">
+                                        </div>
+                                        <div class="col-md-8">
+                                            <label class="form-label">Title</label>
+                                            <input type="text" class="form-control" name="feature_${i}_title" value="${data[`feature_${i}_title`] || ''}" placeholder="Feature Title">
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label">Description</label>
+                                            <textarea class="form-control" name="feature_${i}_description" rows="2" placeholder="Feature description...">${data[`feature_${i}_description`] || ''}</textarea>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            break;
+            
+        case 'products_section':
+            html = `
+                <div class="row g-3">
+                    <div class="col-12">
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" name="enabled" ${data.enabled ? 'checked' : ''}>
+                            <label class="form-check-label fw-bold">Enable Products Section</label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Section Title</label>
+                        <input type="text" class="form-control" name="title" value="${data.title || ''}" placeholder="Available Software Products">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Columns per Row</label>
+                        <select class="form-select" name="columns_per_row">
+                            <option value="2" ${data.columns_per_row == 2 ? 'selected' : ''}>2 Columns</option>
+                            <option value="3" ${data.columns_per_row == 3 ? 'selected' : ''}>3 Columns</option>
+                            <option value="4" ${data.columns_per_row == 4 ? 'selected' : ''}>4 Columns</option>
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Section Subtitle</label>
+                        <textarea class="form-control" name="subtitle" rows="2" placeholder="Choose from our selection...">${data.subtitle || ''}</textarea>
+                    </div>
+                    
+                    <hr class="my-4">
+                    <h6 class="text-primary mb-3">No Products Display</h6>
+                    
+                    <div class="col-12">
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" name="show_when_no_products" ${data.show_when_no_products ? 'checked' : ''}>
+                            <label class="form-check-label">Show Section When No Products Available</label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">No Products Title</label>
+                        <input type="text" class="form-control" name="no_products_title" value="${data.no_products_title || ''}" placeholder="No Products Available">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">No Products Message</label>
+                        <input type="text" class="form-control" name="no_products_message" value="${data.no_products_message || ''}" placeholder="Products are currently being configured...">
+                    </div>
+                </div>
+            `;
+            break;
+            
+        case 'how_it_works':
+            html = `
+                <div class="row g-3">
+                    <div class="col-12">
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" name="enabled" ${data.enabled ? 'checked' : ''}>
+                            <label class="form-check-label fw-bold">Enable How It Works Section</label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Section Title</label>
+                        <input type="text" class="form-control" name="title" value="${data.title || ''}" placeholder="How It Works">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Section Subtitle</label>
+                        <input type="text" class="form-control" name="subtitle" value="${data.subtitle || ''}" placeholder="Get your software license in three simple steps.">
+                    </div>
+                    
+                    <hr class="my-4">
+                    <h6 class="text-primary mb-3">Steps</h6>
+                    
+                    ${[1,2,3].map(i => `
+                        <div class="col-12">
+                            <div class="card mb-3">
+                                <div class="card-header">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" name="step_${i}_enabled" ${data[`step_${i}_enabled`] ? 'checked' : ''}>
+                                        <label class="form-check-label fw-bold">Step ${i}</label>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row g-3">
+                                        <div class="col-md-4">
+                                            <label class="form-label">Icon Class</label>
+                                            <input type="text" class="form-control" name="step_${i}_icon" value="${data[`step_${i}_icon`] || ''}" placeholder="fas fa-shopping-cart">
+                                        </div>
+                                        <div class="col-md-8">
+                                            <label class="form-label">Title</label>
+                                            <input type="text" class="form-control" name="step_${i}_title" value="${data[`step_${i}_title`] || ''}" placeholder="Step Title">
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label">Description</label>
+                                            <textarea class="form-control" name="step_${i}_description" rows="2" placeholder="Step description...">${data[`step_${i}_description`] || ''}</textarea>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            break;
+            
+        case 'support_section':
+            html = `
+                <div class="row g-3">
+                    <div class="col-12">
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" name="enabled" ${data.enabled ? 'checked' : ''}>
+                            <label class="form-check-label fw-bold">Enable Support Section</label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Section Title</label>
+                        <input type="text" class="form-control" name="title" value="${data.title || ''}" placeholder="Need Help?">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Section Subtitle</label>
+                        <input type="text" class="form-control" name="subtitle" value="${data.subtitle || ''}" placeholder="We're here to help you...">
+                    </div>
+                    
+                    <hr class="my-4">
+                    <h6 class="text-primary mb-3">Support Cards</h6>
+                    
+                    ${[1,2].map(i => `
+                        <div class="col-12">
+                            <div class="card mb-3">
+                                <div class="card-header">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" name="card_${i}_enabled" ${data[`card_${i}_enabled`] ? 'checked' : ''}>
+                                        <label class="form-check-label fw-bold">Support Card ${i}</label>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row g-3">
+                                        <div class="col-md-4">
+                                            <label class="form-label">Icon Class</label>
+                                            <input type="text" class="form-control" name="card_${i}_icon" value="${data[`card_${i}_icon`] || ''}" placeholder="fas fa-shield-alt">
+                                        </div>
+                                        <div class="col-md-8">
+                                            <label class="form-label">Title</label>
+                                            <input type="text" class="form-control" name="card_${i}_title" value="${data[`card_${i}_title`] || ''}" placeholder="Card Title">
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label">Description</label>
+                                            <textarea class="form-control" name="card_${i}_description" rows="2" placeholder="Card description...">${data[`card_${i}_description`] || ''}</textarea>
+                                        </div>
+                                        ${i === 1 ? `
+                                            <div class="col-md-6">
+                                                <label class="form-label">Button 1 Text</label>
+                                                <input type="text" class="form-control" name="card_${i}_button_1_text" value="${data[`card_${i}_button_1_text`] || ''}" placeholder="Button Text">
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label">Button 1 Link</label>
+                                                <input type="text" class="form-control" name="card_${i}_button_1_link" value="${data[`card_${i}_button_1_link`] || ''}" placeholder="/validate-license">
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label">Button 2 Text</label>
+                                                <input type="text" class="form-control" name="card_${i}_button_2_text" value="${data[`card_${i}_button_2_text`] || ''}" placeholder="Button Text">
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label">Button 2 Link</label>
+                                                <input type="text" class="form-control" name="card_${i}_button_2_link" value="${data[`card_${i}_button_2_link`] || ''}" placeholder="/login">
+                                            </div>
+                                        ` : `
+                                            <div class="col-md-6">
+                                                <label class="form-label">Button Text</label>
+                                                <input type="text" class="form-control" name="card_${i}_button_text" value="${data[`card_${i}_button_text`] || ''}" placeholder="Button Text">
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label">Button Link</label>
+                                                <input type="text" class="form-control" name="card_${i}_button_link" value="${data[`card_${i}_button_link`] || ''}" placeholder="mailto:support@example.com">
+                                            </div>
+                                        `}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            break;
+            
+        case 'page_structure':
+            html = `
+                <div class="row g-3">
+                    <div class="col-12">
+                        <h6 class="text-primary mb-3">Section Visibility</h6>
+                        <p class="text-muted mb-3">Control which sections appear on the homepage</p>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" name="hero_enabled" ${data.hero_enabled ? 'checked' : ''}>
+                            <label class="form-check-label">Hero Section</label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" name="features_enabled" ${data.features_enabled ? 'checked' : ''}>
+                            <label class="form-check-label">Features Section</label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" name="products_enabled" ${data.products_enabled ? 'checked' : ''}>
+                            <label class="form-check-label">Products Section</label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" name="how_it_works_enabled" ${data.how_it_works_enabled ? 'checked' : ''}>
+                            <label class="form-check-label">How It Works Section</label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" name="support_enabled" ${data.support_enabled ? 'checked' : ''}>
+                            <label class="form-check-label">Support Section</label>
+                        </div>
+                    </div>
+                    
+                    <hr class="my-4">
+                    <div class="col-12">
+                        <h6 class="text-primary mb-3">Section Order</h6>
+                        <p class="text-muted mb-3">Drag sections to reorder them (coming soon)</p>
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Section reordering will be available in a future update. Current order: Hero → Features → Products → How It Works → Support
+                        </div>
+                    </div>
+                </div>
+            `;
+            break;
+            
+        case 'advanced':
             html = `
                 <div class="row g-3">
                     <div class="col-md-6">
@@ -634,7 +1020,8 @@ function openPreview() {
 
 .category-card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--accent-primary);
 }
 
 .form-control-color {
@@ -643,85 +1030,125 @@ function openPreview() {
 }
 
 .form-check-input:checked {
-    background-color: var(--admin-accent);
-    border-color: var(--admin-accent);
+    background-color: var(--accent-primary);
+    border-color: var(--accent-primary);
 }
 
-/* Fix white-on-white text issues in customization modal */
-#customizationModal .modal-body {
-    background-color: #ffffff;
-    color: #212529;
+/* Modal styling - consistent with dark theme */
+#customizationModal .modal-content,
+#importModal .modal-content {
+    background-color: var(--surface-secondary);
+    border: 1px solid var(--border-default);
+    color: var(--text-primary);
 }
 
-#customizationModal .form-label {
-    color: #212529 !important;
+#customizationModal .modal-header,
+#importModal .modal-header {
+    background-color: var(--surface-tertiary);
+    border-bottom: 1px solid var(--border-default);
+    color: var(--text-primary);
+}
+
+#customizationModal .modal-footer,
+#importModal .modal-footer {
+    background-color: var(--surface-tertiary);
+    border-top: 1px solid var(--border-default);
+}
+
+#customizationModal .modal-body,
+#importModal .modal-body {
+    background-color: var(--surface-secondary);
+    color: var(--text-primary);
+}
+
+#customizationModal .form-label,
+#importModal .form-label {
+    color: var(--text-primary) !important;
     font-weight: 500;
     margin-bottom: 0.5rem;
 }
 
-#customizationModal .form-control {
-    background-color: #ffffff;
-    color: #212529;
-    border: 1px solid #ced4da;
+#customizationModal .form-control,
+#customizationModal .form-select,
+#importModal .form-control {
+    background-color: var(--surface-tertiary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-default);
 }
 
-#customizationModal .form-control:focus {
-    background-color: #ffffff;
-    color: #212529;
-    border-color: #86b7fe;
-    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+#customizationModal .form-control:focus,
+#customizationModal .form-select:focus,
+#importModal .form-control:focus {
+    background-color: var(--surface-secondary);
+    color: var(--text-primary);
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 0.25rem rgba(35, 134, 54, 0.25);
 }
 
-#customizationModal .form-check-label {
-    color: #212529 !important;
+#customizationModal .form-check-label,
+#importModal .form-check-label {
+    color: var(--text-primary) !important;
     margin-left: 0.5rem;
 }
 
-#customizationModal .form-check-input {
-    background-color: #ffffff;
-    border: 1px solid #ced4da;
+#customizationModal .form-check-input,
+#importModal .form-check-input {
+    background-color: var(--surface-tertiary);
+    border: 1px solid var(--border-default);
 }
 
-#customizationModal .row {
-    background-color: transparent;
-}
-
-#customizationModal .col-12,
-#customizationModal .col-md-6 {
-    background-color: transparent;
-}
-
-/* Ensure proper contrast for all text elements */
-#customizationModal * {
-    color: inherit;
-}
-
-#customizationModal input[type="text"],
-#customizationModal input[type="email"],
-#customizationModal input[type="color"],
-#customizationModal textarea {
-    color: #212529 !important;
-    background-color: #ffffff !important;
+#customizationModal .form-check-input:checked,
+#importModal .form-check-input:checked {
+    background-color: var(--accent-primary);
+    border-color: var(--accent-primary);
 }
 
 #customizationModal input[type="color"] {
+    background-color: var(--surface-tertiary);
+    border: 1px solid var(--border-default);
     padding: 2px;
-    border: 1px solid #ced4da;
 }
 
-/* Import modal fixes */
-#importModal .modal-body {
-    background-color: #ffffff;
-    color: #212529;
+/* Dropdown menus in modals */
+#customizationModal .dropdown-menu,
+#importModal .dropdown-menu {
+    background-color: var(--surface-secondary);
+    border: 1px solid var(--border-default);
 }
 
-#importModal .form-label {
-    color: #212529 !important;
+#customizationModal .dropdown-item,
+#importModal .dropdown-item {
+    color: var(--text-primary);
 }
 
-#importModal .alert {
-    color: #664d03;
-    background-color: #fff3cd;
-    border-color: #ffecb5;
+#customizationModal .dropdown-item:hover,
+#importModal .dropdown-item:hover {
+    background-color: var(--surface-tertiary);
+    color: var(--accent-primary);
+}
+
+/* Import modal alert styling */
+#importModal .alert-warning {
+    background-color: rgba(251, 133, 0, 0.15);
+    border-color: rgba(251, 133, 0, 0.25);
+    color: var(--bs-warning);
+}
+
+/* Text dividers and headings */
+#customizationModal h6,
+#importModal h6 {
+    color: var(--accent-primary);
+}
+
+#customizationModal hr,
+#importModal hr {
+    border-color: var(--border-default);
+    opacity: 0.5;
+}
+
+/* Button overrides for modals */
+#customizationModal .btn-close,
+#importModal .btn-close {
+    filter: invert(1);
 }
 </style>

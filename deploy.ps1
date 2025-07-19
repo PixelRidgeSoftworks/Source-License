@@ -1,46 +1,41 @@
 #!/usr/bin/env pwsh
-# PowerShell Deployment Script for Source License Management System
-# Handles updates and configuration changes without overwriting customizations
+# Source-License Unified Deploy Script
+# Simplified deployment script for Windows systems
 
 param(
-    [string]$Action = "update",
-    [string]$Domain = "",
-    [string]$Port = "",
-    [string]$Environment = "",
-    [switch]$Force,
-    [switch]$BackupFirst,
+    [string]$Action = "help",
+    [string]$Environment = "production",
+    [string]$Port = "4567",
+    [switch]$Backup,
     [switch]$Help
 )
 
 if ($Help) {
     Write-Host @"
-Source License Management System - Windows Deployment Script
+Source-License Deploy Script for Windows
 
 USAGE:
     ./deploy.ps1 [ACTION] [OPTIONS]
 
 ACTIONS:
-    update                    Update application code and dependencies
-    config                    Update configuration only
-    restart                   Restart services
-    backup                    Create backup of current installation
-    restore                   Restore from backup
-    migrate                   Run database migrations only
-    status                    Show deployment status
+    run                      Start the application
+    stop                     Stop the application
+    restart                  Restart the application
+    status                   Show application status
+    update                   Update code and restart
+    migrate                  Run database migrations only
 
 OPTIONS:
-    -Domain <domain>          Update domain configuration
-    -Port <port>              Update port configuration  
-    -Environment <env>        Update environment (development/production)
-    -Force                    Force update even if changes detected
-    -BackupFirst              Create backup before deployment
-    -Help                     Show this help message
+    -Environment <env>       Environment (development/production, default: production)
+    -Port <port>             Port for the application (default: 4567)
+    -Backup                  Create backup before update
+    -Help                    Show this help message
 
 EXAMPLES:
-    ./deploy.ps1 update -BackupFirst
-    ./deploy.ps1 config -Domain "new-domain.com"
-    ./deploy.ps1 restart
-    ./deploy.ps1 backup
+    ./deploy.ps1 run
+    ./deploy.ps1 stop
+    ./deploy.ps1 update -Backup
+    ./deploy.ps1 run -Environment development -Port 3000
 "@
     exit 0
 }
@@ -51,149 +46,247 @@ function Write-Error { param($Message) Write-Host "✗ $Message" -ForegroundColo
 function Write-Info { param($Message) Write-Host "ℹ $Message" -ForegroundColor Cyan }
 function Write-Warning { param($Message) Write-Host "⚠ $Message" -ForegroundColor Yellow }
 
-# Check if running as administrator
-function Test-AdminRights {
-    $currentUser = [Security.Principal.WindowsIdentity]::GetCurrent()
-    $principal = New-Object Security.Principal.WindowsPrincipal($currentUser)
-    return $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+# Check if command exists
+function Test-Command {
+    param($Command)
+    return [bool](Get-Command $Command -ErrorAction SilentlyContinue)
 }
 
-# Backup current installation
-function New-Backup {
-    param($BackupPath = "backups\$(Get-Date -Format 'yyyyMMdd-HHmmss')")
-    
-    Write-Info "Creating backup at $BackupPath..."
-    
+# Check if port is in use
+function Test-Port {
+    param($Port)
     try {
-        New-Item -ItemType Directory -Path $BackupPath -Force | Out-Null
-        
-        # Backup configuration files
-        $configFiles = @(".env", "config\customizations.yml", "Gemfile.lock")
-        foreach ($file in $configFiles) {
-            if (Test-Path $file) {
-                $destPath = Join-Path $BackupPath (Split-Path $file -Leaf)
-                Copy-Item $file $destPath -Force
-                Write-Info "Backed up $file"
-            }
-        }
-        
-        # Backup database if SQLite
-        if (Test-Path "database.db") {
-            Copy-Item "database.db" "$BackupPath\database.db" -Force
-            Write-Info "Backed up database"
-        }
-        
-        # Backup logs
-        if (Test-Path "logs") {
-            Copy-Item "logs" "$BackupPath\logs" -Recurse -Force
-            Write-Info "Backed up logs"
-        }
-        
-        # Create manifest
-        $manifest = @{
-            Timestamp = Get-Date
-            Version = (git describe --tags --always 2>$null)
-            Environment = $env:RACK_ENV
-            Files = $configFiles
-        }
-        $manifest | ConvertTo-Json | Out-File "$BackupPath\manifest.json" -Encoding UTF8
-        
-        Write-Success "Backup created successfully at $BackupPath"
-        return $BackupPath
-    } catch {
-        Write-Error "Failed to create backup: $_"
-        return $null
-    }
-}
-
-# Restore from backup
-function Restore-Backup {
-    param($BackupPath)
-    
-    if (-not (Test-Path $BackupPath)) {
-        Write-Error "Backup path not found: $BackupPath"
-        return $false
-    }
-    
-    Write-Info "Restoring from backup: $BackupPath..."
-    
-    try {
-        # Check manifest
-        $manifestPath = Join-Path $BackupPath "manifest.json"
-        if (Test-Path $manifestPath) {
-            $manifest = Get-Content $manifestPath | ConvertFrom-Json
-            Write-Info "Backup created: $($manifest.Timestamp)"
-            Write-Info "Backup version: $($manifest.Version)"
-        }
-        
-        # Stop services before restore
-        & .\service_manager.ps1 stop
-        
-        # Restore files
-        $filesToRestore = Get-ChildItem $BackupPath -File | Where-Object { $_.Name -ne "manifest.json" }
-        foreach ($file in $filesToRestore) {
-            $destPath = ".\$($file.Name)"
-            Copy-Item $file.FullName $destPath -Force
-            Write-Info "Restored $($file.Name)"
-        }
-        
-        # Restore directories
-        $dirsToRestore = Get-ChildItem $BackupPath -Directory
-        foreach ($dir in $dirsToRestore) {
-            $destPath = ".\$($dir.Name)"
-            if (Test-Path $destPath) {
-                Remove-Item $destPath -Recurse -Force
-            }
-            Copy-Item $dir.FullName $destPath -Recurse -Force
-            Write-Info "Restored $($dir.Name)\"
-        }
-        
-        Write-Success "Backup restored successfully"
+        $connection = New-Object System.Net.Sockets.TcpClient
+        $connection.Connect("localhost", $Port)
+        $connection.Close()
         return $true
     } catch {
-        Write-Error "Failed to restore backup: $_"
         return $false
     }
 }
 
-# Check for uncommitted changes
-function Test-LocalChanges {
+# Get application process
+function Get-AppProcess {
     try {
-        $status = git status --porcelain 2>$null
-        return $status.Length -gt 0
+        return Get-Process | Where-Object { 
+            $_.ProcessName -eq "ruby" -and 
+            $_.CommandLine -like "*launch.rb*" 
+        } | Select-Object -First 1
     } catch {
-        return $false
+        return Get-Process -Name "ruby" -ErrorAction SilentlyContinue | Select-Object -First 1
     }
 }
 
-# Update application code
-function Update-Application {
-    Write-Info "Updating application code..."
+# Health check
+function Test-Health {
+    param($Port)
+    try {
+        $response = Invoke-WebRequest -Uri "http://localhost:$Port/health" -TimeoutSec 5 -ErrorAction SilentlyContinue
+        return $response.StatusCode -eq 200
+    } catch {
+        try {
+            $response = Invoke-WebRequest -Uri "http://localhost:$Port/" -TimeoutSec 5 -ErrorAction SilentlyContinue
+            return $response.StatusCode -eq 200
+        } catch {
+            return $false
+        }
+    }
+}
+
+# Start application
+function Start-Application {
+    Write-Info "Starting Source-License application..."
     
-    # Check for local changes
-    if ((Test-LocalChanges) -and -not $Force) {
-        Write-Warning "Local changes detected. Use -Force to override or commit changes first."
-        git status --short
-        return $false
+    if (Test-Port $Port) {
+        Write-Warning "Port $Port is already in use"
+        if (Test-Health $Port) {
+            Write-Success "Application appears to be already running"
+            return $true
+        } else {
+            Write-Warning "Port is in use but health check failed"
+        }
     }
     
+    # Set environment variables
+    $env:RACK_ENV = $Environment
+    $env:APP_ENV = $Environment
+    $env:PORT = $Port
+    
+    # Create logs directory if it doesn't exist
+    if (-not (Test-Path "logs")) {
+        New-Item -ItemType Directory -Path "logs" -Force | Out-Null
+    }
+    
+    Write-Info "Environment: $Environment"
+    Write-Info "Port: $Port"
+    
     try {
-        # Create backup if requested
-        if ($BackupFirst) {
-            $backupPath = New-Backup
-            if (-not $backupPath) {
-                Write-Error "Backup failed, aborting update"
+        if ($Environment -eq "development") {
+            Write-Info "Starting in development mode (foreground)..."
+            & ruby launch.rb
+        } else {
+            Write-Info "Starting in production mode (background)..."
+            $job = Start-Job -ScriptBlock {
+                param($WorkingDir, $Env, $Port)
+                Set-Location $WorkingDir
+                $env:RACK_ENV = $Env
+                $env:APP_ENV = $Env
+                $env:PORT = $Port
+                & ruby launch.rb
+            } -ArgumentList (Get-Location), $Environment, $Port
+            
+            # Give it a moment to start
+            Start-Sleep 3
+            
+            if (Test-Health $Port) {
+                Write-Success "Application started successfully"
+                $process = Get-AppProcess
+                if ($process) {
+                    Write-Info "PID: $($process.Id)"
+                }
+                Write-Info "Job ID: $($job.Id)"
+                Write-Info "Access: http://localhost:$Port"
+                Write-Info "Admin: http://localhost:$Port/admin"
+                Write-Info "Logs: Get-Content logs\app.log -Tail 20 -Wait"
+                return $true
+            } else {
+                Write-Error "Application failed to start"
+                Write-Info "Check logs: Get-Content logs\app.log"
+                $job | Stop-Job -PassThru | Remove-Job
                 return $false
             }
         }
+    } catch {
+        Write-Error "Failed to start application: $_"
+        return $false
+    }
+}
+
+# Stop application
+function Stop-Application {
+    Write-Info "Stopping Source-License application..."
+    
+    try {
+        # Stop Ruby processes
+        $processes = Get-AppProcess
+        if ($processes) {
+            $processes | Stop-Process -Force
+            Write-Success "Ruby processes stopped"
+            return $true
+        }
         
-        # Stop services
-        Write-Info "Stopping services..."
-        & .\service_manager.ps1 stop
+        # Stop background jobs
+        $jobs = Get-Job | Where-Object { $_.State -eq "Running" }
+        if ($jobs) {
+            $jobs | Stop-Job -PassThru | Remove-Job
+            Write-Success "Background jobs stopped"
+            return $true
+        }
+        
+        Write-Warning "No running application found"
+        return $false
+    } catch {
+        Write-Error "Error stopping application: $_"
+        return $false
+    }
+}
+
+# Restart application
+function Restart-Application {
+    Write-Info "Restarting Source-License application..."
+    
+    Stop-Application | Out-Null
+    Start-Sleep 2
+    Start-Application
+}
+
+# Show status
+function Show-Status {
+    Write-Info "Source-License Application Status"
+    Write-Host "=================================="
+    
+    $process = Get-AppProcess
+    if ($process) {
+        Write-Success "Application is running (PID: $($process.Id))"
+        
+        if (Test-Health $Port) {
+            Write-Success "Health check passed"
+        } else {
+            Write-Warning "Health check failed"
+        }
+        
+        Write-Info "Port: $Port"
+        Write-Info "URLs:"
+        Write-Info "  Main: http://localhost:$Port"
+        Write-Info "  Admin: http://localhost:$Port/admin"
+        
+        # Show memory usage
+        $memoryMB = [math]::Round($process.WorkingSet / 1MB, 2)
+        Write-Info "Memory: $memoryMB MB"
+        
+        # Show start time
+        Write-Info "Started: $($process.StartTime)"
+    } else {
+        Write-Error "Application is not running"
+    }
+    
+    # Show background jobs
+    $jobs = Get-Job | Where-Object { $_.State -eq "Running" }
+    if ($jobs) {
+        Write-Info "Background Jobs: $($jobs.Count) (IDs: $(($jobs.Id) -join ', '))"
+    }
+    
+    # Show recent logs
+    if (Test-Path "logs\app.log") {
+        Write-Host ""
+        Write-Info "Recent log entries:"
+        try {
+            Get-Content "logs\app.log" -Tail 5 -ErrorAction SilentlyContinue
+        } catch {
+            Write-Warning "Could not read log file"
+        }
+    }
+}
+
+# Update application
+function Update-Application {
+    Write-Info "Updating Source-License application..."
+    
+    try {
+        # Create backup if requested
+        if ($Backup) {
+            $backupDir = "backups\$(Get-Date -Format 'yyyyMMdd-HHmmss')"
+            Write-Info "Creating backup at $backupDir..."
+            New-Item -ItemType Directory -Path $backupDir -Force | Out-Null
+            
+            # Backup important files
+            $files = @(".env", "Gemfile.lock")
+            foreach ($file in $files) {
+                if (Test-Path $file) {
+                    Copy-Item $file "$backupDir\" -Force
+                }
+            }
+            
+            # Backup database if SQLite
+            if (Test-Path "database.db") {
+                Copy-Item "database.db" "$backupDir\" -Force
+            }
+            
+            Write-Success "Backup created"
+        }
+        
+        # Stop application
+        Stop-Application | Out-Null
         
         # Pull latest changes
-        Write-Info "Pulling latest changes..."
-        git pull origin main
+        if (Test-Command "git" -and (Test-Path ".git")) {
+            Write-Info "Pulling latest changes..."
+            try {
+                git pull origin main
+            } catch {
+                Write-Warning "Git pull failed, continuing anyway"
+            }
+        }
         
         # Update dependencies
         Write-Info "Updating dependencies..."
@@ -201,120 +294,24 @@ function Update-Application {
         
         # Run migrations
         Write-Info "Running database migrations..."
-        ruby lib\migrations.rb
+        try {
+            ruby lib\migrations.rb
+        } catch {
+            Write-Warning "Database migration failed, continuing anyway"
+        }
         
-        # Restart services
-        Write-Info "Starting services..."
-        & .\service_manager.ps1 start
+        # Start application
+        Start-Application | Out-Null
         
-        Write-Success "Application updated successfully"
+        Write-Success "Update completed"
         return $true
     } catch {
         Write-Error "Update failed: $_"
-        
-        # Attempt to restore backup if available
-        if ($BackupFirst -and $backupPath) {
-            Write-Warning "Attempting to restore backup..."
-            Restore-Backup $backupPath
-        }
-        
         return $false
     }
 }
 
-# Update configuration
-function Update-Configuration {
-    Write-Info "Updating configuration..."
-    
-    try {
-        # Backup configuration
-        if (Test-Path ".env") {
-            Copy-Item ".env" ".env.backup" -Force
-            Write-Info "Backed up current .env file"
-        }
-        
-        # Update domain if provided
-        if ($Domain) {
-            if (Test-Path ".env") {
-                $envContent = Get-Content ".env"
-                $envContent = $envContent -replace "^APP_HOST=.*", "APP_HOST=$Domain"
-                $envContent | Set-Content ".env"
-                Write-Success "Updated APP_HOST to $Domain"
-            }
-            
-            # Update Nginx config if exists
-            $nginxConfig = "C:\nginx\conf\source-license.conf"
-            if (Test-Path $nginxConfig) {
-                $configContent = Get-Content $nginxConfig
-                $configContent = $configContent -replace "server_name .*;", "server_name $Domain;"
-                $configContent | Set-Content $nginxConfig
-                Write-Success "Updated Nginx server_name to $Domain"
-                
-                # Restart Nginx
-                Restart-Service nginx -ErrorAction SilentlyContinue
-            }
-        }
-        
-        # Update port if provided
-        if ($Port) {
-            if (Test-Path ".env") {
-                $envContent = Get-Content ".env"
-                $envContent = $envContent -replace "^PORT=.*", "PORT=$Port"
-                $envContent | Set-Content ".env"
-                Write-Success "Updated PORT to $Port"
-            }
-        }
-        
-        # Update environment if provided
-        if ($Environment) {
-            if (Test-Path ".env") {
-                $envContent = Get-Content ".env"
-                $envContent = $envContent -replace "^RACK_ENV=.*", "RACK_ENV=$Environment"
-                $envContent = $envContent -replace "^APP_ENV=.*", "APP_ENV=$Environment"
-                $envContent | Set-Content ".env"
-                Write-Success "Updated environment to $Environment"
-            }
-        }
-        
-        Write-Success "Configuration updated successfully"
-        return $true
-    } catch {
-        Write-Error "Configuration update failed: $_"
-        
-        # Restore backup
-        if (Test-Path ".env.backup") {
-            Copy-Item ".env.backup" ".env" -Force
-            Write-Info "Restored previous configuration"
-        }
-        
-        return $false
-    }
-}
-
-# Restart services
-function Restart-Services {
-    Write-Info "Restarting services..."
-    
-    try {
-        # Restart application
-        & .\service_manager.ps1 restart
-        
-        # Restart Nginx if running
-        $nginxService = Get-Service nginx -ErrorAction SilentlyContinue
-        if ($nginxService -and $nginxService.Status -eq "Running") {
-            Restart-Service nginx
-            Write-Success "Nginx restarted"
-        }
-        
-        Write-Success "Services restarted successfully"
-        return $true
-    } catch {
-        Write-Error "Failed to restart services: $_"
-        return $false
-    }
-}
-
-# Run database migrations only
+# Run database migrations
 function Invoke-Migration {
     Write-Info "Running database migrations..."
     
@@ -328,130 +325,95 @@ function Invoke-Migration {
     }
 }
 
-# Show deployment status
-function Show-DeploymentStatus {
-    Write-Host "Source License Management System - Deployment Status" -ForegroundColor Cyan
-    Write-Host "=" * 60
-    
-    # Git status
-    try {
-        $gitBranch = git rev-parse --abbrev-ref HEAD 2>$null
-        $gitCommit = git rev-parse --short HEAD 2>$null
-        $gitStatus = git status --porcelain 2>$null
-        
-        Write-Info "Git Branch: $gitBranch"
-        Write-Info "Git Commit: $gitCommit"
-        
-        if ($gitStatus) {
-            Write-Warning "Uncommitted changes present:"
-            $gitStatus | ForEach-Object { Write-Host "  $_" -ForegroundColor Yellow }
-        } else {
-            Write-Success "Working directory clean"
-        }
-    } catch {
-        Write-Warning "Not a git repository"
-    }
-    
-    # Environment info
-    if (Test-Path ".env") {
-        $envContent = Get-Content ".env"
-        $domain = ($envContent | Where-Object { $_ -match "^APP_HOST=" }) -replace "APP_HOST=", ""
-        $port = ($envContent | Where-Object { $_ -match "^PORT=" }) -replace "PORT=", ""
-        $env = ($envContent | Where-Object { $_ -match "^RACK_ENV=" }) -replace "RACK_ENV=", ""
-        
-        Write-Info "Domain: $domain"
-        Write-Info "Port: $port"
-        Write-Info "Environment: $env"
-    }
-    
-    # Service status
-    & .\service_manager.ps1 status
-    
-    # Recent backups
-    if (Test-Path "backups") {
-        $recentBackups = Get-ChildItem "backups" -Directory | Sort-Object Name -Descending | Select-Object -First 5
-        if ($recentBackups) {
-            Write-Info "Recent backups:"
-            $recentBackups | ForEach-Object { Write-Host "  $($_.Name)" -ForegroundColor Gray }
-        }
-    }
-    
-    # Customizations status
-    if (Test-Path "config\customizations.yml") {
-        $customizationSize = (Get-Item "config\customizations.yml").Length
-        Write-Info "Customizations file: $customizationSize bytes"
-    } else {
-        Write-Info "No customizations file found"
-    }
-}
-
-# List available backups
-function Get-AvailableBackups {
-    if (-not (Test-Path "backups")) {
-        Write-Warning "No backups directory found"
-        return
-    }
-    
-    $backups = Get-ChildItem "backups" -Directory | Sort-Object Name -Descending
-    
-    if ($backups.Count -eq 0) {
-        Write-Warning "No backups found"
-        return
-    }
-    
-    Write-Info "Available backups:"
-    $backups | ForEach-Object {
-        $manifestPath = Join-Path $_.FullName "manifest.json"
-        if (Test-Path $manifestPath) {
-            $manifest = Get-Content $manifestPath | ConvertFrom-Json
-            Write-Host "  $($_.Name) - $($manifest.Timestamp) ($($manifest.Version))" -ForegroundColor Gray
-        } else {
-            Write-Host "  $($_.Name)" -ForegroundColor Gray
-        }
-    }
-}
-
-# Main deployment function
-function Main {
-    Write-Host @"
-╔══════════════════════════════════════════════════════════════════════════════╗
-║                    Source License Management System                          ║
-║                         Deployment Script                                    ║
-╚══════════════════════════════════════════════════════════════════════════════╝
-"@ -ForegroundColor Cyan
-
+# Preflight checks
+function Test-Prerequisites {
     # Check if we're in the right directory
-    if (-not (Test-Path "app.rb") -or -not (Test-Path "Gemfile")) {
-        Write-Error "Please run this script from the project root directory"
+    if (-not (Test-Path "app.rb") -or -not (Test-Path "Gemfile") -or -not (Test-Path "launch.rb")) {
+        Write-Error "Please run this script from the Source-License project root directory"
         exit 1
     }
     
+    # Check Ruby
+    if (-not (Test-Command "ruby")) {
+        Write-Error "Ruby is not installed. Run .\install.ps1 first"
+        exit 1
+    }
+    
+    # Check Bundler
+    if (-not (Test-Command "bundle")) {
+        Write-Error "Bundler is not installed. Run .\install.ps1 first"
+        exit 1
+    }
+    
+    # Check if gems are installed
+    try {
+        $null = bundle check 2>$null
+    } catch {
+        Write-Warning "Dependencies not installed. Running bundle install..."
+        bundle install
+    }
+}
+
+# Main function
+function Main {
+    Write-Host @"
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                    Source-License Deploy Script                              ║
+║                         Windows Systems                                      ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+"@ -ForegroundColor Cyan
+
+    # Run preflight checks
+    Test-Prerequisites
+    
+    # Execute action
     switch ($Action.ToLower()) {
-        "update" {
-            Update-Application
+        { $_ -in @("run", "start") } {
+            Start-Application | Out-Null
         }
-        "config" {
-            Update-Configuration
+        "stop" {
+            Stop-Application | Out-Null
         }
         "restart" {
-            Restart-Services
-        }
-        "backup" {
-            New-Backup | Out-Null
-        }
-        "restore" {
-            Get-AvailableBackups
-            $backupName = Read-Host "Enter backup name to restore"
-            if ($backupName) {
-                $backupPath = "backups\$backupName"
-                Restore-Backup $backupPath
-            }
-        }
-        "migrate" {
-            Invoke-Migration
+            Restart-Application | Out-Null
         }
         "status" {
-            Show-DeploymentStatus
+            Show-Status
+        }
+        "update" {
+            Update-Application | Out-Null
+        }
+        "migrate" {
+            Invoke-Migration | Out-Null
+        }
+        "help" {
+            Write-Host @"
+Source-License Deploy Script for Windows
+
+USAGE:
+    ./deploy.ps1 [ACTION] [OPTIONS]
+
+ACTIONS:
+    run                      Start the application
+    stop                     Stop the application
+    restart                  Restart the application
+    status                   Show application status
+    update                   Update code and restart
+    migrate                  Run database migrations only
+
+OPTIONS:
+    -Environment <env>       Environment (development/production, default: production)
+    -Port <port>             Port for the application (default: 4567)
+    -Backup                  Create backup before update
+    -Help                    Show this help message
+
+EXAMPLES:
+    ./deploy.ps1 run
+    ./deploy.ps1 stop
+    ./deploy.ps1 update -Backup
+    ./deploy.ps1 run -Environment development -Port 3000
+"@
+            exit 0
         }
         default {
             Write-Error "Unknown action: $Action"
@@ -459,6 +421,12 @@ function Main {
             exit 1
         }
     }
+}
+
+# Handle Ctrl+C gracefully
+$null = Register-EngineEvent PowerShell.Exiting -Action {
+    Write-Host "`nShutting down gracefully..." -ForegroundColor Yellow
+    Stop-Application | Out-Null
 }
 
 # Run main function

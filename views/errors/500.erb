@@ -2,13 +2,13 @@
     <div class="row justify-content-center">
         <div class="col-lg-6 text-center">
             <div class="mb-5">
-                <i class="fas fa-exclamation-triangle text-warning" style="font-size: 6rem;"></i>
+                <i class="fas fa-exclamation-triangle" style="font-size: 6rem; color: var(--bs-warning);"></i>
             </div>
             
-            <h1 class="display-4 fw-bold text-muted mb-3">500</h1>
-            <h2 class="h4 mb-4">Internal Server Error</h2>
+            <h1 class="display-4 fw-bold mb-3" style="color: var(--text-secondary);">500</h1>
+            <h2 class="h4 mb-4" style="color: var(--text-primary);">Internal Server Error</h2>
             
-            <p class="lead text-muted mb-4">
+            <p class="lead mb-4" style="color: var(--text-secondary);">
                 Something went wrong on our end. We're working to fix this issue. 
                 Please try again in a few moments.
             </p>
@@ -18,11 +18,11 @@
                     <i class="fas fa-redo me-2"></i>
                     Try Again
                 </button>
-                <a href="/" class="btn btn-outline-secondary">
+                <a href="/" class="btn btn-secondary">
                     <i class="fas fa-home me-2"></i>
                     Go Home
                 </a>
-                <a href="mailto:<%= ENV['ADMIN_EMAIL'] || 'support@example.com' %>" class="btn btn-outline-danger">
+                <a href="mailto:<%= ENV['ADMIN_EMAIL'] || 'support@example.com' %>" class="btn btn-outline-primary">
                     <i class="fas fa-bug me-2"></i>
                     Report Issue
                 </a>
@@ -30,21 +30,21 @@
             
             <!-- Error reporting -->
             <div class="mt-5">
-                <div class="card border-warning bg-light">
+                <div class="card" style="border-left: 4px solid var(--bs-warning);">
                     <div class="card-body">
-                        <h6 class="mb-3">Help Us Improve</h6>
-                        <p class="small text-muted mb-3">
+                        <h6 class="mb-3" style="color: var(--text-primary);">Help Us Improve</h6>
+                        <p class="small mb-3" style="color: var(--text-secondary);">
                             If this error persists, please let us know what you were trying to do 
                             when this error occurred.
                         </p>
                         <div class="row g-3 text-start">
                             <div class="col-md-6">
-                                <h6 class="small text-uppercase text-muted">Error ID</h6>
-                                <code class="small"><%= Time.now.to_i %>-<%= SecureRandom.hex(4) %></code>
+                                <h6 class="small text-uppercase" style="color: var(--text-secondary);">Error ID</h6>
+                                <code class="small" style="background: var(--surface-tertiary); color: var(--bs-warning); padding: 0.25rem 0.5rem; border-radius: 4px;"><%= Time.now.to_i %>-<%= SecureRandom.hex(4) %></code>
                             </div>
                             <div class="col-md-6">
-                                <h6 class="small text-uppercase text-muted">Timestamp</h6>
-                                <small class="text-muted"><%= Time.now.strftime('%Y-%m-%d %H:%M:%S UTC') %></small>
+                                <h6 class="small text-uppercase" style="color: var(--text-secondary);">Timestamp</h6>
+                                <small style="color: var(--text-secondary);"><%= Time.now.strftime('%Y-%m-%d %H:%M:%S UTC') %></small>
                             </div>
                         </div>
                     </div>
@@ -53,3 +53,60 @@
         </div>
     </div>
 </div>
+
+<!-- Custom Error Page Styles -->
+<style>
+.error-page-icon {
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+}
+
+.error-page-card {
+    background: var(--surface-secondary);
+    border: 1px solid var(--border-default);
+    box-shadow: var(--shadow);
+}
+
+.error-page-warning {
+    background: rgba(251, 133, 0, 0.1);
+    border-left: 4px solid var(--bs-warning);
+}
+
+.error-code {
+    background: var(--surface-tertiary);
+    color: var(--bs-warning);
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    font-family: 'Courier New', monospace;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+.btn-reload {
+    background: var(--gradient-primary);
+    border: none;
+    transition: all 0.3s ease;
+}
+
+.btn-reload:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow);
+}
+
+@media (max-width: 768px) {
+    .display-4 {
+        font-size: 3rem;
+    }
+    
+    .lead {
+        font-size: 1.1rem;
+    }
+    
+    .btn-group-vertical {
+        width: 100%;
+    }
+    
+    .btn-group-vertical .btn {
+        margin-bottom: 0.5rem;
+    }
+}
+</style>

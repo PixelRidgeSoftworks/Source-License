@@ -1,0 +1,948 @@
+<!-- Customer Management Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-1">Customer Management</h1>
+        <p class="text-muted mb-0">Manage customer accounts, profiles, and access</p>
+    </div>
+    <div>
+        <a href="/admin/licenses/generate" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i>Manual License
+        </a>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row g-4 mb-4">
+    <div class="col-xl-3 col-md-6">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <div class="stat-number text-primary"><%= @total_customers %></div>
+                    <div class="stat-label">Total Customers</div>
+                </div>
+                <div class="text-primary">
+                    <i class="fas fa-users fa-2x"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <div class="stat-number text-success"><%= User.where(status: 'active').count %></div>
+                    <div class="stat-label">Active</div>
+                </div>
+                <div class="text-success">
+                    <i class="fas fa-user-check fa-2x"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <div class="stat-number text-warning"><%= User.where(email_verified: false).count %></div>
+                    <div class="stat-label">Unverified</div>
+                </div>
+                <div class="text-warning">
+                    <i class="fas fa-shield-exclamation fa-2x"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <div class="stat-number text-info"><%= User.where(Sequel.lit('created_at > ?', Time.now - (30 * 24 * 60 * 60))).count %></div>
+                    <div class="stat-label">New (30 days)</div>
+                </div>
+                <div class="text-info">
+                    <i class="fas fa-user-plus fa-2x"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filter and Search -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="input-group">
+            <span class="input-group-text">
+                <i class="fas fa-search"></i>
+            </span>
+            <input type="text" class="form-control" placeholder="Search customers, emails..." 
+                   id="customerSearch" value="<%= h(params[:search] || '') %>">
+        </div>
+    </div>
+    <div class="col-md-8">
+        <div class="d-flex gap-2">
+            <select class="form-select" id="statusFilter">
+                <option value="">All Status</option>
+                <option value="active" <%= 'selected' if params[:status] == 'active' %>>Active</option>
+                <option value="inactive" <%= 'selected' if params[:status] == 'inactive' %>>Inactive</option>
+                <option value="suspended" <%= 'selected' if params[:status] == 'suspended' %>>Suspended</option>
+            </select>
+            <select class="form-select" id="dateFilter">
+                <option value="">All Time</option>
+                <option value="today" <%= 'selected' if params[:date_filter] == 'today' %>>Today</option>
+                <option value="week" <%= 'selected' if params[:date_filter] == 'week' %>>This Week</option>
+                <option value="month" <%= 'selected' if params[:date_filter] == 'month' %>>This Month</option>
+                <option value="year" <%= 'selected' if params[:date_filter] == 'year' %>>This Year</option>
+            </select>
+            <select class="form-select" id="perPageFilter">
+                <option value="25" <%= 'selected' if @per_page == 25 %>>25 per page</option>
+                <option value="50" <%= 'selected' if @per_page == 50 %>>50 per page</option>
+                <option value="100" <%= 'selected' if @per_page == 100 %>>100 per page</option>
+            </select>
+        </div>
+    </div>
+</div>
+
+<!-- Bulk Actions Toolbar (initially hidden) -->
+<div id="bulkActionsToolbar" class="bulk-actions-toolbar mb-3" style="display: none;">
+    <div class="d-flex justify-content-between align-items-center">
+        <div class="bulk-actions-info">
+            <span id="selectedCount">0</span> customers selected
+        </div>
+        <div class="bulk-actions-buttons">
+            <button class="btn btn-success btn-sm me-2" onclick="bulkActivate()">
+                <i class="fas fa-check me-1"></i>Activate
+            </button>
+            <button class="btn btn-secondary btn-sm me-2" onclick="bulkDeactivate()">
+                <i class="fas fa-pause me-1"></i>Deactivate
+            </button>
+            <button class="btn btn-warning btn-sm me-2" onclick="bulkSuspend()">
+                <i class="fas fa-ban me-1"></i>Suspend
+            </button>
+            <button class="btn btn-info btn-sm me-2" onclick="bulkExport()">
+                <i class="fas fa-download me-1"></i>Export Selected
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="clearSelection()">
+                <i class="fas fa-times me-1"></i>Clear Selection
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Customers Table -->
+<div class="data-table">
+    <h5 class="table-header">
+        <i class="fas fa-users me-2"></i>
+        Customers
+        <% if @total_customers > @per_page %>
+        <small class="text-muted ms-2">
+            (Showing <%= [(@current_page - 1) * @per_page + 1, @total_customers].min %>-<%= [@current_page * @per_page, @total_customers].min %> of <%= @total_customers %>)
+        </small>
+        <% end %>
+    </h5>
+    
+    <div class="table-responsive customers-table-container">
+        <% if @customers.any? %>
+        <table class="table table-hover table-dark mb-0" id="customersTable">
+            <thead>
+                <tr>
+                    <th width="40">
+                        <input type="checkbox" id="selectAll" class="form-check-input">
+                    </th>
+                    <th>Customer</th>
+                    <th>Status</th>
+                    <th>Licenses</th>
+                    <th>Orders</th>
+                    <th>Total Spent</th>
+                    <th>Last Login</th>
+                    <th>Registered</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% @customers.each do |customer| %>
+                <tr class="customer-row" 
+                    data-status="<%= customer.status %>"
+                    data-customer="<%= h(customer.email.downcase) %>">
+                    <td>
+                        <input type="checkbox" class="form-check-input customer-checkbox" 
+                               value="<%= customer.id %>" data-customer-id="<%= customer.id %>">
+                    </td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <div class="customer-icon me-3">
+                                <%= customer_status_icon(customer.status) %>
+                            </div>
+                            <div>
+                                <div class="fw-bold">
+                                    <a href="/admin/customers/<%= customer.id %>" class="text-decoration-none">
+                                        <%= h(customer.display_name) %>
+                                    </a>
+                                </div>
+                                <small class="text-muted d-flex align-items-center">
+                                    <a href="mailto:<%= h(customer.email) %>" class="text-decoration-none me-2">
+                                        <%= h(customer.email) %>
+                                    </a>
+                                    <%= email_verification_icon(customer.email_verified?) %>
+                                </small>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <%= status_badge(customer.status) %>
+                        <br><%= customer_activity_status(customer) %>
+                    </td>
+                    <td>
+                        <div>
+                            <%= customer_license_summary(customer) %>
+                            <% if customer.license_count > 0 %>
+                            <br><small class="text-muted">
+                                <a href="/admin/licenses?search=<%= u(customer.email) %>" class="text-decoration-none">
+                                    View Licenses
+                                </a>
+                            </small>
+                            <% end %>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="fw-bold">
+                            <%= customer_order_count(customer) %> order<%= customer_order_count(customer) == 1 ? '' : 's' %>
+                        </div>
+                        <% if customer_order_count(customer) > 0 %>
+                        <small class="text-muted">
+                            <a href="/admin/orders?search=<%= u(customer.email) %>" class="text-decoration-none">
+                                View Orders
+                            </a>
+                        </small>
+                        <% end %>
+                    </td>
+                    <td>
+                        <div class="fw-bold">
+                            <%= customer_lifetime_value(customer) %>
+                        </div>
+                        <small class="text-muted">
+                            Lifetime Value
+                        </small>
+                    </td>
+                    <td>
+                        <% if customer.last_login_at %>
+                        <div class="text-muted">
+                            <%= format_date(customer.last_login_at, :short) %>
+                        </div>
+                        <small class="text-muted">
+                            <%= time_ago(customer.last_login_at) %>
+                        </small>
+                        <% else %>
+                        <span class="text-muted">Never</span>
+                        <% end %>
+                    </td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <%= registration_source_icon(customer) %>
+                            <div class="ms-2">
+                                <div class="text-muted">
+                                    <%= format_date(customer.created_at, :short) %>
+                                </div>
+                                <small class="text-muted">
+                                    <%= account_age_text(customer) %> ago
+                                </small>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="btn-group btn-group-sm">
+                            <a href="/admin/customers/<%= customer.id %>" 
+                               class="btn btn-outline-primary"
+                               title="View Details">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <a href="/admin/customers/<%= customer.id %>/edit" 
+                               class="btn btn-outline-secondary"
+                               title="Edit Customer">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <div class="dropdown">
+                                <button class="btn btn-outline-secondary dropdown-toggle" 
+                                        data-bs-toggle="dropdown">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <% if customer.status == 'active' %>
+                                    <li>
+                                        <button class="dropdown-item" 
+                                                onclick="updateCustomerStatus(<%= customer.id %>, 'suspend')">
+                                            <i class="fas fa-ban me-2"></i>Suspend Account
+                                        </button>
+                                    </li>
+                                    <li>
+                                        <button class="dropdown-item" 
+                                                onclick="updateCustomerStatus(<%= customer.id %>, 'deactivate')">
+                                            <i class="fas fa-pause me-2"></i>Deactivate Account
+                                        </button>
+                                    </li>
+                                    <% elsif customer.status == 'suspended' %>
+                                    <li>
+                                        <button class="dropdown-item" 
+                                                onclick="updateCustomerStatus(<%= customer.id %>, 'activate')">
+                                            <i class="fas fa-check me-2"></i>Activate Account
+                                        </button>
+                                    </li>
+                                    <% else %>
+                                    <li>
+                                        <button class="dropdown-item" 
+                                                onclick="updateCustomerStatus(<%= customer.id %>, 'activate')">
+                                            <i class="fas fa-check me-2"></i>Activate Account
+                                        </button>
+                                    </li>
+                                    <% end %>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <a class="dropdown-item" href="mailto:<%= h(customer.email) %>?subject=Regarding Your Account">
+                                            <i class="fas fa-envelope me-2"></i>Email Customer
+                                        </a>
+                                    </li>
+                                    <% if customer.license_count > 0 %>
+                                    <li>
+                                        <a class="dropdown-item" href="/admin/licenses/generate?email=<%= u(customer.email) %>&name=<%= u(customer.name || '') %>">
+                                            <i class="fas fa-key me-2"></i>Generate License
+                                        </a>
+                                    </li>
+                                    <% end %>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <span class="dropdown-item-text">
+                                            <small class="text-muted">Risk Level: <%= customer_risk_level(customer) %></small>
+                                        </span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                <% end %>
+            </tbody>
+        </table>
+        <% else %>
+        <div class="text-center py-5">
+            <i class="fas fa-users text-muted mb-3" style="font-size: 3rem;"></i>
+            <h5 class="text-muted">No Customers Found</h5>
+            <p class="text-muted mb-4">
+                <% if params[:search] || params[:status] || params[:date_filter] %>
+                No customers match your current filters. Try adjusting your search criteria.
+                <% else %>
+                Customers will appear here when users register accounts.
+                <% end %>
+            </p>
+            <% if params[:search] || params[:status] || params[:date_filter] %>
+            <button class="btn btn-secondary" onclick="clearFilters()">
+                <i class="fas fa-times me-2"></i>Clear Filters
+            </button>
+            <% end %>
+        </div>
+        <% end %>
+    </div>
+    
+    <!-- Pagination -->
+    <% if @total_pages > 1 %>
+    <div class="card-footer" style="background: var(--surface-tertiary); border-top: 1px solid var(--border-default);">
+        <div class="d-flex justify-content-between align-items-center">
+            <small class="text-muted">
+                Showing <%= [(@current_page - 1) * @per_page + 1, @total_customers].min %>-<%= [@current_page * @per_page, @total_customers].min %> of <%= @total_customers %> customers
+            </small>
+            
+            <nav>
+                <ul class="pagination pagination-sm mb-0">
+                    <!-- Previous button -->
+                    <% if @current_page > 1 %>
+                    <li class="page-item">
+                        <a class="page-link" href="<%= build_pagination_url(@current_page - 1) %>">Previous</a>
+                    </li>
+                    <% else %>
+                    <li class="page-item disabled">
+                        <span class="page-link">Previous</span>
+                    </li>
+                    <% end %>
+                    
+                    <!-- Page numbers -->
+                    <% 
+                    start_page = [@current_page - 2, 1].max
+                    end_page = [start_page + 4, @total_pages].min
+                    start_page = [end_page - 4, 1].max if end_page - start_page < 4
+                    %>
+                    
+                    <% if start_page > 1 %>
+                    <li class="page-item">
+                        <a class="page-link" href="<%= build_pagination_url(1) %>">1</a>
+                    </li>
+                    <% if start_page > 2 %>
+                    <li class="page-item disabled">
+                        <span class="page-link">...</span>
+                    </li>
+                    <% end %>
+                    <% end %>
+                    
+                    <% (start_page..end_page).each do |page| %>
+                    <% if page == @current_page %>
+                    <li class="page-item active">
+                        <span class="page-link"><%= page %></span>
+                    </li>
+                    <% else %>
+                    <li class="page-item">
+                        <a class="page-link" href="<%= build_pagination_url(page) %>"><%= page %></a>
+                    </li>
+                    <% end %>
+                    <% end %>
+                    
+                    <% if end_page < @total_pages %>
+                    <% if end_page < @total_pages - 1 %>
+                    <li class="page-item disabled">
+                        <span class="page-link">...</span>
+                    </li>
+                    <% end %>
+                    <li class="page-item">
+                        <a class="page-link" href="<%= build_pagination_url(@total_pages) %>"><%= @total_pages %></a>
+                    </li>
+                    <% end %>
+                    
+                    <!-- Next button -->
+                    <% if @current_page < @total_pages %>
+                    <li class="page-item">
+                        <a class="page-link" href="<%= build_pagination_url(@current_page + 1) %>">Next</a>
+                    </li>
+                    <% else %>
+                    <li class="page-item disabled">
+                        <span class="page-link">Next</span>
+                    </li>
+                    <% end %>
+                </ul>
+            </nav>
+            
+            <div class="btn-group btn-group-sm">
+                <button class="btn btn-outline-secondary" onclick="exportCustomers()">
+                    <i class="fas fa-download me-1"></i>Export All
+                </button>
+            </div>
+        </div>
+    </div>
+    <% elsif @customers.any? %>
+    <div class="card-footer" style="background: var(--surface-tertiary); border-top: 1px solid var(--border-default);">
+        <div class="d-flex justify-content-between align-items-center">
+            <small class="text-muted">
+                Showing all <%= @total_customers %> customers
+            </small>
+            <div class="btn-group btn-group-sm">
+                <button class="btn btn-outline-secondary" onclick="exportCustomers()">
+                    <i class="fas fa-download me-1"></i>Export All
+                </button>
+            </div>
+        </div>
+    </div>
+    <% end %>
+</div>
+
+<!-- Customer Management JavaScript -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('customerSearch');
+    const statusFilter = document.getElementById('statusFilter');
+    const dateFilter = document.getElementById('dateFilter');
+    const perPageFilter = document.getElementById('perPageFilter');
+    const selectAllCheckbox = document.getElementById('selectAll');
+    const customerCheckboxes = document.querySelectorAll('.customer-checkbox');
+    const bulkToolbar = document.getElementById('bulkActionsToolbar');
+    const selectedCountElement = document.getElementById('selectedCount');
+    
+    // Build pagination URL helper
+    window.buildPaginationUrl = function(page) {
+        const params = new URLSearchParams(window.location.search);
+        params.set('page', page);
+        return '?' + params.toString();
+    };
+    
+    // Filter functionality
+    function applyFilters() {
+        const params = new URLSearchParams();
+        
+        const search = searchInput.value.trim();
+        const status = statusFilter.value;
+        const dateRange = dateFilter.value;
+        const perPage = perPageFilter.value;
+        
+        if (search) params.set('search', search);
+        if (status) params.set('status', status);
+        if (dateRange) params.set('date_filter', dateRange);
+        if (perPage !== '50') params.set('per_page', perPage);
+        
+        const url = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
+        window.location.href = url;
+    }
+    
+    // Clear filters
+    window.clearFilters = function() {
+        window.location.href = window.location.pathname;
+    };
+    
+    // Debounced search
+    let searchTimeout;
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(applyFilters, 500);
+        });
+    }
+    
+    // Filter change handlers
+    if (statusFilter) statusFilter.addEventListener('change', applyFilters);
+    if (dateFilter) dateFilter.addEventListener('change', applyFilters);
+    if (perPageFilter) perPageFilter.addEventListener('change', applyFilters);
+    
+    // Bulk selection functionality
+    function updateBulkSelection() {
+        const checkedBoxes = Array.from(customerCheckboxes).filter(cb => cb.checked);
+        
+        // Update select all checkbox state
+        if (checkedBoxes.length === 0) {
+            selectAllCheckbox.indeterminate = false;
+            selectAllCheckbox.checked = false;
+        } else if (checkedBoxes.length === customerCheckboxes.length) {
+            selectAllCheckbox.indeterminate = false;
+            selectAllCheckbox.checked = true;
+        } else {
+            selectAllCheckbox.indeterminate = true;
+            selectAllCheckbox.checked = false;
+        }
+        
+        // Show/hide bulk actions toolbar
+        if (checkedBoxes.length > 0) {
+            bulkToolbar.style.display = 'block';
+            selectedCountElement.textContent = checkedBoxes.length;
+        } else {
+            bulkToolbar.style.display = 'none';
+        }
+    }
+    
+    // Select all checkbox handler
+    if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', function() {
+            customerCheckboxes.forEach(checkbox => {
+                checkbox.checked = this.checked;
+            });
+            updateBulkSelection();
+        });
+    }
+    
+    // Individual checkbox handlers
+    customerCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', updateBulkSelection);
+    });
+});
+
+// Get selected customer IDs
+function getSelectedCustomerIds() {
+    return Array.from(document.querySelectorAll('.customer-checkbox:checked')).map(cb => cb.value);
+}
+
+// Clear selection
+function clearSelection() {
+    document.querySelectorAll('.customer-checkbox').forEach(cb => cb.checked = false);
+    document.getElementById('selectAll').checked = false;
+    document.getElementById('selectAll').indeterminate = false;
+    document.getElementById('bulkActionsToolbar').style.display = 'none';
+}
+
+// Bulk activate customers
+function bulkActivate() {
+    const customerIds = getSelectedCustomerIds();
+    
+    if (customerIds.length === 0) {
+        alert('Please select customers to activate.');
+        return;
+    }
+    
+    if (confirm(`Are you sure you want to activate ${customerIds.length} selected customers?`)) {
+        performBulkAction('activate', customerIds);
+    }
+}
+
+// Bulk deactivate customers
+function bulkDeactivate() {
+    const customerIds = getSelectedCustomerIds();
+    
+    if (customerIds.length === 0) {
+        alert('Please select customers to deactivate.');
+        return;
+    }
+    
+    if (confirm(`Are you sure you want to deactivate ${customerIds.length} selected customers?`)) {
+        performBulkAction('deactivate', customerIds);
+    }
+}
+
+// Bulk suspend customers
+function bulkSuspend() {
+    const customerIds = getSelectedCustomerIds();
+    
+    if (customerIds.length === 0) {
+        alert('Please select customers to suspend.');
+        return;
+    }
+    
+    if (confirm(`⚠️ Are you sure you want to suspend ${customerIds.length} selected customers?\n\nThis will prevent them from accessing their accounts!`)) {
+        performBulkAction('suspend', customerIds);
+    }
+}
+
+// Bulk export customers
+function bulkExport() {
+    const customerIds = getSelectedCustomerIds();
+    
+    if (customerIds.length === 0) {
+        alert('Please select customers to export.');
+        return;
+    }
+    
+    const params = new URLSearchParams({ customer_ids: customerIds.join(',') });
+    window.location.href = `/admin/customers/export?${params.toString()}`;
+}
+
+// Perform bulk action
+function performBulkAction(action, customerIds) {
+    const loadingText = action === 'activate' ? 'Activating...' : 
+                       action === 'deactivate' ? 'Deactivating...' : 'Suspending...';
+    
+    // Show loading state
+    const toolbar = document.getElementById('bulkActionsToolbar');
+    const originalHTML = toolbar.innerHTML;
+    toolbar.innerHTML = `<div class="d-flex align-items-center"><div class="spinner-border spinner-border-sm me-2"></div>${loadingText}</div>`;
+    
+    fetch('/admin/customers/bulk-action', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify({
+            action: action,
+            customer_ids: customerIds
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            if (data.results) {
+                let message = `Bulk ${action} completed:\n`;
+                message += `✓ Success: ${data.results.success || 0}\n`;
+                if (data.results.failed > 0) {
+                    message += `✗ Failed: ${data.results.failed}\n`;
+                    if (data.results.errors && data.results.errors.length > 0) {
+                        message += `\nErrors:\n${data.results.errors.slice(0, 3).join('\n')}`;
+                        if (data.results.errors.length > 3) {
+                            message += `\n... and ${data.results.errors.length - 3} more`;
+                        }
+                    }
+                }
+                alert(message);
+            }
+            location.reload();
+        } else {
+            alert('Error: ' + (data.error || 'Unknown error occurred'));
+            toolbar.innerHTML = originalHTML;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while performing the bulk action.');
+        toolbar.innerHTML = originalHTML;
+    });
+}
+
+// Update customer status
+function updateCustomerStatus(customerId, action) {
+    const confirmText = action === 'activate' ? 
+        'Are you sure you want to activate this customer account?' :
+        action === 'deactivate' ? 
+        'Are you sure you want to deactivate this customer account?' :
+        'Are you sure you want to suspend this customer account? They will not be able to access their account.';
+    
+    if (confirm(confirmText)) {
+        fetch(`/admin/customers/${customerId}/toggle-status`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({ action: action })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while updating the customer status.');
+        });
+    }
+}
+
+// Export customers
+function exportCustomers() {
+    window.location.href = '/admin/customers/export';
+}
+
+// Stat card click handlers
+document.querySelectorAll('.stat-card').forEach(card => {
+    card.style.cursor = 'pointer';
+    card.addEventListener('click', function() {
+        const label = this.querySelector('.stat-label').textContent.toLowerCase();
+        const statusFilter = document.getElementById('statusFilter');
+        
+        // Reset filters
+        statusFilter.value = '';
+        
+        switch(label) {
+            case 'active':
+                statusFilter.value = 'active';
+                break;
+            case 'unverified':
+                // This would need a special filter for email verification
+                break;
+            case 'new (30 days)':
+                document.getElementById('dateFilter').value = 'month';
+                break;
+        }
+        
+        // Trigger filter
+        if (statusFilter.value) {
+            statusFilter.dispatchEvent(new Event('change'));
+        }
+    });
+});
+</script>
+
+<!-- Custom Styles -->
+<style>
+.customer-icon {
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+.btn-group-sm .btn {
+    padding: 0.25rem 0.5rem;
+}
+
+.customer-row:hover {
+    background-color: var(--surface-tertiary);
+}
+
+.table th {
+    border-bottom: 2px solid var(--border-default);
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.dropdown-menu {
+    background: var(--surface-secondary);
+    border: 1px solid var(--border-default);
+}
+
+.dropdown-item {
+    color: var(--text-primary);
+}
+
+.dropdown-item:hover {
+    background: var(--surface-tertiary);
+    color: var(--accent-primary);
+}
+
+/* Bulk Actions Toolbar */
+.bulk-actions-toolbar {
+    background: var(--surface-secondary);
+    border: 1px solid var(--accent-primary);
+    border-radius: 8px;
+    padding: 1rem;
+    box-shadow: var(--shadow);
+    animation: slideInDown 0.3s ease-out;
+}
+
+.bulk-actions-info {
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.bulk-actions-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+@keyframes slideInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Selected row highlighting */
+.customer-row:has(.customer-checkbox:checked) {
+    background-color: rgba(35, 134, 54, 0.1) !important;
+    border-left: 3px solid var(--accent-primary);
+}
+
+/* Checkbox styling */
+.form-check-input:checked {
+    background-color: var(--accent-primary);
+    border-color: var(--accent-primary);
+}
+
+.form-check-input:focus {
+    box-shadow: 0 0 0 0.25rem rgba(35, 134, 54, 0.25);
+}
+
+/* Pagination styling */
+.pagination-sm .page-link {
+    background: var(--surface-secondary);
+    border-color: var(--border-default);
+    color: var(--text-primary);
+}
+
+.pagination-sm .page-link:hover {
+    background: var(--surface-tertiary);
+    border-color: var(--accent-primary);
+    color: var(--accent-primary);
+}
+
+.pagination-sm .page-item.active .page-link {
+    background: var(--accent-primary);
+    border-color: var(--accent-primary);
+}
+
+.pagination-sm .page-item.disabled .page-link {
+    background: var(--surface-secondary);
+    border-color: var(--border-muted);
+    color: var(--text-muted);
+}
+
+/* Customers table container styling */
+.customers-table-container {
+    min-height: 400px;
+    position: relative;
+}
+
+.customers-table-container .table {
+    margin-bottom: 0;
+}
+
+/* Ensure dropdown menus don't cause scrolling */
+.dropdown-menu {
+    position: absolute;
+    z-index: 1050;
+    max-height: 300px;
+    overflow-y: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.dropdown-menu::-webkit-scrollbar {
+    display: none;
+}
+
+/* Table wrapper to handle overflow properly */
+.data-table {
+    position: relative;
+    background: var(--surface-secondary);
+    border: 1px solid var(--border-default);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+}
+
+.table-header {
+    background-color: var(--surface-tertiary);
+    border-bottom: 1px solid var(--border-default);
+    padding: 1rem 1.5rem;
+    margin: 0;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* Empty state styling */
+.customers-table-container .text-center {
+    min-height: 350px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Responsive bulk actions */
+@media (max-width: 768px) {
+    .bulk-actions-toolbar .d-flex {
+        flex-direction: column;
+        align-items: stretch !important;
+    }
+    
+    .bulk-actions-buttons {
+        margin-top: 1rem;
+        justify-content: center;
+    }
+    
+    .bulk-actions-buttons .btn {
+        flex: 1;
+        min-width: 120px;
+    }
+    
+    .table-responsive {
+        font-size: 0.875rem;
+    }
+    
+    .customer-row .fw-bold {
+        font-size: 0.8rem;
+    }
+    
+    .customer-row small {
+        font-size: 0.7rem;
+    }
+    
+    .customers-table-container {
+        min-height: 50vh;
+    }
+    
+    .customers-table-container .text-center {
+        min-height: 40vh;
+    }
+}
+</style>
+
+<%
+# Helper method for building pagination URLs with current filters
+def build_pagination_url(page)
+  params_copy = params.dup
+  params_copy['page'] = page.to_s
+  params_copy.delete('page') if page == 1
+  
+  query_string = params_copy.reject { |k, v| v.nil? || v.empty? }
+                           .map { |k, v| "#{k}=#{CGI.escape(v.to_s)}" }
+                           .join('&')
+  
+  query_string.empty? ? request.path : "#{request.path}?#{query_string}"
+end
+%>

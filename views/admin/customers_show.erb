@@ -1,0 +1,681 @@
+<!-- Customer Details Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-1">Customer Details</h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item">
+                    <a href="/admin/customers" class="text-decoration-none">Customers</a>
+                </li>
+                <li class="breadcrumb-item active" aria-current="page">
+                    <%= h(@customer.display_name) %>
+                </li>
+            </ol>
+        </nav>
+    </div>
+    <div>
+        <a href="/admin/customers/<%= @customer.id %>/edit" class="btn btn-primary">
+            <i class="fas fa-edit me-2"></i>Edit Customer
+        </a>
+    </div>
+</div>
+
+<!-- Customer Overview Cards -->
+<div class="row g-4 mb-4">
+    <div class="col-md-8">
+        <!-- Customer Information Card -->
+        <div class="admin-card">
+            <div class="admin-card-header d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center">
+                    <%= customer_status_icon(@customer.status) %>
+                    <h5 class="mb-0 ms-2">Customer Information</h5>
+                </div>
+                <%= status_badge(@customer.status) %>
+            </div>
+            <div class="admin-card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label text-muted">Name</label>
+                            <div class="fw-bold">
+                                <%= h(@customer.name || 'Not provided') %>
+                                <% if @customer.name.nil? || @customer.name.empty? %>
+                                <small class="text-muted">(Using email prefix)</small>
+                                <% end %>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label text-muted">Email Address</label>
+                            <div class="d-flex align-items-center">
+                                <a href="mailto:<%= h(@customer.email) %>" class="text-decoration-none fw-bold me-2">
+                                    <%= h(@customer.email) %>
+                                </a>
+                                <%= email_verification_icon(@customer.email_verified?) %>
+                            </div>
+                            <% unless @customer.email_verified? %>
+                            <small class="text-warning">
+                                <i class="fas fa-exclamation-triangle me-1"></i>
+                                Email not verified
+                            </small>
+                            <% end %>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label text-muted">Account Status</label>
+                            <div>
+                                <%= status_badge(@customer.status) %>
+                                <%= customer_activity_status(@customer) %>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label text-muted">Risk Level</label>
+                            <div>
+                                <%= customer_risk_level(@customer) %>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <!-- Account Timeline -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label text-muted">Registered</label>
+                            <div class="d-flex align-items-center">
+                                <%= registration_source_icon(@customer) %>
+                                <div class="ms-2">
+                                    <div class="fw-bold">
+                                        <%= format_date(@customer.created_at, :long) %>
+                                    </div>
+                                    <small class="text-muted">
+                                        <%= account_age_text(@customer) %> ago
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label text-muted">Last Login</label>
+                            <div>
+                                <% if @customer.last_login_at %>
+                                <div class="fw-bold">
+                                    <%= format_date(@customer.last_login_at, :datetime) %>
+                                </div>
+                                <small class="text-muted">
+                                    <%= time_ago(@customer.last_login_at) %>
+                                    <% if @customer.last_login_ip %>
+                                    from <%= h(@customer.last_login_ip) %>
+                                    <% end %>
+                                </small>
+                                <% else %>
+                                <span class="text-muted">Never logged in</span>
+                                <% end %>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <% if @customer.login_count && @customer.login_count > 0 %>
+                <div class="mb-3">
+                    <label class="form-label text-muted">Login Statistics</label>
+                    <div>
+                        <span class="fw-bold"><%= @customer.login_count %></span> total login<%= @customer.login_count == 1 ? '' : 's' %>
+                        <% if @customer.password_changed_at %>
+                        <small class="text-muted ms-3">
+                            Password last changed <%= time_ago(@customer.password_changed_at) %>
+                        </small>
+                        <% end %>
+                    </div>
+                </div>
+                <% end %>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <!-- Quick Stats Card -->
+        <div class="admin-card">
+            <div class="admin-card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-bar me-2"></i>Quick Stats
+                </h5>
+            </div>
+            <div class="admin-card-body">
+                <div class="stat-item mb-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-muted">Total Licenses</span>
+                        <span class="fw-bold text-primary fs-5"><%= @customer.license_count %></span>
+                    </div>
+                </div>
+                
+                <div class="stat-item mb-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-muted">Active Licenses</span>
+                        <span class="fw-bold text-success fs-5"><%= @customer.active_licenses.count %></span>
+                    </div>
+                </div>
+                
+                <div class="stat-item mb-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-muted">Total Orders</span>
+                        <span class="fw-bold text-info fs-5"><%= customer_order_count(@customer) %></span>
+                    </div>
+                </div>
+                
+                <div class="stat-item">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-muted">Lifetime Value</span>
+                        <span class="fw-bold text-warning fs-5"><%= customer_lifetime_value(@customer) %></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Quick Actions Card -->
+        <div class="admin-card mt-4">
+            <div class="admin-card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-bolt me-2"></i>Quick Actions
+                </h5>
+            </div>
+            <div class="admin-card-body">
+                <div class="d-grid gap-2">
+                    <a href="mailto:<%= h(@customer.email) %>?subject=Regarding Your Account" 
+                       class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-envelope me-2"></i>Email Customer
+                    </a>
+                    
+                    <a href="/admin/licenses/generate?email=<%= u(@customer.email) %>&name=<%= u(@customer.name || '') %>" 
+                       class="btn btn-outline-success btn-sm">
+                        <i class="fas fa-key me-2"></i>Generate License
+                    </a>
+                    
+                    <% if @customer.status == 'active' %>
+                    <button class="btn btn-outline-warning btn-sm" 
+                            onclick="updateCustomerStatus(<%= @customer.id %>, 'suspend')">
+                        <i class="fas fa-ban me-2"></i>Suspend Account
+                    </button>
+                    <% elsif @customer.status == 'suspended' %>
+                    <button class="btn btn-outline-success btn-sm" 
+                            onclick="updateCustomerStatus(<%= @customer.id %>, 'activate')">
+                        <i class="fas fa-check me-2"></i>Activate Account
+                    </button>
+                    <% else %>
+                    <button class="btn btn-outline-success btn-sm" 
+                            onclick="updateCustomerStatus(<%= @customer.id %>, 'activate')">
+                        <i class="fas fa-check me-2"></i>Activate Account
+                    </button>
+                    <% end %>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Customer Activity Tabs -->
+<div class="admin-card">
+    <div class="admin-card-header">
+        <ul class="nav nav-tabs card-header-tabs" id="customerTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="licenses-tab" data-bs-toggle="tab" 
+                        data-bs-target="#licenses" type="button" role="tab">
+                    <i class="fas fa-key me-2"></i>Licenses (<%= @customer.license_count %>)
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="orders-tab" data-bs-toggle="tab" 
+                        data-bs-target="#orders" type="button" role="tab">
+                    <i class="fas fa-shopping-cart me-2"></i>Orders (<%= customer_order_count(@customer) %>)
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="activity-tab" data-bs-toggle="tab" 
+                        data-bs-target="#activity" type="button" role="tab">
+                    <i class="fas fa-history me-2"></i>Activity Log
+                </button>
+            </li>
+        </ul>
+    </div>
+    
+    <div class="tab-content">
+        <!-- Licenses Tab -->
+        <div class="tab-pane fade show active" id="licenses" role="tabpanel">
+            <div class="admin-card-body">
+                <% customer_licenses = @customer.licenses_dataset.order(Sequel.desc(:created_at)).limit(10).all %>
+                <% if customer_licenses.any? %>
+                <div class="table-responsive">
+                    <table class="table table-dark">
+                        <thead>
+                            <tr>
+                                <th>License Key</th>
+                                <th>Product</th>
+                                <th>Status</th>
+                                <th>Activations</th>
+                                <th>Created</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% customer_licenses.each do |license| %>
+                            <tr>
+                                <td>
+                                    <code class="text-info">
+                                        <a href="/admin/licenses/<%= license.id %>" class="text-decoration-none">
+                                            <%= format_license_key(license.license_key) %>
+                                        </a>
+                                    </code>
+                                </td>
+                                <td>
+                                    <%= h(license.product&.name || 'Unknown Product') %>
+                                </td>
+                                <td>
+                                    <%= license_status_icon(license.status) %>
+                                    <%= status_badge(license.status) %>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="me-2">
+                                            <%= license.activation_count %>/<%= license.effective_max_activations %>
+                                        </div>
+                                        <div class="progress" style="width: 60px; height: 6px;">
+                                            <% percentage = [(license.activation_count.to_f / license.effective_max_activations * 100).to_i, 100].min %>
+                                            <% progress_class = percentage < 50 ? 'bg-success' : percentage < 80 ? 'bg-warning' : 'bg-danger' %>
+                                            <div class="progress-bar <%= progress_class %>" style="width: <%= percentage %>%"></div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="text-muted">
+                                        <%= format_date(license.created_at, :short) %>
+                                    </div>
+                                    <small class="text-muted">
+                                        <%= time_ago(license.created_at) %>
+                                    </small>
+                                </td>
+                                <td>
+                                    <a href="/admin/licenses/<%= license.id %>" 
+                                       class="btn btn-outline-primary btn-sm">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            <% end %>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <% if @customer.license_count > 10 %>
+                <div class="text-center mt-3">
+                    <a href="/admin/licenses?search=<%= u(@customer.email) %>" 
+                       class="btn btn-outline-secondary">
+                        View All <%= @customer.license_count %> Licenses
+                    </a>
+                </div>
+                <% end %>
+                <% else %>
+                <div class="text-center py-4">
+                    <i class="fas fa-key text-muted mb-3" style="font-size: 2rem;"></i>
+                    <h6 class="text-muted">No Licenses</h6>
+                    <p class="text-muted mb-3">This customer doesn't have any licenses yet.</p>
+                    <a href="/admin/licenses/generate?email=<%= u(@customer.email) %>&name=<%= u(@customer.name || '') %>" 
+                       class="btn btn-primary btn-sm">
+                        <i class="fas fa-plus me-2"></i>Generate First License
+                    </a>
+                </div>
+                <% end %>
+            </div>
+        </div>
+        
+        <!-- Orders Tab -->
+        <div class="tab-pane fade" id="orders" role="tabpanel">
+            <div class="admin-card-body">
+                <% customer_orders = Order.where(email: @customer.email).order(Sequel.desc(:created_at)).limit(10).all %>
+                <% if customer_orders.any? %>
+                <div class="table-responsive">
+                    <table class="table table-dark">
+                        <thead>
+                            <tr>
+                                <th>Order ID</th>
+                                <th>Amount</th>
+                                <th>Status</th>
+                                <th>Payment Method</th>
+                                <th>Items</th>
+                                <th>Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% customer_orders.each do |order| %>
+                            <tr>
+                                <td>
+                                    <a href="/admin/orders/<%= order.id %>" class="text-decoration-none">
+                                        #<%= order.id %>
+                                    </a>
+                                </td>
+                                <td>
+                                    <div class="fw-bold">
+                                        <%= format_currency(order.amount, order.currency) %>
+                                    </div>
+                                </td>
+                                <td>
+                                    <%= order_status_icon(order.status) %>
+                                    <%= status_badge(order.status) %>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <%= payment_method_icon(order.payment_method) %>
+                                        <span class="ms-2">
+                                            <%= order.payment_method.capitalize %>
+                                        </span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <% if order.order_items.any? %>
+                                    <div>
+                                        <%= order.order_items.count %> item<%= order.order_items.count == 1 ? '' : 's' %>
+                                    </div>
+                                    <small class="text-muted">
+                                        <%= h(order.order_items.first.product&.name || 'Unknown') %>
+                                        <% if order.order_items.count > 1 %>
+                                        + <%= order.order_items.count - 1 %> more
+                                        <% end %>
+                                    </small>
+                                    <% else %>
+                                    <span class="text-muted">No items</span>
+                                    <% end %>
+                                </td>
+                                <td>
+                                    <div class="text-muted">
+                                        <%= format_date(order.created_at, :short) %>
+                                    </div>
+                                    <small class="text-muted">
+                                        <%= time_ago(order.created_at) %>
+                                    </small>
+                                </td>
+                                <td>
+                                    <a href="/admin/orders/<%= order.id %>" 
+                                       class="btn btn-outline-primary btn-sm">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            <% end %>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <% if customer_order_count(@customer) > 10 %>
+                <div class="text-center mt-3">
+                    <a href="/admin/orders?search=<%= u(@customer.email) %>" 
+                       class="btn btn-outline-secondary">
+                        View All <%= customer_order_count(@customer) %> Orders
+                    </a>
+                </div>
+                <% end %>
+                <% else %>
+                <div class="text-center py-4">
+                    <i class="fas fa-shopping-cart text-muted mb-3" style="font-size: 2rem;"></i>
+                    <h6 class="text-muted">No Orders</h6>
+                    <p class="text-muted mb-0">This customer hasn't placed any orders yet.</p>
+                </div>
+                <% end %>
+            </div>
+        </div>
+        
+        <!-- Activity Log Tab -->
+        <div class="tab-pane fade" id="activity" role="tabpanel">
+            <div class="admin-card-body">
+                <div class="activity-timeline">
+                    <!-- Account Created -->
+                    <div class="activity-item">
+                        <div class="activity-icon bg-success">
+                            <i class="fas fa-user-plus"></i>
+                        </div>
+                        <div class="activity-content">
+                            <div class="activity-title">Account Created</div>
+                            <div class="activity-description">
+                                Customer registered their account
+                            </div>
+                            <div class="activity-time">
+                                <%= format_date(@customer.created_at, :datetime) %>
+                                (<%= time_ago(@customer.created_at) %>)
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Last Login -->
+                    <% if @customer.last_login_at %>
+                    <div class="activity-item">
+                        <div class="activity-icon bg-info">
+                            <i class="fas fa-sign-in-alt"></i>
+                        </div>
+                        <div class="activity-content">
+                            <div class="activity-title">Last Login</div>
+                            <div class="activity-description">
+                                Logged in to account
+                                <% if @customer.last_login_ip %>
+                                from <%= h(@customer.last_login_ip) %>
+                                <% end %>
+                            </div>
+                            <div class="activity-time">
+                                <%= format_date(@customer.last_login_at, :datetime) %>
+                                (<%= time_ago(@customer.last_login_at) %>)
+                            </div>
+                        </div>
+                    </div>
+                    <% end %>
+                    
+                    <!-- Email Verification -->
+                    <% if @customer.email_verified? && @customer.email_verified_at %>
+                    <div class="activity-item">
+                        <div class="activity-icon bg-warning">
+                            <i class="fas fa-shield-check"></i>
+                        </div>
+                        <div class="activity-content">
+                            <div class="activity-title">Email Verified</div>
+                            <div class="activity-description">
+                                Email address was verified
+                            </div>
+                            <div class="activity-time">
+                                <%= format_date(@customer.email_verified_at, :datetime) %>
+                                (<%= time_ago(@customer.email_verified_at) %>)
+                            </div>
+                        </div>
+                    </div>
+                    <% end %>
+                    
+                    <!-- Recent Orders -->
+                    <% Order.where(email: @customer.email).order(Sequel.desc(:created_at)).limit(5).each do |order| %>
+                    <div class="activity-item">
+                        <div class="activity-icon bg-primary">
+                            <i class="fas fa-shopping-cart"></i>
+                        </div>
+                        <div class="activity-content">
+                            <div class="activity-title">
+                                Order #<%= order.id %> 
+                                <span class="ms-2"><%= status_badge(order.status) %></span>
+                            </div>
+                            <div class="activity-description">
+                                Placed order for <%= format_currency(order.amount, order.currency) %>
+                                <% if order.order_items.any? %>
+                                - <%= h(order.order_items.first.product&.name || 'Unknown Product') %>
+                                <% if order.order_items.count > 1 %>
+                                + <%= order.order_items.count - 1 %> more
+                                <% end %>
+                                <% end %>
+                            </div>
+                            <div class="activity-time">
+                                <%= format_date(order.created_at, :datetime) %>
+                                (<%= time_ago(order.created_at) %>)
+                            </div>
+                        </div>
+                    </div>
+                    <% end %>
+                    
+                    <!-- Recent Licenses -->
+                    <% @customer.licenses_dataset.order(Sequel.desc(:created_at)).limit(3).each do |license| %>
+                    <div class="activity-item">
+                        <div class="activity-icon bg-secondary">
+                            <i class="fas fa-key"></i>
+                        </div>
+                        <div class="activity-content">
+                            <div class="activity-title">
+                                License Generated
+                                <span class="ms-2"><%= status_badge(license.status) %></span>
+                            </div>
+                            <div class="activity-description">
+                                License for <%= h(license.product&.name || 'Unknown Product') %>
+                                <code class="ms-2"><%= format_license_key(license.license_key) %></code>
+                            </div>
+                            <div class="activity-time">
+                                <%= format_date(license.created_at, :datetime) %>
+                                (<%= time_ago(license.created_at) %>)
+                            </div>
+                        </div>
+                    </div>
+                    <% end %>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Customer Management JavaScript -->
+<script>
+// Update customer status
+function updateCustomerStatus(customerId, action) {
+    const confirmText = action === 'activate' ? 
+        'Are you sure you want to activate this customer account?' :
+        action === 'deactivate' ? 
+        'Are you sure you want to deactivate this customer account?' :
+        'Are you sure you want to suspend this customer account? They will not be able to access their account.';
+    
+    if (confirm(confirmText)) {
+        fetch(`/admin/customers/${customerId}/toggle-status`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({ action: action })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while updating the customer status.');
+        });
+    }
+}
+</script>
+
+<!-- Custom Styles -->
+<style>
+.stat-item {
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--border-muted);
+}
+
+.stat-item:last-child {
+    border-bottom: none;
+}
+
+.activity-timeline {
+    position: relative;
+    padding-left: 2rem;
+}
+
+.activity-timeline::before {
+    content: '';
+    position: absolute;
+    left: 1rem;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--border-default);
+}
+
+.activity-item {
+    position: relative;
+    margin-bottom: 2rem;
+    padding-left: 2rem;
+}
+
+.activity-icon {
+    position: absolute;
+    left: -2rem;
+    top: 0;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 0.75rem;
+    z-index: 1;
+}
+
+.activity-content .activity-title {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.25rem;
+}
+
+.activity-content .activity-description {
+    color: var(--text-secondary);
+    margin-bottom: 0.25rem;
+}
+
+.activity-content .activity-time {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+}
+
+.nav-tabs {
+    border-bottom: 1px solid var(--border-default);
+}
+
+.nav-tabs .nav-link {
+    color: var(--text-secondary);
+    border: none;
+    border-bottom: 2px solid transparent;
+}
+
+.nav-tabs .nav-link:hover {
+    color: var(--accent-primary);
+    border-bottom-color: var(--accent-primary);
+}
+
+.nav-tabs .nav-link.active {
+    color: var(--accent-primary);
+    background: transparent;
+    border-bottom-color: var(--accent-primary);
+}
+
+.progress {
+    background: var(--surface-tertiary);
+}
+
+.code {
+    background: var(--surface-tertiary);
+    padding: 0.125rem 0.25rem;
+    border-radius: 0.25rem;
+    font-family: monospace;
+    font-size: 0.875rem;
+}
+</style>

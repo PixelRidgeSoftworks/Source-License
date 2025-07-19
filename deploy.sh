@@ -1,22 +1,19 @@
 #!/bin/bash
-# Bash Deployment Script for Source License Management System
-# Handles updates and configuration changes without overwriting customizations
+# Source-License Unified Deploy Script
+# Simplified deployment script for Unix systems (Linux/macOS)
 
 set -e
 
 # Default values
-ACTION="update"
-DOMAIN=""
-PORT=""
-ENVIRONMENT=""
-FORCE=false
+ACTION="help"
+ENVIRONMENT="production"
+PORT="4567"
 BACKUP_FIRST=false
 
 # Color codes
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
 CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
@@ -29,33 +26,40 @@ print_warning() { echo -e "${YELLOW}⚠ $1${NC}"; }
 # Show help
 show_help() {
     cat << EOF
-Source License Management System - Unix Deployment Script
+Source-License Deploy Script for Unix Systems
 
 USAGE:
-    ./deploy.sh [ACTION] [OPTIONS]
+    ./deploy [ACTION] [OPTIONS]
 
 ACTIONS:
-    update                    Update application code and dependencies
-    config                    Update configuration only
-    restart                   Restart services
-    backup                    Create backup of current installation
-    restore                   Restore from backup
-    migrate                   Run database migrations only
-    status                    Show deployment status
+    run                      Start the application
+    stop                     Stop the application
+    restart                  Restart the application
+    status                   Show application status
+    update                   Update code and restart
+    migrate                  Run database migrations only
+    install-service          Create systemd service (requires sudo)
+    remove-service           Remove systemd service (requires sudo)
 
 OPTIONS:
-    -d, --domain <domain>     Update domain configuration
-    -p, --port <port>         Update port configuration
-    -e, --environment <env>   Update environment (development/production)
-    -f, --force              Force update even if changes detected
-    -b, --backup-first       Create backup before deployment
+    -e, --environment ENV    Environment (development/production, default: production)
+    -p, --port PORT          Port for the application (default: 4567)
+    -b, --backup             Create backup before update
     -h, --help               Show this help message
 
 EXAMPLES:
-    ./deploy.sh update --backup-first
-    ./deploy.sh config --domain "new-domain.com"
-    ./deploy.sh restart
-    ./deploy.sh backup
+    ./deploy run
+    ./deploy stop
+    ./deploy update --backup
+    ./deploy run --environment development --port 3000
+    sudo ./deploy install-service
+    sudo ./deploy remove-service
+
+SYSTEMD USAGE:
+    sudo systemctl start source-license     # Start service
+    sudo systemctl stop source-license      # Stop service
+    sudo systemctl status source-license    # Show status
+    sudo journalctl -u source-license -f    # Follow logs
 EOF
 }
 
@@ -69,23 +73,15 @@ parse_args() {
     
     while [[ $# -gt 0 ]]; do
         case $1 in
-            -d|--domain)
-                DOMAIN="$2"
+            -e|--environment)
+                ENVIRONMENT="$2"
                 shift 2
                 ;;
             -p|--port)
                 PORT="$2"
                 shift 2
                 ;;
-            -e|--environment)
-                ENVIRONMENT="$2"
-                shift 2
-                ;;
-            -f|--force)
-                FORCE=true
-                shift
-                ;;
-            -b|--backup-first)
+            -b|--backup)
                 BACKUP_FIRST=true
                 shift
                 ;;
@@ -102,210 +98,430 @@ parse_args() {
     done
 }
 
-# Detect OS
-detect_os() {
-    if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-        PLATFORM="linux"
-        if command -v systemctl >/dev/null 2>&1; then
-            SERVICE_MANAGER="systemd"
-        else
-            SERVICE_MANAGER="manual"
-        fi
-    elif [[ "$OSTYPE" == "darwin"* ]]; then
-        PLATFORM="macos"
-        SERVICE_MANAGER="launchctl"
-    else
-        print_error "Unsupported operating system: $OSTYPE"
-        exit 1
-    fi
-}
-
 # Check if command exists
 command_exists() {
     command -v "$1" >/dev/null 2>&1
 }
 
-# Create backup
-create_backup() {
-    local backup_path="${1:-backups/$(date +%Y%m%d-%H%M%S)}"
-    
-    print_info "Creating backup at $backup_path..."
-    
-    mkdir -p "$backup_path"
-    
-    # Backup configuration files
-    local config_files=(".env" "config/customizations.yml" "Gemfile.lock")
-    for file in "${config_files[@]}"; do
-        if [[ -f "$file" ]]; then
-            cp "$file" "$backup_path/$(basename "$file")"
-            print_info "Backed up $file"
-        fi
-    done
-    
-    # Backup database if SQLite
-    if [[ -f "database.db" ]]; then
-        cp "database.db" "$backup_path/database.db"
-        print_info "Backed up database"
-    fi
-    
-    # Backup logs
-    if [[ -d "logs" ]]; then
-        cp -r "logs" "$backup_path/logs"
-        print_info "Backed up logs"
-    fi
-    
-    # Create manifest
-    cat > "$backup_path/manifest.json" << EOF
-{
-    "timestamp": "$(date -Iseconds)",
-    "version": "$(git describe --tags --always 2>/dev/null || echo 'unknown')",
-    "environment": "${RACK_ENV:-unknown}",
-    "platform": "$PLATFORM",
-    "files": [$(printf '"%s",' "${config_files[@]}" | sed 's/,$//')]
-}
-EOF
-    
-    print_success "Backup created successfully at $backup_path"
-    echo "$backup_path"
+# Check if systemd is available
+has_systemd() {
+    command_exists systemctl && [[ -d /etc/systemd/system ]]
 }
 
-# Restore from backup
-restore_backup() {
-    local backup_path="$1"
-    
-    if [[ ! -d "$backup_path" ]]; then
-        print_error "Backup path not found: $backup_path"
-        return 1
-    fi
-    
-    print_info "Restoring from backup: $backup_path..."
-    
-    # Check manifest
-    if [[ -f "$backup_path/manifest.json" ]]; then
-        local timestamp=$(grep '"timestamp"' "$backup_path/manifest.json" | cut -d'"' -f4)
-        local version=$(grep '"version"' "$backup_path/manifest.json" | cut -d'"' -f4)
-        print_info "Backup created: $timestamp"
-        print_info "Backup version: $version"
-    fi
-    
-    # Stop services before restore
-    stop_services
-    
-    # Restore files
-    for file in "$backup_path"/*; do
-        if [[ -f "$file" ]] && [[ "$(basename "$file")" != "manifest.json" ]]; then
-            cp "$file" "./$(basename "$file")"
-            print_info "Restored $(basename "$file")"
-        fi
-    done
-    
-    # Restore directories
-    for dir in "$backup_path"/*; do
-        if [[ -d "$dir" ]]; then
-            local dir_name=$(basename "$dir")
-            if [[ -d "./$dir_name" ]]; then
-                rm -rf "./$dir_name"
-            fi
-            cp -r "$dir" "./$dir_name"
-            print_info "Restored $dir_name/"
-        fi
-    done
-    
-    print_success "Backup restored successfully"
-}
-
-# Check for uncommitted changes
-check_local_changes() {
-    if command_exists git; then
-        local status
-        status=$(git status --porcelain 2>/dev/null)
-        [[ -n "$status" ]]
+# Check if port is in use
+port_in_use() {
+    local port="$1"
+    if command_exists ss; then
+        ss -tuln | grep -q ":$port "
+    elif command_exists netstat; then
+        netstat -tuln | grep -q ":$port "
+    elif command_exists lsof; then
+        lsof -i ":$port" >/dev/null 2>&1
     else
-        false
+        # Fallback: try to connect to the port
+        timeout 1 bash -c "cat < /dev/null > /dev/tcp/localhost/$port" 2>/dev/null
     fi
 }
 
-# Stop services
-stop_services() {
-    print_info "Stopping services..."
-    
-    case $SERVICE_MANAGER in
-        systemd)
-            if systemctl is-active --quiet source-license; then
-                sudo systemctl stop source-license
-                print_success "Stopped source-license service"
-            fi
-            ;;
-        launchctl)
-            if launchctl list | grep -q com.sourcelicense.app; then
-                sudo launchctl unload /Library/LaunchDaemons/com.sourcelicense.app.plist 2>/dev/null || true
-                print_success "Stopped macOS LaunchDaemon"
-            fi
-            ;;
-        *)
-            # Kill ruby processes manually
-            local pids
-            pids=$(ps aux | grep "ruby.*launch.rb" | grep -v grep | awk '{print $2}')
-            if [[ -n "$pids" ]]; then
-                echo "$pids" | xargs kill
-                print_success "Stopped Ruby processes"
-            fi
-            ;;
-    esac
+# Get application process
+get_app_process() {
+    ps aux | grep "ruby.*launch\.rb" | grep -v grep | awk '{print $2}' | head -1
 }
 
-# Start services
-start_services() {
-    print_info "Starting services..."
-    
-    case $SERVICE_MANAGER in
-        systemd)
-            sudo systemctl start source-license
-            print_success "Started source-license service"
-            ;;
-        launchctl)
-            sudo launchctl load /Library/LaunchDaemons/com.sourcelicense.app.plist
-            print_success "Started macOS LaunchDaemon"
-            ;;
-        *)
-            # Start manually in background
-            nohup ruby launch.rb > logs/app.log 2>&1 &
-            print_success "Started Ruby application"
-            ;;
-    esac
+# Check if running as root/sudo
+is_root() {
+    [[ $EUID -eq 0 ]]
 }
 
-# Update application code
-update_application() {
-    print_info "Updating application code..."
+# Create systemd service file
+create_systemd_service() {
+    local current_dir=$(pwd)
+    local service_name="source-license"
+    local service_file="/etc/systemd/system/$service_name.service"
     
-    # Check for local changes
-    if check_local_changes && [[ "$FORCE" != true ]]; then
-        print_warning "Local changes detected. Use --force to override or commit changes first."
-        git status --short
+    print_info "Creating systemd service..."
+    
+    # Determine user for service
+    local service_user="$USER"
+    if [[ "$service_user" == "root" ]]; then
+        # Look for a non-root user to run the service
+        if id "www-data" &>/dev/null; then
+            service_user="www-data"
+        elif id "nobody" &>/dev/null; then
+            service_user="nobody"
+        else
+            print_warning "Running service as root is not recommended"
+            service_user="root"
+        fi
+    fi
+    
+    local service_content="[Unit]
+Description=Source-License Management System
+After=network.target
+
+[Service]
+Type=simple
+User=$service_user
+WorkingDirectory=$current_dir
+ExecStart=/usr/bin/env ruby $current_dir/launch.rb
+Restart=always
+RestartSec=5
+Environment=RACK_ENV=$ENVIRONMENT
+Environment=APP_ENV=$ENVIRONMENT
+Environment=PORT=$PORT
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=$current_dir
+
+[Install]
+WantedBy=multi-user.target"
+    
+    if ! is_root; then
+        print_warning "Root privileges required to create systemd service"
+        print_info "Run with sudo to enable systemd service management"
         return 1
     fi
     
-    local backup_path=""
+    echo "$service_content" | sudo tee "$service_file" > /dev/null
+    sudo systemctl daemon-reload
+    sudo systemctl enable "$service_name"
+    
+    # Set permissions for service user
+    if [[ "$service_user" != "root" ]] && [[ "$service_user" != "$USER" ]]; then
+        sudo chown -R "$service_user:$service_user" "$current_dir" 2>/dev/null || {
+            print_warning "Could not change ownership to $service_user"
+            print_info "Service may have permission issues"
+        }
+    fi
+    
+    print_success "Systemd service created and enabled"
+    print_info "Service name: $service_name"
+    print_info "Service user: $service_user"
+    return 0
+}
+
+# Remove systemd service
+remove_systemd_service() {
+    local service_name="source-license"
+    local service_file="/etc/systemd/system/$service_name.service"
+    
+    if [[ -f "$service_file" ]]; then
+        if ! is_root; then
+            print_warning "Root privileges required to remove systemd service"
+            return 1
+        fi
+        
+        print_info "Removing systemd service..."
+        sudo systemctl stop "$service_name" 2>/dev/null || true
+        sudo systemctl disable "$service_name" 2>/dev/null || true
+        sudo rm -f "$service_file"
+        sudo systemctl daemon-reload
+        print_success "Systemd service removed"
+    fi
+}
+
+# Start via systemd or fallback
+start_with_systemd() {
+    local service_name="source-license"
+    
+    if has_systemd && systemctl list-unit-files | grep -q "$service_name.service"; then
+        print_info "Starting via systemd..."
+        if is_root; then
+            systemctl start "$service_name"
+        else
+            sudo systemctl start "$service_name"
+        fi
+        
+        # Wait a moment for startup
+        sleep 3
+        
+        if systemctl is-active --quiet "$service_name"; then
+            print_success "Service started successfully via systemd"
+            print_info "Status: sudo systemctl status $service_name"
+            print_info "Logs: sudo journalctl -u $service_name -f"
+            return 0
+        else
+            print_error "Service failed to start via systemd"
+            print_info "Check logs: sudo journalctl -u $service_name"
+            return 1
+        fi
+    else
+        return 1  # Fall back to manual start
+    fi
+}
+
+# Stop via systemd or fallback
+stop_with_systemd() {
+    local service_name="source-license"
+    
+    if has_systemd && systemctl list-unit-files | grep -q "$service_name.service"; then
+        print_info "Stopping via systemd..."
+        if is_root; then
+            systemctl stop "$service_name"
+        else
+            sudo systemctl stop "$service_name"
+        fi
+        print_success "Service stopped via systemd"
+        return 0
+    else
+        return 1  # Fall back to manual stop
+    fi
+}
+
+# Get systemd service status
+get_systemd_status() {
+    local service_name="source-license"
+    
+    if has_systemd && systemctl list-unit-files | grep -q "$service_name.service"; then
+        if systemctl is-active --quiet "$service_name"; then
+            print_success "Systemd service is running"
+            print_info "Service: $service_name"
+            
+            # Show service info
+            local status_output=$(systemctl status "$service_name" --no-pager -l 2>/dev/null)
+            if [[ $? -eq 0 ]]; then
+                echo "$status_output" | head -10
+            fi
+            return 0
+        else
+            print_warning "Systemd service is not running"
+            return 1
+        fi
+    else
+        return 1  # No systemd service available
+    fi
+}
+
+# Health check
+health_check() {
+    local port="$1"
+    if command_exists curl; then
+        curl -s -f "http://localhost:$port/health" >/dev/null 2>&1 || \
+        curl -s -f "http://localhost:$port/" >/dev/null 2>&1
+    elif command_exists wget; then
+        wget -q -O /dev/null "http://localhost:$port/health" 2>/dev/null || \
+        wget -q -O /dev/null "http://localhost:$port/" 2>/dev/null
+    else
+        # Fallback: just check if port is responding
+        port_in_use "$port"
+    fi
+}
+
+# Start application
+start_app() {
+    print_info "Starting Source-License application..."
+    
+    if port_in_use "$PORT"; then
+        print_warning "Port $PORT is already in use"
+        if health_check "$PORT"; then
+            print_success "Application appears to be already running"
+            return 0
+        else
+            print_warning "Port is in use but health check failed"
+        fi
+    fi
+    
+    # Export environment variables
+    export RACK_ENV="$ENVIRONMENT"
+    export APP_ENV="$ENVIRONMENT"
+    export PORT="$PORT"
+    
+    # Create logs directory if it doesn't exist
+    mkdir -p logs
+    
+    print_info "Environment: $ENVIRONMENT"
+    print_info "Port: $PORT"
+    
+    # For production, try systemd first, then fallback
+    if [[ "$ENVIRONMENT" == "production" ]]; then
+        if start_with_systemd; then
+            return 0
+        fi
+        
+        print_info "Systemd not available, using manual start..."
+        print_info "Starting in production mode (background)..."
+        nohup ruby launch.rb > logs/app.log 2>&1 &
+        
+        # Give it a moment to start
+        sleep 3
+        
+        if health_check "$PORT"; then
+            print_success "Application started successfully"
+            print_info "PID: $(get_app_process)"
+            print_info "Access: http://localhost:$PORT"
+            print_info "Admin: http://localhost:$PORT/admin"
+            print_info "Logs: tail -f logs/app.log"
+        else
+            print_error "Application failed to start"
+            print_info "Check logs: tail logs/app.log"
+            return 1
+        fi
+    else
+        # Development mode always runs in foreground
+        print_info "Starting in development mode (foreground)..."
+        exec ruby launch.rb
+    fi
+}
+
+# Stop application
+stop_app() {
+    print_info "Stopping Source-License application..."
+    
+    # Try systemd first, then fallback
+    if stop_with_systemd; then
+        return 0
+    fi
+    
+    # Manual stop
+    local pid=$(get_app_process)
+    if [[ -n "$pid" ]]; then
+        kill "$pid"
+        
+        # Wait for graceful shutdown
+        local count=0
+        while [[ $count -lt 10 ]] && kill -0 "$pid" 2>/dev/null; do
+            sleep 1
+            ((count++))
+        done
+        
+        # Force kill if still running
+        if kill -0 "$pid" 2>/dev/null; then
+            print_warning "Forcing shutdown..."
+            kill -9 "$pid"
+        fi
+        
+        print_success "Application stopped"
+    else
+        print_warning "No running application found"
+    fi
+}
+
+# Restart application
+restart_app() {
+    print_info "Restarting Source-License application..."
+    
+    # Try systemd restart first
+    local service_name="source-license"
+    if has_systemd && systemctl list-unit-files | grep -q "$service_name.service"; then
+        print_info "Restarting via systemd..."
+        if is_root; then
+            systemctl restart "$service_name"
+        else
+            sudo systemctl restart "$service_name"
+        fi
+        
+        sleep 3
+        if systemctl is-active --quiet "$service_name"; then
+            print_success "Service restarted successfully via systemd"
+            return 0
+        fi
+    fi
+    
+    # Fallback to manual restart
+    stop_app
+    sleep 2
+    start_app
+}
+
+# Show status
+show_status() {
+    print_info "Source-License Application Status"
+    echo "=================================="
+    
+    # Check systemd status first
+    if get_systemd_status; then
+        echo
+        print_info "Access URLs:"
+        print_info "  Main: http://localhost:$PORT"
+        print_info "  Admin: http://localhost:$PORT/admin"
+        return 0
+    fi
+    
+    # Fallback to manual process check
+    local pid=$(get_app_process)
+    if [[ -n "$pid" ]]; then
+        print_success "Application is running (PID: $pid)"
+        
+        if health_check "$PORT"; then
+            print_success "Health check passed"
+        else
+            print_warning "Health check failed"
+        fi
+        
+        print_info "Port: $PORT"
+        print_info "URLs:"
+        print_info "  Main: http://localhost:$PORT"
+        print_info "  Admin: http://localhost:$PORT/admin"
+        
+        # Show memory usage if possible
+        if command_exists ps; then
+            local mem=$(ps -o rss= -p "$pid" 2>/dev/null)
+            if [[ -n "$mem" ]]; then
+                print_info "Memory: $((mem / 1024)) MB"
+            fi
+        fi
+    else
+        print_error "Application is not running"
+    fi
+    
+    # Show systemd service info if available
+    local service_name="source-license"
+    if has_systemd; then
+        if systemctl list-unit-files | grep -q "$service_name.service"; then
+            echo
+            print_info "Systemd service is available"
+            print_info "  Service file: /etc/systemd/system/$service_name.service"
+        else
+            echo
+            print_warning "Systemd service not installed"
+            print_info "Run 'sudo ./deploy install-service' to create systemd service"
+        fi
+    fi
+    
+    # Show recent logs
+    if [[ -f "logs/app.log" ]]; then
+        echo
+        print_info "Recent log entries:"
+        tail -5 logs/app.log 2>/dev/null || print_warning "Could not read log file"
+    fi
+}
+
+# Update application
+update_app() {
+    print_info "Updating Source-License application..."
     
     # Create backup if requested
     if [[ "$BACKUP_FIRST" == true ]]; then
-        backup_path=$(create_backup)
-        if [[ -z "$backup_path" ]]; then
-            print_error "Backup failed, aborting update"
-            return 1
+        local backup_dir="backups/$(date +%Y%m%d-%H%M%S)"
+        print_info "Creating backup at $backup_dir..."
+        mkdir -p "$backup_dir"
+        
+        # Backup important files
+        local files=(".env" "Gemfile.lock")
+        for file in "${files[@]}"; do
+            if [[ -f "$file" ]]; then
+                cp "$file" "$backup_dir/"
+            fi
+        done
+        
+        # Backup database if SQLite
+        if [[ -f "database.db" ]]; then
+            cp "database.db" "$backup_dir/"
         fi
+        
+        print_success "Backup created"
     fi
     
-    # Stop services
-    stop_services
+    # Stop application
+    stop_app
     
     # Pull latest changes
-    print_info "Pulling latest changes..."
-    if command_exists git; then
-        git pull origin main
-    else
-        print_warning "Git not available, skipping code update"
+    if command_exists git && [[ -d ".git" ]]; then
+        print_info "Pulling latest changes..."
+        git pull origin main || print_warning "Git pull failed, continuing anyway"
     fi
     
     # Update dependencies
@@ -314,260 +530,99 @@ update_application() {
     
     # Run migrations
     print_info "Running database migrations..."
-    ruby lib/migrations.rb
+    ruby lib/migrations.rb || print_warning "Database migration failed, continuing anyway"
     
-    # Start services
-    start_services
+    # Start application
+    start_app
     
-    print_success "Application updated successfully"
+    print_success "Update completed"
 }
 
-# Update configuration
-update_configuration() {
-    print_info "Updating configuration..."
-    
-    # Backup configuration
-    if [[ -f ".env" ]]; then
-        cp ".env" ".env.backup"
-        print_info "Backed up current .env file"
-    fi
-    
-    # Update domain if provided
-    if [[ -n "$DOMAIN" ]]; then
-        if [[ -f ".env" ]]; then
-            sed -i.bak "s/^APP_HOST=.*/APP_HOST=$DOMAIN/" .env
-            print_success "Updated APP_HOST to $DOMAIN"
-        fi
-        
-        # Update Nginx config if exists
-        local nginx_configs=("/etc/nginx/sites-available/source-license" "/usr/local/etc/nginx/servers/source-license.conf")
-        for config in "${nginx_configs[@]}"; do
-            if [[ -f "$config" ]]; then
-                sudo sed -i.bak "s/server_name .*/server_name $DOMAIN;/" "$config"
-                print_success "Updated Nginx server_name to $DOMAIN"
-                
-                # Restart Nginx
-                if [[ "$PLATFORM" == "linux" ]]; then
-                    sudo systemctl reload nginx 2>/dev/null || true
-                elif [[ "$PLATFORM" == "macos" ]]; then
-                    sudo brew services restart nginx 2>/dev/null || true
-                fi
-                break
-            fi
-        done
-    fi
-    
-    # Update port if provided
-    if [[ -n "$PORT" ]]; then
-        if [[ -f ".env" ]]; then
-            sed -i.bak "s/^PORT=.*/PORT=$PORT/" .env
-            print_success "Updated PORT to $PORT"
-        fi
-    fi
-    
-    # Update environment if provided
-    if [[ -n "$ENVIRONMENT" ]]; then
-        if [[ -f ".env" ]]; then
-            sed -i.bak "s/^RACK_ENV=.*/RACK_ENV=$ENVIRONMENT/" .env
-            sed -i.bak "s/^APP_ENV=.*/APP_ENV=$ENVIRONMENT/" .env
-            print_success "Updated environment to $ENVIRONMENT"
-        fi
-    fi
-    
-    print_success "Configuration updated successfully"
-}
-
-# Restart services
-restart_services() {
-    print_info "Restarting services..."
-    
-    stop_services
-    sleep 2
-    start_services
-    
-    # Restart Nginx if running
-    if [[ "$PLATFORM" == "linux" ]] && systemctl is-active --quiet nginx; then
-        sudo systemctl reload nginx
-        print_success "Nginx reloaded"
-    elif [[ "$PLATFORM" == "macos" ]] && command_exists brew; then
-        sudo brew services restart nginx 2>/dev/null && print_success "Nginx restarted" || true
-    fi
-    
-    print_success "Services restarted successfully"
-}
-
-# Run database migrations only
+# Run database migrations
 run_migrations() {
     print_info "Running database migrations..."
     
-    ruby lib/migrations.rb
-    print_success "Database migrations completed"
+    if ruby lib/migrations.rb; then
+        print_success "Database migrations completed"
+    else
+        print_error "Database migration failed"
+        return 1
+    fi
 }
 
-# Show deployment status
-show_deployment_status() {
+# Preflight checks
+preflight_checks() {
+    # Check if we're in the right directory
+    if [[ ! -f "app.rb" ]] || [[ ! -f "Gemfile" ]] || [[ ! -f "launch.rb" ]]; then
+        print_error "Please run this script from the Source-License project root directory"
+        exit 1
+    fi
+    
+    # Check Ruby
+    if ! command_exists ruby; then
+        print_error "Ruby is not installed. Run ./install first"
+        exit 1
+    fi
+    
+    # Check Bundler
+    if ! command_exists bundle; then
+        print_error "Bundler is not installed. Run ./install first"
+        exit 1
+    fi
+    
+    # Check if gems are installed
+    if ! bundle check >/dev/null 2>&1; then
+        print_warning "Dependencies not installed. Running bundle install..."
+        bundle install
+    fi
+}
+
+# Main function
+main() {
     echo -e "${CYAN}"
     cat << "EOF"
 ╔══════════════════════════════════════════════════════════════════════════════╗
-║                    Source License Management System                          ║
-║                         Deployment Status                                    ║
+║                    Source-License Deploy Script                              ║
+║                         Unix Systems                                         ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
 EOF
     echo -e "${NC}"
     
-    # Git status
-    if command_exists git && [[ -d ".git" ]]; then
-        local git_branch
-        local git_commit
-        git_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
-        git_commit=$(git rev-parse --short HEAD 2>/dev/null)
-        
-        print_info "Git Branch: $git_branch"
-        print_info "Git Commit: $git_commit"
-        
-        if check_local_changes; then
-            print_warning "Uncommitted changes present:"
-            git status --short | sed 's/^/  /'
-        else
-            print_success "Working directory clean"
-        fi
-    else
-        print_warning "Not a git repository"
-    fi
-    
-    # Environment info
-    if [[ -f ".env" ]]; then
-        local domain
-        local port
-        local env
-        domain=$(grep "^APP_HOST=" .env | cut -d'=' -f2 2>/dev/null || echo "not set")
-        port=$(grep "^PORT=" .env | cut -d'=' -f2 2>/dev/null || echo "not set")
-        env=$(grep "^RACK_ENV=" .env | cut -d'=' -f2 2>/dev/null || echo "not set")
-        
-        print_info "Domain: $domain"
-        print_info "Port: $port"
-        print_info "Environment: $env"
-    fi
-    
-    # Service status
-    case $SERVICE_MANAGER in
-        systemd)
-            if systemctl is-active --quiet source-license; then
-                print_success "systemd service is running"
-            else
-                print_warning "systemd service is not running"
-            fi
-            ;;
-        launchctl)
-            if launchctl list | grep -q com.sourcelicense.app; then
-                print_success "macOS LaunchDaemon is loaded"
-            else
-                print_warning "macOS LaunchDaemon is not loaded"
-            fi
-            ;;
-        *)
-            local pids
-            pids=$(ps aux | grep "ruby.*launch.rb" | grep -v grep | awk '{print $2}')
-            if [[ -n "$pids" ]]; then
-                print_success "Ruby application is running (PIDs: $pids)"
-            else
-                print_warning "Ruby application is not running"
-            fi
-            ;;
-    esac
-    
-    # Recent backups
-    if [[ -d "backups" ]]; then
-        local recent_backups
-        recent_backups=$(ls -1t backups/ 2>/dev/null | head -5)
-        if [[ -n "$recent_backups" ]]; then
-            print_info "Recent backups:"
-            echo "$recent_backups" | sed 's/^/  /'
-        fi
-    fi
-    
-    # Customizations status
-    if [[ -f "config/customizations.yml" ]]; then
-        local customization_size
-        customization_size=$(stat -f%z "config/customizations.yml" 2>/dev/null || stat -c%s "config/customizations.yml" 2>/dev/null)
-        print_info "Customizations file: $customization_size bytes"
-    else
-        print_info "No customizations file found"
-    fi
-}
-
-# List available backups
-list_backups() {
-    if [[ ! -d "backups" ]]; then
-        print_warning "No backups directory found"
-        return
-    fi
-    
-    local backups
-    backups=$(ls -1t backups/ 2>/dev/null)
-    
-    if [[ -z "$backups" ]]; then
-        print_warning "No backups found"
-        return
-    fi
-    
-    print_info "Available backups:"
-    for backup in $backups; do
-        local manifest_path="backups/$backup/manifest.json"
-        if [[ -f "$manifest_path" ]]; then
-            local timestamp
-            local version
-            timestamp=$(grep '"timestamp"' "$manifest_path" | cut -d'"' -f4)
-            version=$(grep '"version"' "$manifest_path" | cut -d'"' -f4)
-            echo "  $backup - $timestamp ($version)"
-        else
-            echo "  $backup"
-        fi
-    done
-}
-
-# Main deployment function
-main() {
     # Parse arguments
     parse_args "$@"
     
-    # Detect OS
-    detect_os
-    print_info "Detected platform: $PLATFORM"
-    print_info "Service manager: $SERVICE_MANAGER"
+    # Run preflight checks
+    preflight_checks
     
-    # Check if we're in the right directory
-    if [[ ! -f "app.rb" ]] || [[ ! -f "Gemfile" ]]; then
-        print_error "Please run this script from the project root directory"
-        exit 1
-    fi
-    
+    # Execute action
     case "$ACTION" in
-        update)
-            update_application
+        run|start)
+            start_app
             ;;
-        config)
-            update_configuration
+        stop)
+            stop_app
             ;;
         restart)
-            restart_services
+            restart_app
             ;;
-        backup)
-            create_backup >/dev/null
+        status)
+            show_status
             ;;
-        restore)
-            list_backups
-            echo
-            read -p "Enter backup name to restore: " backup_name
-            if [[ -n "$backup_name" ]]; then
-                restore_backup "backups/$backup_name"
-            fi
+        update)
+            update_app
             ;;
         migrate)
             run_migrations
             ;;
-        status)
-            show_deployment_status
+        install-service)
+            create_systemd_service
+            ;;
+        remove-service)
+            remove_systemd_service
+            ;;
+        help)
+            show_help
+            exit 0
             ;;
         *)
             print_error "Unknown action: $ACTION"
@@ -576,6 +631,9 @@ main() {
             ;;
     esac
 }
+
+# Handle Ctrl+C gracefully
+trap 'echo -e "\n${YELLOW}Shutting down gracefully...${NC}"; stop_app; exit 0' INT TERM
 
 # Run main function with all arguments
 main "$@"

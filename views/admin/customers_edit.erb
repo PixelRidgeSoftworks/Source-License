@@ -1,0 +1,471 @@
+<!-- Customer Edit Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-1">Edit Customer</h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item">
+                    <a href="/admin/customers" class="text-decoration-none">Customers</a>
+                </li>
+                <li class="breadcrumb-item">
+                    <a href="/admin/customers/<%= @customer.id %>" class="text-decoration-none">
+                        <%= h(@customer.display_name) %>
+                    </a>
+                </li>
+                <li class="breadcrumb-item active" aria-current="page">
+                    Edit
+                </li>
+            </ol>
+        </nav>
+    </div>
+    <div>
+        <a href="/admin/customers/<%= @customer.id %>" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Back to Details
+        </a>
+    </div>
+</div>
+
+<!-- Customer Edit Form -->
+<div class="row">
+    <div class="col-md-8">
+        <div class="admin-card">
+            <div class="admin-card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-user-edit me-2"></i>Customer Information
+                </h5>
+            </div>
+            <div class="admin-card-body">
+                <form method="POST" action="/admin/customers/<%= @customer.id %>" class="needs-validation" novalidate>
+                    <input type="hidden" name="_method" value="PUT">
+                    <%= csrf_input %>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-floating mb-3">
+                                <input type="text" class="form-control" id="name" name="name" 
+                                       value="<%= h(@customer.name || '') %>" placeholder="Customer Name">
+                                <label for="name">Full Name</label>
+                                <div class="form-text">
+                                    Optional - if not provided, email prefix will be used for display
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="form-floating mb-3">
+                                <input type="email" class="form-control" id="email" name="email" 
+                                       value="<%= h(@customer.email) %>" placeholder="Email Address" required>
+                                <label for="email">Email Address *</label>
+                                <div class="invalid-feedback">
+                                    Please provide a valid email address.
+                                </div>
+                                <div class="form-text">
+                                    <% if @customer.email_verified? %>
+                                    <i class="fas fa-shield-check text-success me-1"></i>
+                                    Email verified
+                                    <% else %>
+                                    <i class="fas fa-shield-exclamation text-warning me-1"></i>
+                                    Email not verified
+                                    <% end %>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-floating mb-3">
+                                <select class="form-select" id="status" name="status" required>
+                                    <option value="active" <%= 'selected' if @customer.status == 'active' %>>Active</option>
+                                    <option value="inactive" <%= 'selected' if @customer.status == 'inactive' %>>Inactive</option>
+                                    <option value="suspended" <%= 'selected' if @customer.status == 'suspended' %>>Suspended</option>
+                                </select>
+                                <label for="status">Account Status *</label>
+                                <div class="form-text">
+                                    <strong>Active:</strong> Full access to account and services<br>
+                                    <strong>Inactive:</strong> Limited access, can view but not use licenses<br>
+                                    <strong>Suspended:</strong> No access to account or services
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="form-floating mb-3">
+                                <input type="password" class="form-control" id="new_password" name="new_password" 
+                                       placeholder="New Password" minlength="8">
+                                <label for="new_password">New Password</label>
+                                <div class="form-text">
+                                    Leave blank to keep current password. Minimum 8 characters.
+                                </div>
+                                <div class="invalid-feedback">
+                                    Password must be at least 8 characters long.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Account Information Display -->
+                    <div class="border rounded p-3 mb-3" style="background: var(--surface-tertiary);">
+                        <h6 class="mb-3">Account Information</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-2">
+                                    <label class="form-label text-muted small">Customer ID</label>
+                                    <div><code><%= @customer.id %></code></div>
+                                </div>
+                                <div class="mb-2">
+                                    <label class="form-label text-muted small">Registered</label>
+                                    <div>
+                                        <%= format_date(@customer.created_at, :datetime) %>
+                                        <small class="text-muted">(<%= time_ago(@customer.created_at) %>)</small>
+                                    </div>
+                                </div>
+                                <div class="mb-2">
+                                    <label class="form-label text-muted small">Account Age</label>
+                                    <div><%= account_age_text(@customer) %></div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-2">
+                                    <label class="form-label text-muted small">Last Login</label>
+                                    <div>
+                                        <% if @customer.last_login_at %>
+                                        <%= format_date(@customer.last_login_at, :datetime) %>
+                                        <small class="text-muted">(<%= time_ago(@customer.last_login_at) %>)</small>
+                                        <% else %>
+                                        <span class="text-muted">Never</span>
+                                        <% end %>
+                                    </div>
+                                </div>
+                                <div class="mb-2">
+                                    <label class="form-label text-muted small">Total Logins</label>
+                                    <div><%= @customer.login_count || 0 %></div>
+                                </div>
+                                <div class="mb-2">
+                                    <label class="form-label text-muted small">Risk Level</label>
+                                    <div><%= customer_risk_level(@customer) %></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Action Buttons -->
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Save Changes
+                            </button>
+                            <a href="/admin/customers/<%= @customer.id %>" class="btn btn-secondary ms-2">
+                                Cancel
+                            </a>
+                        </div>
+                        
+                        <div class="btn-group">
+                            <button type="button" class="btn btn-outline-info btn-sm" onclick="resetPassword()">
+                                <i class="fas fa-key me-1"></i>Reset Password
+                            </button>
+                            <% unless @customer.email_verified? %>
+                            <button type="button" class="btn btn-outline-warning btn-sm" onclick="verifyEmail()">
+                                <i class="fas fa-shield-check me-1"></i>Mark Email Verified
+                            </button>
+                            <% end %>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <!-- Quick Stats -->
+        <div class="admin-card">
+            <div class="admin-card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-bar me-2"></i>Customer Stats
+                </h5>
+            </div>
+            <div class="admin-card-body">
+                <div class="stat-item mb-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-muted">Total Licenses</span>
+                        <span class="fw-bold text-primary fs-5"><%= @customer.license_count %></span>
+                    </div>
+                </div>
+                
+                <div class="stat-item mb-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-muted">Active Licenses</span>
+                        <span class="fw-bold text-success fs-5"><%= @customer.active_licenses.count %></span>
+                    </div>
+                </div>
+                
+                <div class="stat-item mb-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-muted">Total Orders</span>
+                        <span class="fw-bold text-info fs-5"><%= customer_order_count(@customer) %></span>
+                    </div>
+                </div>
+                
+                <div class="stat-item">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-muted">Lifetime Value</span>
+                        <span class="fw-bold text-warning fs-5"><%= customer_lifetime_value(@customer) %></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Related Actions -->
+        <div class="admin-card mt-4">
+            <div class="admin-card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-tools me-2"></i>Related Actions
+                </h5>
+            </div>
+            <div class="admin-card-body">
+                <div class="d-grid gap-2">
+                    <a href="/admin/licenses?search=<%= u(@customer.email) %>" 
+                       class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-key me-2"></i>View Licenses (<%= @customer.license_count %>)
+                    </a>
+                    
+                    <a href="/admin/orders?search=<%= u(@customer.email) %>" 
+                       class="btn btn-outline-info btn-sm">
+                        <i class="fas fa-shopping-cart me-2"></i>View Orders (<%= customer_order_count(@customer) %>)
+                    </a>
+                    
+                    <a href="/admin/licenses/generate?email=<%= u(@customer.email) %>&name=<%= u(@customer.name || '') %>" 
+                       class="btn btn-outline-success btn-sm">
+                        <i class="fas fa-plus me-2"></i>Generate License
+                    </a>
+                    
+                    <a href="mailto:<%= h(@customer.email) %>?subject=Regarding Your Account" 
+                       class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-envelope me-2"></i>Email Customer
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Danger Zone -->
+        <div class="admin-card mt-4 border-danger">
+            <div class="admin-card-header bg-danger text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Danger Zone
+                </h5>
+            </div>
+            <div class="admin-card-body">
+                <p class="text-muted small mb-3">
+                    These actions are permanent and cannot be undone.
+                </p>
+                
+                <div class="d-grid gap-2">
+                    <% if @customer.status != 'suspended' %>
+                    <button class="btn btn-outline-warning btn-sm" 
+                            onclick="updateCustomerStatus(<%= @customer.id %>, 'suspend')">
+                        <i class="fas fa-ban me-2"></i>Suspend Account
+                    </button>
+                    <% else %>
+                    <button class="btn btn-outline-success btn-sm" 
+                            onclick="updateCustomerStatus(<%= @customer.id %>, 'activate')">
+                        <i class="fas fa-check me-2"></i>Unsuspend Account
+                    </button>
+                    <% end %>
+                    
+                    <% if @customer.license_count == 0 && customer_order_count(@customer) == 0 %>
+                    <button class="btn btn-outline-danger btn-sm" onclick="deleteCustomer()">
+                        <i class="fas fa-trash me-2"></i>Delete Customer
+                    </button>
+                    <% else %>
+                    <button class="btn btn-outline-danger btn-sm" disabled 
+                            title="Cannot delete customer with existing licenses or orders">
+                        <i class="fas fa-trash me-2"></i>Delete Customer
+                    </button>
+                    <small class="text-muted">Cannot delete: has <%= @customer.license_count %> licenses and <%= customer_order_count(@customer) %> orders</small>
+                    <% end %>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Customer Edit JavaScript -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Form validation
+    const forms = document.querySelectorAll('.needs-validation');
+    Array.from(forms).forEach(form => {
+        form.addEventListener('submit', event => {
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            form.classList.add('was-validated');
+        });
+    });
+    
+    // Password validation
+    const passwordInput = document.getElementById('new_password');
+    if (passwordInput) {
+        passwordInput.addEventListener('input', function() {
+            if (this.value.length > 0 && this.value.length < 8) {
+                this.setCustomValidity('Password must be at least 8 characters long');
+            } else {
+                this.setCustomValidity('');
+            }
+        });
+    }
+});
+
+// Update customer status
+function updateCustomerStatus(customerId, action) {
+    const confirmText = action === 'activate' ? 
+        'Are you sure you want to activate this customer account?' :
+        action === 'suspend' ? 
+        'Are you sure you want to suspend this customer account? They will not be able to access their account.' :
+        'Are you sure you want to perform this action?';
+    
+    if (confirm(confirmText)) {
+        fetch(`/admin/customers/${customerId}/toggle-status`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({ action: action })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while updating the customer status.');
+        });
+    }
+}
+
+// Reset password
+function resetPassword() {
+    if (confirm('Are you sure you want to generate a new password for this customer?\n\nThis will invalidate their current password and they will need to use the password reset feature to access their account.')) {
+        // Generate a random password
+        const newPassword = generateRandomPassword();
+        document.getElementById('new_password').value = newPassword;
+        
+        alert(`New password generated: ${newPassword}\n\nPlease save the form to apply this change and share the password with the customer securely.`);
+    }
+}
+
+// Generate random password
+function generateRandomPassword() {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+    let password = '';
+    for (let i = 0; i < 12; i++) {
+        password += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return password;
+}
+
+// Mark email as verified
+function verifyEmail() {
+    if (confirm('Are you sure you want to mark this email address as verified?\n\nThis will allow the customer to access all account features.')) {
+        // This would need to be implemented as a separate endpoint
+        alert('Email verification feature would be implemented here.');
+    }
+}
+
+// Delete customer
+function deleteCustomer() {
+    const customerName = '<%= h(@customer.display_name) %>';
+    if (confirm(`⚠️ WARNING: Are you sure you want to DELETE customer "${customerName}"?\n\nThis will permanently remove:\n- Customer account\n- All associated data\n\nThis action CANNOT be undone!\n\nType "DELETE" to confirm.`)) {
+        const confirmation = prompt('Type "DELETE" to confirm:');
+        if (confirmation === 'DELETE') {
+            // This would need to be implemented as a separate endpoint
+            alert('Customer deletion feature would be implemented here.');
+        } else {
+            alert('Deletion cancelled - confirmation text did not match.');
+        }
+    }
+}
+</script>
+
+<!-- Custom Styles -->
+<style>
+.stat-item {
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--border-muted);
+}
+
+.stat-item:last-child {
+    border-bottom: none;
+}
+
+.form-floating .form-control:focus ~ label,
+.form-floating .form-control:not(:placeholder-shown) ~ label {
+    color: var(--accent-primary);
+}
+
+.form-floating .form-control:focus {
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 0.2rem rgba(35, 134, 54, 0.25);
+}
+
+.form-floating .form-select:focus {
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 0.2rem rgba(35, 134, 54, 0.25);
+}
+
+.border-danger {
+    border-color: var(--bs-danger) !important;
+}
+
+.bg-danger {
+    background-color: var(--bs-danger) !important;
+}
+
+.btn-outline-danger:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.needs-validation .form-control:invalid {
+    border-color: var(--bs-danger);
+}
+
+.needs-validation .form-control:valid {
+    border-color: var(--bs-success);
+}
+
+.invalid-feedback {
+    display: none;
+}
+
+.was-validated .form-control:invalid ~ .invalid-feedback {
+    display: block;
+}
+
+.form-text {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+}
+
+.breadcrumb-item + .breadcrumb-item::before {
+    color: var(--text-muted);
+}
+
+.breadcrumb-item.active {
+    color: var(--text-muted);
+}
+
+code {
+    background: var(--surface-tertiary);
+    padding: 0.125rem 0.25rem;
+    border-radius: 0.25rem;
+    font-family: monospace;
+    font-size: 0.875rem;
+}
+</style>

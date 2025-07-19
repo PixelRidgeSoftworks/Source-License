@@ -2,13 +2,13 @@
     <div class="row justify-content-center">
         <div class="col-lg-6 text-center">
             <div class="mb-5">
-                <i class="fas fa-search text-muted" style="font-size: 6rem;"></i>
+                <i class="fas fa-search" style="font-size: 6rem; color: var(--text-secondary);"></i>
             </div>
             
-            <h1 class="display-4 fw-bold text-muted mb-3">404</h1>
-            <h2 class="h4 mb-4">Page Not Found</h2>
+            <h1 class="display-4 fw-bold mb-3" style="color: var(--text-secondary);">404</h1>
+            <h2 class="h4 mb-4" style="color: var(--text-primary);">Page Not Found</h2>
             
-            <p class="lead text-muted mb-4">
+            <p class="lead mb-4" style="color: var(--text-secondary);">
                 The page you're looking for doesn't exist. It might have been moved, 
                 deleted, or you entered the wrong URL.
             </p>
@@ -18,11 +18,11 @@
                     <i class="fas fa-home me-2"></i>
                     Go Home
                 </a>
-                <a href="/my-licenses" class="btn btn-outline-secondary">
+                <a href="/my-licenses" class="btn btn-secondary">
                     <i class="fas fa-key me-2"></i>
                     Check My Licenses
                 </a>
-                <a href="mailto:<%= ENV['ADMIN_EMAIL'] || 'support@example.com' %>" class="btn btn-outline-info">
+                <a href="mailto:<%= ENV['ADMIN_EMAIL'] || 'support@example.com' %>" class="btn btn-outline-primary">
                     <i class="fas fa-envelope me-2"></i>
                     Contact Support
                 </a>
@@ -30,24 +30,24 @@
             
             <!-- Search suggestion -->
             <div class="mt-5">
-                <div class="card border-0 bg-light">
+                <div class="card">
                     <div class="card-body">
-                        <h6 class="mb-3">Looking for something specific?</h6>
+                        <h6 class="mb-3" style="color: var(--text-primary);">Looking for something specific?</h6>
                         <div class="row g-3 text-start">
                             <div class="col-md-6">
-                                <h6 class="small text-uppercase text-muted">Popular Pages</h6>
+                                <h6 class="small text-uppercase" style="color: var(--text-secondary);">Popular Pages</h6>
                                 <ul class="list-unstyled small">
-                                    <li><a href="/" class="text-decoration-none">Home</a></li>
-                                    <li><a href="/my-licenses" class="text-decoration-none">My Licenses</a></li>
-                                    <li><a href="/cart" class="text-decoration-none">Shopping Cart</a></li>
+                                    <li><a href="/" class="text-decoration-none" style="color: var(--accent-primary);">Home</a></li>
+                                    <li><a href="/my-licenses" class="text-decoration-none" style="color: var(--accent-primary);">My Licenses</a></li>
+                                    <li><a href="/cart" class="text-decoration-none" style="color: var(--accent-primary);">Shopping Cart</a></li>
                                 </ul>
                             </div>
                             <div class="col-md-6">
-                                <h6 class="small text-uppercase text-muted">Support</h6>
+                                <h6 class="small text-uppercase" style="color: var(--text-secondary);">Support</h6>
                                 <ul class="list-unstyled small">
-                                    <li><a href="#support" class="text-decoration-none">Help Center</a></li>
-                                    <li><a href="#" class="text-decoration-none">Documentation</a></li>
-                                    <li><a href="#" class="text-decoration-none">Contact Us</a></li>
+                                    <li><a href="#support" class="text-decoration-none" style="color: var(--accent-primary);">Help Center</a></li>
+                                    <li><a href="#" class="text-decoration-none" style="color: var(--accent-primary);">Documentation</a></li>
+                                    <li><a href="#" class="text-decoration-none" style="color: var(--accent-primary);">Contact Us</a></li>
                                 </ul>
                             </div>
                         </div>
@@ -57,3 +57,37 @@
         </div>
     </div>
 </div>
+
+<!-- Custom Error Page Styles -->
+<style>
+.error-page-icon {
+    color: var(--text-secondary);
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+}
+
+.error-page-card {
+    background: var(--surface-secondary);
+    border: 1px solid var(--border-default);
+    box-shadow: var(--shadow);
+}
+
+.error-page-link {
+    color: var(--accent-primary);
+    transition: all 0.3s ease;
+}
+
+.error-page-link:hover {
+    color: var(--accent-secondary);
+    transform: translateX(2px);
+}
+
+@media (max-width: 768px) {
+    .display-4 {
+        font-size: 3rem;
+    }
+    
+    .lead {
+        font-size: 1.1rem;
+    }
+}
+</style>

@@ -115,7 +115,7 @@ class User < Sequel::Model
 
   # Display name (name or email)
   def display_name
-    name.present? ? name : email
+    name && !name.empty? ? name : email.split('@').first
   end
 
   # Account summary

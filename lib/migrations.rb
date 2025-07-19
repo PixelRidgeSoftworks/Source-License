@@ -1,0 +1,224 @@
+# frozen_string_literal: true
+
+# Source-License: Database Migrations
+# Handles creation and updates of database schema
+
+class Migrations
+  class << self
+    # Run all migrations in order
+    def run_all
+      puts 'Running database migrations...'
+
+      create_schema_info_table
+      run_migration(1, :create_admins_table)
+      run_migration(2, :create_products_table)
+      run_migration(3, :create_orders_table)
+      run_migration(4, :create_order_items_table)
+      run_migration(5, :create_licenses_table)
+      run_migration(6, :create_subscriptions_table)
+      run_migration(7, :create_license_activations_table)
+
+      puts '✓ All migrations completed successfully'
+    end
+
+    private
+
+    # Create schema info table to track migration versions
+    def create_schema_info_table
+      return if DB.table_exists?(:schema_info)
+
+      DB.create_table :schema_info do
+        Integer :version, primary_key: true
+        DateTime :created_at, null: false, default: Sequel::CURRENT_TIMESTAMP
+      end
+      puts '✓ Created schema_info table'
+    end
+
+    # Run a specific migration if it hasn't been run yet
+    def run_migration(version, method_name)
+      return if migration_exists?(version)
+
+      puts "Running migration #{version}: #{method_name}"
+      send(method_name)
+      record_migration(version)
+      puts "✓ Migration #{version} completed"
+    end
+
+    # Check if a migration has already been run
+    def migration_exists?(version)
+      DB[:schema_info].where(version: version).any?
+    end
+
+    # Record that a migration has been run
+    def record_migration(version)
+      DB[:schema_info].insert(version: version, created_at: Time.now)
+    end
+
+    # Migration 1: Create admins table
+    def create_admins_table
+      DB.create_table :admins do
+        primary_key :id
+        String :email, null: false, unique: true, size: 255
+        String :password_hash, null: false, size: 255
+        String :status, default: 'active', size: 50
+        String :roles, default: 'admin', size: 255
+
+        # Authentication tracking
+        DateTime :created_at, null: false, default: Sequel::CURRENT_TIMESTAMP
+        DateTime :updated_at, null: false, default: Sequel::CURRENT_TIMESTAMP
+        DateTime :last_login_at
+        String :last_login_ip, size: 45
+        String :last_login_user_agent, size: 500
+        Integer :login_count, default: 0
+
+        # Password management
+        DateTime :password_changed_at
+        Boolean :must_change_password, default: false
+        String :password_reset_token, size: 255
+        DateTime :password_reset_sent_at
+
+        # Two-factor authentication
+        String :two_factor_secret, size: 255
+        Boolean :two_factor_enabled, default: false
+        DateTime :two_factor_enabled_at
+        DateTime :two_factor_disabled_at
+
+        # Account status tracking
+        DateTime :activated_at
+        DateTime :deactivated_at
+        DateTime :locked_at
+        DateTime :unlocked_at
+
+        index :email
+        index :status
+        index :password_reset_token
+        index :last_login_at
+      end
+    end
+
+    # Migration 2: Create products table
+    def create_products_table
+      DB.create_table :products do
+        primary_key :id
+        String :name, null: false, size: 255
+        Text :description
+        Text :features # JSON field for product features
+        Decimal :price, size: [10, 2], null: false
+        String :license_type, null: false, default: 'one_time' # 'one_time' or 'subscription'
+        Integer :license_duration_days # null for one-time, number for subscription
+        Integer :max_activations, default: 1
+        String :download_file, size: 255 # filename in downloads directory
+        String :version, size: 50
+        Boolean :active, default: true
+        DateTime :created_at, null: false, default: Sequel::CURRENT_TIMESTAMP
+        DateTime :updated_at, null: false, default: Sequel::CURRENT_TIMESTAMP
+
+        index :name
+        index :license_type
+        index :active
+      end
+    end
+
+    # Migration 3: Create orders table
+    def create_orders_table
+      DB.create_table :orders do
+        primary_key :id
+        String :email, null: false, size: 255
+        Decimal :amount, size: [10, 2], null: false
+        String :currency, default: 'USD', size: 3
+        String :status, null: false, default: 'pending' # pending, completed, failed, refunded
+        String :payment_method, size: 50 # stripe, paypal
+        String :payment_intent_id, size: 255 # external payment ID
+        String :transaction_id, size: 255 # final transaction ID
+        Text :payment_details # JSON field for additional payment info
+        DateTime :created_at, null: false, default: Sequel::CURRENT_TIMESTAMP
+        DateTime :updated_at, null: false, default: Sequel::CURRENT_TIMESTAMP
+        DateTime :completed_at
+
+        index :email
+        index :status
+        index :payment_intent_id
+      end
+    end
+
+    # Migration 4: Create order_items table
+    def create_order_items_table
+      DB.create_table :order_items do
+        primary_key :id
+        foreign_key :order_id, :orders, null: false, on_delete: :cascade
+        foreign_key :product_id, :products, null: false
+        Integer :quantity, null: false, default: 1
+        Decimal :price, size: [10, 2], null: false # price at time of purchase
+        DateTime :created_at, null: false, default: Sequel::CURRENT_TIMESTAMP
+
+        index :order_id
+        index :product_id
+      end
+    end
+
+    # Migration 5: Create licenses table
+    def create_licenses_table
+      DB.create_table :licenses do
+        primary_key :id
+        String :license_key, null: false, unique: true, size: 255
+        foreign_key :order_id, :orders, null: false
+        foreign_key :product_id, :products, null: false
+        String :customer_email, null: false, size: 255
+        String :status, null: false, default: 'active' # active, suspended, revoked, expired
+        Integer :max_activations, null: false, default: 1
+        Integer :activation_count, default: 0
+        Integer :download_count, default: 0
+        DateTime :expires_at # null for lifetime licenses
+        DateTime :created_at, null: false, default: Sequel::CURRENT_TIMESTAMP
+        DateTime :updated_at, null: false, default: Sequel::CURRENT_TIMESTAMP
+        DateTime :last_activated_at
+        DateTime :last_downloaded_at
+
+        index :license_key
+        index :customer_email
+        index :status
+        index :order_id
+        index :product_id
+      end
+    end
+
+    # Migration 6: Create subscriptions table (for subscription-based licenses)
+    def create_subscriptions_table
+      DB.create_table :subscriptions do
+        primary_key :id
+        foreign_key :license_id, :licenses, null: false, on_delete: :cascade
+        String :external_subscription_id, size: 255 # Stripe/PayPal subscription ID
+        String :status, null: false, default: 'active' # active, canceled, past_due, unpaid
+        DateTime :current_period_start, null: false
+        DateTime :current_period_end, null: false
+        DateTime :canceled_at
+        Boolean :auto_renew, default: true
+        DateTime :created_at, null: false, default: Sequel::CURRENT_TIMESTAMP
+        DateTime :updated_at, null: false, default: Sequel::CURRENT_TIMESTAMP
+
+        index :license_id
+        index :external_subscription_id
+        index :status
+      end
+    end
+
+    # Migration 7: Create license_activations table (for tracking activations)
+    def create_license_activations_table
+      DB.create_table :license_activations do
+        primary_key :id
+        foreign_key :license_id, :licenses, null: false, on_delete: :cascade
+        String :machine_fingerprint, size: 255 # unique machine identifier
+        String :ip_address, size: 45 # supports both IPv4 and IPv6
+        String :user_agent, size: 500
+        Text :system_info # JSON field for system information
+        Boolean :active, default: true
+        DateTime :created_at, null: false, default: Sequel::CURRENT_TIMESTAMP
+        DateTime :deactivated_at
+
+        index :license_id
+        index :machine_fingerprint
+        index %i[license_id machine_fingerprint], unique: true
+      end
+    end
+  end
+end

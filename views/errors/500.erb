@@ -1,0 +1,55 @@
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-6 text-center">
+            <div class="mb-5">
+                <i class="fas fa-exclamation-triangle text-warning" style="font-size: 6rem;"></i>
+            </div>
+            
+            <h1 class="display-4 fw-bold text-muted mb-3">500</h1>
+            <h2 class="h4 mb-4">Internal Server Error</h2>
+            
+            <p class="lead text-muted mb-4">
+                Something went wrong on our end. We're working to fix this issue. 
+                Please try again in a few moments.
+            </p>
+            
+            <div class="d-flex flex-column flex-sm-row gap-3 justify-content-center">
+                <button onclick="window.location.reload()" class="btn btn-primary">
+                    <i class="fas fa-redo me-2"></i>
+                    Try Again
+                </button>
+                <a href="/" class="btn btn-outline-secondary">
+                    <i class="fas fa-home me-2"></i>
+                    Go Home
+                </a>
+                <a href="mailto:<%= ENV['ADMIN_EMAIL'] || 'support@example.com' %>" class="btn btn-outline-danger">
+                    <i class="fas fa-bug me-2"></i>
+                    Report Issue
+                </a>
+            </div>
+            
+            <!-- Error reporting -->
+            <div class="mt-5">
+                <div class="card border-warning bg-light">
+                    <div class="card-body">
+                        <h6 class="mb-3">Help Us Improve</h6>
+                        <p class="small text-muted mb-3">
+                            If this error persists, please let us know what you were trying to do 
+                            when this error occurred.
+                        </p>
+                        <div class="row g-3 text-start">
+                            <div class="col-md-6">
+                                <h6 class="small text-uppercase text-muted">Error ID</h6>
+                                <code class="small"><%= Time.now.to_i %>-<%= SecureRandom.hex(4) %></code>
+                            </div>
+                            <div class="col-md-6">
+                                <h6 class="small text-uppercase text-muted">Timestamp</h6>
+                                <small class="text-muted"><%= Time.now.strftime('%Y-%m-%d %H:%M:%S UTC') %></small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,59 @@
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-6 text-center">
+            <div class="mb-5">
+                <i class="fas fa-search text-muted" style="font-size: 6rem;"></i>
+            </div>
+            
+            <h1 class="display-4 fw-bold text-muted mb-3">404</h1>
+            <h2 class="h4 mb-4">Page Not Found</h2>
+            
+            <p class="lead text-muted mb-4">
+                The page you're looking for doesn't exist. It might have been moved, 
+                deleted, or you entered the wrong URL.
+            </p>
+            
+            <div class="d-flex flex-column flex-sm-row gap-3 justify-content-center">
+                <a href="/" class="btn btn-primary">
+                    <i class="fas fa-home me-2"></i>
+                    Go Home
+                </a>
+                <a href="/my-licenses" class="btn btn-outline-secondary">
+                    <i class="fas fa-key me-2"></i>
+                    Check My Licenses
+                </a>
+                <a href="mailto:<%= ENV['ADMIN_EMAIL'] || 'support@example.com' %>" class="btn btn-outline-info">
+                    <i class="fas fa-envelope me-2"></i>
+                    Contact Support
+                </a>
+            </div>
+            
+            <!-- Search suggestion -->
+            <div class="mt-5">
+                <div class="card border-0 bg-light">
+                    <div class="card-body">
+                        <h6 class="mb-3">Looking for something specific?</h6>
+                        <div class="row g-3 text-start">
+                            <div class="col-md-6">
+                                <h6 class="small text-uppercase text-muted">Popular Pages</h6>
+                                <ul class="list-unstyled small">
+                                    <li><a href="/" class="text-decoration-none">Home</a></li>
+                                    <li><a href="/my-licenses" class="text-decoration-none">My Licenses</a></li>
+                                    <li><a href="/cart" class="text-decoration-none">Shopping Cart</a></li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <h6 class="small text-uppercase text-muted">Support</h6>
+                                <ul class="list-unstyled small">
+                                    <li><a href="#support" class="text-decoration-none">Help Center</a></li>
+                                    <li><a href="#" class="text-decoration-none">Documentation</a></li>
+                                    <li><a href="#" class="text-decoration-none">Contact Us</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

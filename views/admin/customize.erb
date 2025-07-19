@@ -1,0 +1,576 @@
+<!-- Customization Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-1">Template Customization</h1>
+        <p class="text-muted mb-0">Customize colors, text, layout, and features through this visual editor</p>
+    </div>
+    <div>
+        <div class="btn-group">
+            <button class="btn btn-outline-primary" onclick="openPreview()">
+                <i class="fas fa-eye me-2"></i>Preview Changes
+            </button>
+            <button class="btn btn-outline-info" onclick="location.href='/admin/customize/code-guide'">
+                <i class="fas fa-code me-2"></i>Code Guide
+            </button>
+            <div class="btn-group">
+                <button class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                    <i class="fas fa-cog me-2"></i>Actions
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="#" onclick="exportCustomizations()">
+                        <i class="fas fa-download me-2"></i>Export Settings
+                    </a></li>
+                    <li><a class="dropdown-item" href="#" onclick="showImportModal()">
+                        <i class="fas fa-upload me-2"></i>Import Settings
+                    </a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item text-warning" href="#" onclick="resetToDefaults()">
+                        <i class="fas fa-undo me-2"></i>Reset to Defaults
+                    </a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Customization Categories -->
+<div class="row g-4">
+    <% @categories.each do |category_id, category| %>
+    <div class="col-lg-6 col-xl-4">
+        <div class="admin-card category-card" data-category="<%= category_id %>">
+            <div class="admin-card-header">
+                <i class="<%= category['icon'] %> me-2"></i>
+                <%= category['title'] %>
+            </div>
+            <div class="admin-card-body">
+                <p class="text-muted mb-3"><%= category['description'] %></p>
+                <button class="btn btn-primary w-100" onclick="openCategory('<%= category_id %>')">
+                    <i class="fas fa-edit me-2"></i>Customize
+                </button>
+            </div>
+        </div>
+    </div>
+    <% end %>
+</div>
+
+<!-- Customization Modal -->
+<div class="modal fade" id="customizationModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-palette me-2"></i>
+                    <span id="modalTitle">Customize</span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="customizationForm">
+                    <!-- Dynamic form content will be loaded here -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveCustomizations()">
+                    <i class="fas fa-save me-2"></i>Save Changes
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Import Modal -->
+<div class="modal fade" id="importModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-upload me-2"></i>
+                    Import Customizations
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="importForm" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label for="importFile" class="form-label">Select YAML file to import:</label>
+                        <input type="file" class="form-control" id="importFile" name="file" accept=".yml,.yaml" required>
+                    </div>
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Warning:</strong> Importing will overwrite all current customizations.
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-warning" onclick="importCustomizations()">
+                    <i class="fas fa-upload me-2"></i>Import
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Store customizations data for JavaScript -->
+<script>
+window.customizations = <%= json_for_js(@customizations) %>;
+window.categories = <%= json_for_js(@categories) %>;
+</script>
+
+<!-- Customization JavaScript -->
+<script>
+let currentCategory = null;
+let modifiedFields = {};
+
+// Open category for editing
+function openCategory(categoryId) {
+    currentCategory = categoryId;
+    const category = window.categories[categoryId];
+    const categoryData = window.customizations[categoryId] || {};
+    
+    document.getElementById('modalTitle').textContent = category.title;
+    
+    // Generate form fields based on category
+    const formHtml = generateCategoryForm(categoryId, categoryData);
+    document.getElementById('customizationForm').innerHTML = formHtml;
+    
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('customizationModal'));
+    modal.show();
+    
+    // Initialize color pickers and other widgets
+    initializeFormWidgets();
+}
+
+// Generate form HTML for a category
+function generateCategoryForm(categoryId, data) {
+    let html = '';
+    
+    switch(categoryId) {
+        case 'branding':
+            html = `
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Site Name</label>
+                        <input type="text" class="form-control" name="site_name" value="${data.site_name || ''}" placeholder="Source License">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Site Tagline</label>
+                        <input type="text" class="form-control" name="site_tagline" value="${data.site_tagline || ''}" placeholder="Professional Software Licensing Made Simple">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Company Name</label>
+                        <input type="text" class="form-control" name="company_name" value="${data.company_name || ''}" placeholder="Your Company">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Support Email</label>
+                        <input type="email" class="form-control" name="support_email" value="${data.support_email || ''}" placeholder="support@example.com">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Logo Text</label>
+                        <input type="text" class="form-control" name="logo_text" value="${data.logo_text || ''}" placeholder="Source License">
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Footer Text</label>
+                        <textarea class="form-control" name="footer_text" rows="2" placeholder="Professional software licensing management system.">${data.footer_text || ''}</textarea>
+                    </div>
+                </div>
+            `;
+            break;
+            
+        case 'colors':
+            html = `
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Primary Color</label>
+                        <input type="color" class="form-control form-control-color" name="primary" value="${data.primary || '#2c3e50'}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Secondary Color</label>
+                        <input type="color" class="form-control form-control-color" name="secondary" value="${data.secondary || '#3498db'}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Success Color</label>
+                        <input type="color" class="form-control form-control-color" name="success" value="${data.success || '#27ae60'}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Warning Color</label>
+                        <input type="color" class="form-control form-control-color" name="warning" value="${data.warning || '#f39c12'}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Danger Color</label>
+                        <input type="color" class="form-control form-control-color" name="danger" value="${data.danger || '#e74c3c'}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Background Color</label>
+                        <input type="color" class="form-control form-control-color" name="background" value="${data.background || '#f8f9fa'}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Navbar Background</label>
+                        <input type="color" class="form-control form-control-color" name="navbar_bg" value="${data.navbar_bg || '#ffffff'}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Footer Background</label>
+                        <input type="color" class="form-control form-control-color" name="footer_bg" value="${data.footer_bg || '#2c3e50'}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Hero Gradient Start</label>
+                        <input type="color" class="form-control form-control-color" name="hero_gradient_start" value="${data.hero_gradient_start || '#2c3e50'}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Hero Gradient End</label>
+                        <input type="color" class="form-control form-control-color" name="hero_gradient_end" value="${data.hero_gradient_end || '#3498db'}">
+                    </div>
+                </div>
+            `;
+            break;
+            
+        case 'text':
+            html = `
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label class="form-label">Hero Title</label>
+                        <input type="text" class="form-control" name="hero_title" value="${data.hero_title || ''}" placeholder="Professional Software Licensing Made Simple">
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Hero Subtitle</label>
+                        <textarea class="form-control" name="hero_subtitle" rows="3" placeholder="Secure, reliable, and easy-to-manage software licenses...">${data.hero_subtitle || ''}</textarea>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Features Section Title</label>
+                        <input type="text" class="form-control" name="features_title" value="${data.features_title || ''}" placeholder="Why Choose Source License?">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Products Section Title</label>
+                        <input type="text" class="form-control" name="products_title" value="${data.products_title || ''}" placeholder="Available Software Products">
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Features Section Subtitle</label>
+                        <textarea class="form-control" name="features_subtitle" rows="2" placeholder="Built with modern technology and security best practices...">${data.features_subtitle || ''}</textarea>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Products Section Subtitle</label>
+                        <textarea class="form-control" name="products_subtitle" rows="2" placeholder="Choose from our selection of professional software solutions...">${data.products_subtitle || ''}</textarea>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">How It Works Title</label>
+                        <input type="text" class="form-control" name="how_it_works_title" value="${data.how_it_works_title || ''}" placeholder="How It Works">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Support Section Title</label>
+                        <input type="text" class="form-control" name="support_title" value="${data.support_title || ''}" placeholder="Need Help?">
+                    </div>
+                </div>
+            `;
+            break;
+            
+        case 'layout':
+            html = `
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Hero Section Padding</label>
+                        <input type="text" class="form-control" name="hero_padding" value="${data.hero_padding || ''}" placeholder="4rem 0">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Section Padding</label>
+                        <input type="text" class="form-control" name="section_padding" value="${data.section_padding || ''}" placeholder="5rem 0">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Container Max Width</label>
+                        <input type="text" class="form-control" name="container_max_width" value="${data.container_max_width || ''}" placeholder="1200px">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Card Border Radius</label>
+                        <input type="text" class="form-control" name="card_border_radius" value="${data.card_border_radius || ''}" placeholder="10px">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Button Border Radius</label>
+                        <input type="text" class="form-control" name="button_border_radius" value="${data.button_border_radius || ''}" placeholder="25px">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Footer Padding</label>
+                        <input type="text" class="form-control" name="footer_padding" value="${data.footer_padding || ''}" placeholder="2rem 0">
+                    </div>
+                </div>
+            `;
+            break;
+            
+        case 'features':
+            html = `
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" name="show_hero_animation" ${data.show_hero_animation ? 'checked' : ''}>
+                            <label class="form-check-label">Show Hero Animation</label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" name="show_trust_indicators" ${data.show_trust_indicators ? 'checked' : ''}>
+                            <label class="form-check-label">Show Trust Indicators</label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" name="show_help_widget" ${data.show_help_widget ? 'checked' : ''}>
+                            <label class="form-check-label">Show Help Widget</label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" name="enable_auto_refresh" ${data.enable_auto_refresh ? 'checked' : ''}>
+                            <label class="form-check-label">Enable Auto Refresh</label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" name="show_version_info" ${data.show_version_info ? 'checked' : ''}>
+                            <label class="form-check-label">Show Version Info</label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" name="enable_dark_mode" ${data.enable_dark_mode ? 'checked' : ''}>
+                            <label class="form-check-label">Enable Dark Mode</label>
+                        </div>
+                    </div>
+                </div>
+            `;
+            break;
+    }
+    
+    return html;
+}
+
+// Initialize form widgets (color pickers, etc.)
+function initializeFormWidgets() {
+    // Add event listeners to track changes
+    const formElements = document.querySelectorAll('#customizationForm input, #customizationForm textarea');
+    formElements.forEach(element => {
+        element.addEventListener('change', function() {
+            modifiedFields[this.name] = this.type === 'checkbox' ? this.checked : this.value;
+        });
+    });
+}
+
+// Save customizations
+function saveCustomizations() {
+    if (Object.keys(modifiedFields).length === 0) {
+        AdminUtils.showNotification('No changes to save', 'info');
+        return;
+    }
+    
+    // Prepare updates with category prefix
+    const updates = {};
+    Object.keys(modifiedFields).forEach(field => {
+        updates[`${currentCategory}.${field}`] = modifiedFields[field];
+    });
+    
+    // Send to server
+    fetch('/admin/customize', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(updates)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            AdminUtils.showNotification(data.message, 'success');
+            
+            // Update local data
+            Object.keys(modifiedFields).forEach(field => {
+                if (!window.customizations[currentCategory]) {
+                    window.customizations[currentCategory] = {};
+                }
+                window.customizations[currentCategory][field] = modifiedFields[field];
+            });
+            
+            // Reset modified fields
+            modifiedFields = {};
+            
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('customizationModal'));
+            modal.hide();
+        } else {
+            AdminUtils.showNotification(data.error || 'Save failed', 'danger');
+        }
+    })
+    .catch(error => {
+        AdminUtils.showNotification('Network error: ' + error.message, 'danger');
+    });
+}
+
+// Export customizations
+function exportCustomizations() {
+    window.open('/admin/customize/export', '_blank');
+}
+
+// Show import modal
+function showImportModal() {
+    const modal = new bootstrap.Modal(document.getElementById('importModal'));
+    modal.show();
+}
+
+// Import customizations
+function importCustomizations() {
+    const formData = new FormData(document.getElementById('importForm'));
+    
+    fetch('/admin/customize/import', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            AdminUtils.showNotification(data.message, 'success');
+            
+            // Close modal and reload page
+            const modal = bootstrap.Modal.getInstance(document.getElementById('importModal'));
+            modal.hide();
+            
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
+        } else {
+            AdminUtils.showNotification(data.error || 'Import failed', 'danger');
+        }
+    })
+    .catch(error => {
+        AdminUtils.showNotification('Network error: ' + error.message, 'danger');
+    });
+}
+
+// Reset to defaults
+function resetToDefaults() {
+    if (!AdminUtils.confirmAction('Are you sure you want to reset all customizations to defaults? This cannot be undone.')) {
+        return;
+    }
+    
+    fetch('/admin/customize/reset', {
+        method: 'POST'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            AdminUtils.showNotification(data.message, 'success');
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
+        } else {
+            AdminUtils.showNotification(data.error || 'Reset failed', 'danger');
+        }
+    })
+    .catch(error => {
+        AdminUtils.showNotification('Network error: ' + error.message, 'danger');
+    });
+}
+
+// Open preview in new window
+function openPreview() {
+    window.open('/admin/customize/preview', '_blank');
+}
+</script>
+
+<!-- Custom Styles -->
+<style>
+.category-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    cursor: pointer;
+}
+
+.category-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+}
+
+.form-control-color {
+    width: 100%;
+    height: 38px;
+}
+
+.form-check-input:checked {
+    background-color: var(--admin-accent);
+    border-color: var(--admin-accent);
+}
+
+/* Fix white-on-white text issues in customization modal */
+#customizationModal .modal-body {
+    background-color: #ffffff;
+    color: #212529;
+}
+
+#customizationModal .form-label {
+    color: #212529 !important;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+#customizationModal .form-control {
+    background-color: #ffffff;
+    color: #212529;
+    border: 1px solid #ced4da;
+}
+
+#customizationModal .form-control:focus {
+    background-color: #ffffff;
+    color: #212529;
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+#customizationModal .form-check-label {
+    color: #212529 !important;
+    margin-left: 0.5rem;
+}
+
+#customizationModal .form-check-input {
+    background-color: #ffffff;
+    border: 1px solid #ced4da;
+}
+
+#customizationModal .row {
+    background-color: transparent;
+}
+
+#customizationModal .col-12,
+#customizationModal .col-md-6 {
+    background-color: transparent;
+}
+
+/* Ensure proper contrast for all text elements */
+#customizationModal * {
+    color: inherit;
+}
+
+#customizationModal input[type="text"],
+#customizationModal input[type="email"],
+#customizationModal input[type="color"],
+#customizationModal textarea {
+    color: #212529 !important;
+    background-color: #ffffff !important;
+}
+
+#customizationModal input[type="color"] {
+    padding: 2px;
+    border: 1px solid #ced4da;
+}
+
+/* Import modal fixes */
+#importModal .modal-body {
+    background-color: #ffffff;
+    color: #212529;
+}
+
+#importModal .form-label {
+    color: #212529 !important;
+}
+
+#importModal .alert {
+    color: #664d03;
+    background-color: #fff3cd;
+    border-color: #ffecb5;
+}
+</style>

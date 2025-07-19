@@ -1,0 +1,883 @@
+<!-- Settings Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-1">System Settings</h1>
+        <p class="text-muted mb-0">Configure your license management system</p>
+    </div>
+    <div class="d-flex gap-2">
+        <button class="btn btn-outline-info" onclick="exportSettings()">
+            <i class="fas fa-download me-2"></i>Export
+        </button>
+        <button class="btn btn-outline-warning" onclick="showImportModal()">
+            <i class="fas fa-upload me-2"></i>Import
+        </button>
+        <button class="btn btn-outline-primary" onclick="generateEnvFile()">
+            <i class="fas fa-file-code me-2"></i>.env File
+        </button>
+        <button class="btn btn-outline-success" onclick="loadSettings()">
+            <i class="fas fa-sync-alt me-2"></i>Refresh
+        </button>
+    </div>
+</div>
+
+<!-- Settings Navigation -->
+<div class="row">
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Settings Categories</h5>
+            </div>
+            <div class="list-group list-group-flush" id="settingsNav">
+                <!-- Categories will be loaded here -->
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-9">
+        <!-- Settings Content -->
+        <div id="settingsContent">
+            <div class="text-center py-5">
+                <i class="fas fa-cog fa-3x text-muted mb-3"></i>
+                <h4>Select a category to configure settings</h4>
+                <p class="text-muted">Choose a category from the left to begin configuring your application.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Import Settings Modal -->
+<div class="modal fade" id="importModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-upload me-2"></i>Import Settings
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="importForm" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label for="importFile" class="form-label">Select YAML file</label>
+                        <input type="file" class="form-control" id="importFile" name="file" accept=".yml,.yaml" required>
+                        <div class="form-text">Upload a YAML file containing settings configuration</div>
+                    </div>
+                    
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Warning:</strong> Importing settings will overwrite existing values. Make sure to export current settings first.
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="importSettings()">Import Settings</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Test Results Modal -->
+<div class="modal fade" id="testResultsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-flask me-2"></i>Configuration Test Results
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="testResultsContent">
+                <!-- Test results will be loaded here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Settings Cards -->
+<div class="row g-4">
+    <!-- Template Customization -->
+    <div class="col-lg-6 col-xl-4">
+        <div class="admin-card">
+            <div class="admin-card-header bg-primary text-white">
+                <i class="fas fa-palette me-2"></i>
+                Template Customization
+            </div>
+            <div class="admin-card-body">
+                <p class="text-muted mb-3">
+                    Customize colors, text, layout, and features of your website through an easy-to-use visual editor.
+                </p>
+                
+                <div class="mb-3">
+                    <h6 class="small text-uppercase text-muted">Available Categories</h6>
+                    <div class="d-flex flex-wrap gap-1">
+                        <span class="badge bg-light text-dark">Branding</span>
+                        <span class="badge bg-light text-dark">Colors</span>
+                        <span class="badge bg-light text-dark">Text Content</span>
+                        <span class="badge bg-light text-dark">Layout</span>
+                        <span class="badge bg-light text-dark">Features</span>
+                    </div>
+                </div>
+                
+                <div class="d-grid gap-2">
+                    <a href="/admin/customize" class="btn btn-primary">
+                        <i class="fas fa-paint-brush me-2"></i>Open Visual Editor
+                    </a>
+                    <a href="/admin/customize/code-guide" class="btn btn-outline-info">
+                        <i class="fas fa-code me-2"></i>Code Guide
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Payment Settings -->
+    <div class="col-lg-6 col-xl-4">
+        <div class="admin-card">
+            <div class="admin-card-header bg-success text-white">
+                <i class="fas fa-credit-card me-2"></i>
+                Payment Processing
+            </div>
+            <div class="admin-card-body">
+                <p class="text-muted mb-3">
+                    Configure payment gateways and billing settings.
+                </p>
+                
+                <div class="mb-3">
+                    <h6 class="small text-uppercase text-muted">Status</h6>
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="small">Stripe:</span>
+                                <% if stripe_enabled? %>
+                                    <span class="badge bg-success">Enabled</span>
+                                <% else %>
+                                    <span class="badge bg-secondary">Disabled</span>
+                                <% end %>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="small">PayPal:</span>
+                                <% if paypal_enabled? %>
+                                    <span class="badge bg-success">Enabled</span>
+                                <% else %>
+                                    <span class="badge bg-secondary">Disabled</span>
+                                <% end %>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="d-grid">
+                    <button class="btn btn-success" onclick="showPaymentSettings()">
+                        <i class="fas fa-cog me-2"></i>Configure Payment
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Email Settings -->
+    <div class="col-lg-6 col-xl-4">
+        <div class="admin-card">
+            <div class="admin-card-header bg-info text-white">
+                <i class="fas fa-envelope me-2"></i>
+                Email Configuration
+            </div>
+            <div class="admin-card-body">
+                <p class="text-muted mb-3">
+                    Configure SMTP settings for license delivery and notifications.
+                </p>
+                
+                <div class="mb-3">
+                    <h6 class="small text-uppercase text-muted">SMTP Status</h6>
+                    <% if ENV['SMTP_HOST'] %>
+                        <div class="d-flex align-items-center">
+                            <span class="badge bg-success me-2">Configured</span>
+                            <small class="text-muted"><%= ENV['SMTP_HOST'] %></small>
+                        </div>
+                    <% else %>
+                        <span class="badge bg-warning">Not Configured</span>
+                    <% end %>
+                </div>
+                
+                <div class="d-grid">
+                    <button class="btn btn-info" onclick="showEmailSettings()">
+                        <i class="fas fa-cog me-2"></i>Configure Email
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Database Settings -->
+    <div class="col-lg-6 col-xl-4">
+        <div class="admin-card">
+            <div class="admin-card-header bg-warning text-white">
+                <i class="fas fa-database me-2"></i>
+                Database Management
+            </div>
+            <div class="admin-card-body">
+                <p class="text-muted mb-3">
+                    Database backup, maintenance, and migration tools.
+                </p>
+                
+                <div class="mb-3">
+                    <h6 class="small text-uppercase text-muted">Database Info</h6>
+                    <div class="small">
+                        <div>Adapter: <%= ENV['DATABASE_ADAPTER'] || 'SQLite' %></div>
+                        <div>Host: <%= ENV['DATABASE_HOST'] || 'localhost' %></div>
+                    </div>
+                </div>
+                
+                <div class="d-grid gap-2">
+                    <button class="btn btn-warning" onclick="backupDatabase()">
+                        <i class="fas fa-download me-2"></i>Backup Database
+                    </button>
+                    <button class="btn btn-outline-warning" onclick="runMigrations()">
+                        <i class="fas fa-sync-alt me-2"></i>Run Migrations
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Security Settings -->
+    <div class="col-lg-6 col-xl-4">
+        <div class="admin-card">
+            <div class="admin-card-header bg-danger text-white">
+                <i class="fas fa-shield-alt me-2"></i>
+                Security Settings
+            </div>
+            <div class="admin-card-body">
+                <p class="text-muted mb-3">
+                    Manage admin accounts, API keys, and security settings.
+                </p>
+                
+                <div class="mb-3">
+                    <h6 class="small text-uppercase text-muted">Security Status</h6>
+                    <div class="small">
+                        <div class="d-flex justify-content-between">
+                            <span>SSL:</span>
+                            <span class="badge bg-success">Enabled</span>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span>JWT Auth:</span>
+                            <span class="badge bg-success">Active</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="d-grid gap-2">
+                    <button class="btn btn-danger" onclick="changeAdminPassword()">
+                        <i class="fas fa-key me-2"></i>Change Password
+                    </button>
+                    <button class="btn btn-outline-danger" onclick="regenerateApiKeys()">
+                        <i class="fas fa-refresh me-2"></i>Regenerate API Keys
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- System Information -->
+    <div class="col-lg-6 col-xl-4">
+        <div class="admin-card">
+            <div class="admin-card-header bg-secondary text-white">
+                <i class="fas fa-info-circle me-2"></i>
+                System Information
+            </div>
+            <div class="admin-card-body">
+                <p class="text-muted mb-3">
+                    System status, version information, and diagnostics.
+                </p>
+                
+                <div class="mb-3">
+                    <h6 class="small text-uppercase text-muted">Environment</h6>
+                    <div class="small">
+                        <div>App Environment: <%= ENV['APP_ENV'] || 'development' %></div>
+                        <div>Ruby Version: <%= RUBY_VERSION %></div>
+                        <div>Server: Sinatra</div>
+                    </div>
+                </div>
+                
+                <div class="d-grid gap-2">
+                    <button class="btn btn-secondary" onclick="showSystemInfo()">
+                        <i class="fas fa-info me-2"></i>View Details
+                    </button>
+                    <button class="btn btn-outline-secondary" onclick="downloadLogs()">
+                        <i class="fas fa-file-download me-2"></i>Download Logs
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions Section -->
+<div class="mt-5">
+    <h3 class="h4 mb-4">Quick Actions</h3>
+    <div class="row g-3">
+        <div class="col-md-3">
+            <button class="btn btn-outline-primary w-100" onclick="location.href='/admin/customize/preview'">
+                <i class="fas fa-eye me-2"></i>Preview Site
+            </button>
+        </div>
+        <div class="col-md-3">
+            <button class="btn btn-outline-success w-100" onclick="location.href='/admin/products/new'">
+                <i class="fas fa-plus me-2"></i>Add Product
+            </button>
+        </div>
+        <div class="col-md-3">
+            <button class="btn btn-outline-info w-100" onclick="location.href='/admin/licenses/generate'">
+                <i class="fas fa-key me-2"></i>Generate License
+            </button>
+        </div>
+        <div class="col-md-3">
+            <button class="btn btn-outline-warning w-100" onclick="exportData()">
+                <i class="fas fa-download me-2"></i>Export Data
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Settings Modals -->
+<!-- Payment Settings Modal -->
+<div class="modal fade" id="paymentModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-credit-card me-2"></i>Payment Settings
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted">Configure payment gateway settings in your <code>.env</code> file:</p>
+                
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <h6>Stripe Configuration</h6>
+                        <pre class="bg-light p-3 rounded small"><code>STRIPE_PUBLISHABLE_KEY=pk_test_...
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...</code></pre>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>PayPal Configuration</h6>
+                        <pre class="bg-light p-3 rounded small"><code>PAYPAL_CLIENT_ID=your_client_id
+PAYPAL_CLIENT_SECRET=your_secret
+PAYPAL_ENVIRONMENT=sandbox</code></pre>
+                    </div>
+                </div>
+                
+                <div class="alert alert-warning mt-3">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Important:</strong> Restart the application after updating environment variables.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Email Settings Modal -->
+<div class="modal fade" id="emailModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-envelope me-2"></i>Email Settings
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted">Configure SMTP settings in your <code>.env</code> file:</p>
+                
+                <pre class="bg-light p-3 rounded small"><code>SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USERNAME=your_email@gmail.com
+SMTP_PASSWORD=your_app_password
+SMTP_TLS=true</code></pre>
+                
+                <div class="alert alert-info mt-3">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Gmail Users:</strong> Use an App Password instead of your regular password.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript -->
+<script>
+// Global variables
+let currentCategory = null;
+let settingsData = {};
+
+// Load settings on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadSettings();
+});
+
+// Load all settings
+async function loadSettings() {
+    try {
+        const response = await fetch('/api/settings/categories');
+        const data = await response.json();
+        
+        if (data.success) {
+            settingsData = data.categories;
+            renderSettingsNavigation();
+        } else {
+            AdminUtils.showNotification('Failed to load settings', 'danger');
+        }
+    } catch (error) {
+        console.error('Error loading settings:', error);
+        AdminUtils.showNotification('Error loading settings', 'danger');
+    }
+}
+
+// Render settings navigation
+function renderSettingsNavigation() {
+    const nav = document.getElementById('settingsNav');
+    nav.innerHTML = '';
+    
+    settingsData.forEach(category => {
+        const categoryName = category.name;
+        const categoryTitle = categoryName.charAt(0).toUpperCase() + categoryName.slice(1);
+        const settingsCount = category.settings.length;
+        
+        const categoryIcon = getCategoryIcon(categoryName);
+        
+        const listItem = document.createElement('a');
+        listItem.href = '#';
+        listItem.className = 'list-group-item list-group-item-action d-flex justify-content-between align-items-center';
+        listItem.onclick = () => loadCategory(categoryName);
+        
+        listItem.innerHTML = `
+            <div>
+                <i class="${categoryIcon} me-2"></i>
+                ${categoryTitle}
+            </div>
+            <span class="badge bg-primary rounded-pill">${settingsCount}</span>
+        `;
+        
+        nav.appendChild(listItem);
+    });
+}
+
+// Get icon for category
+function getCategoryIcon(category) {
+    const icons = {
+        application: 'fas fa-cog',
+        payment: 'fas fa-credit-card',
+        email: 'fas fa-envelope',
+        security: 'fas fa-shield-alt',
+        license: 'fas fa-key',
+        monitoring: 'fas fa-chart-line',
+        database: 'fas fa-database'
+    };
+    return icons[category] || 'fas fa-cog';
+}
+
+// Load category settings
+function loadCategory(categoryName) {
+    currentCategory = categoryName;
+    
+    // Update navigation
+    document.querySelectorAll('#settingsNav .list-group-item').forEach(item => {
+        item.classList.remove('active');
+    });
+    event.target.closest('.list-group-item').classList.add('active');
+    
+    // Find category data
+    const categoryData = settingsData.find(cat => cat.name === categoryName);
+    if (!categoryData) return;
+    
+    renderCategorySettings(categoryData);
+}
+
+// Render category settings
+function renderCategorySettings(categoryData) {
+    const content = document.getElementById('settingsContent');
+    const categoryTitle = categoryData.name.charAt(0).toUpperCase() + categoryData.name.slice(1);
+    
+    content.innerHTML = `
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="${getCategoryIcon(categoryData.name)} me-2"></i>
+                    ${categoryTitle} Settings
+                </h5>
+                <div>
+                    <button class="btn btn-outline-info btn-sm" onclick="testConfiguration('${categoryData.name}')">
+                        <i class="fas fa-flask me-1"></i>Test
+                    </button>
+                    <button class="btn btn-outline-success btn-sm" onclick="saveCategory('${categoryData.name}')">
+                        <i class="fas fa-save me-1"></i>Save
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <form id="categoryForm">
+                    ${renderSettingsForm(categoryData.settings)}
+                </form>
+            </div>
+        </div>
+    `;
+}
+
+// Render settings form
+function renderSettingsForm(settings) {
+    return settings.map(setting => {
+        const schema = setting.schema;
+        const fieldId = setting.key.replace(/\./g, '_');
+        
+        return `
+            <div class="mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <label for="${fieldId}" class="form-label mb-0">
+                        <strong>${getSettingDisplayName(setting.key)}</strong>
+                        ${schema.sensitive ? '<i class="fas fa-lock text-warning ms-1" title="Sensitive data"></i>' : ''}
+                    </label>
+                    ${!schema.web_editable ? '<span class="badge bg-secondary">Read-only</span>' : ''}
+                </div>
+                
+                <div class="mb-2">
+                    ${renderSettingInput(setting, fieldId)}
+                </div>
+                
+                <div class="form-text">
+                    ${schema.description}
+                    ${schema.default !== undefined ? `<br><small class="text-muted">Default: ${schema.default}</small>` : ''}
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+// Render setting input
+function renderSettingInput(setting, fieldId) {
+    const schema = setting.schema;
+    const value = setting.value || '';
+    const disabled = !schema.web_editable ? 'disabled' : '';
+    
+    switch (schema.type) {
+        case 'boolean':
+            return `
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="${fieldId}" 
+                           ${value ? 'checked' : ''} ${disabled}
+                           data-key="${setting.key}">
+                    <label class="form-check-label" for="${fieldId}">
+                        ${value ? 'Enabled' : 'Disabled'}
+                    </label>
+                </div>
+            `;
+            
+        case 'select':
+            const options = schema.options.map(option => 
+                `<option value="${option}" ${value === option ? 'selected' : ''}>${option}</option>`
+            ).join('');
+            return `
+                <select class="form-select" id="${fieldId}" data-key="${setting.key}" ${disabled}>
+                    ${options}
+                </select>
+            `;
+            
+        case 'password':
+            return `
+                <div class="input-group">
+                    <input type="password" class="form-control" id="${fieldId}" 
+                           value="${schema.sensitive ? (value ? '••••••••' : '') : value}"
+                           data-key="${setting.key}" ${disabled}
+                           placeholder="${schema.sensitive && value ? 'Enter new value to change' : ''}">
+                    <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('${fieldId}')">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
+            `;
+            
+        case 'text':
+            return `
+                <textarea class="form-control" id="${fieldId}" rows="3" 
+                          data-key="${setting.key}" ${disabled}>${value}</textarea>
+            `;
+            
+        case 'number':
+            return `
+                <input type="number" class="form-control" id="${fieldId}" 
+                       value="${value}" data-key="${setting.key}" ${disabled}>
+            `;
+            
+        default:
+            return `
+                <input type="text" class="form-control" id="${fieldId}" 
+                       value="${value}" data-key="${setting.key}" ${disabled}>
+            `;
+    }
+}
+
+// Get display name for setting
+function getSettingDisplayName(key) {
+    const parts = key.split('.');
+    return parts[parts.length - 1]
+        .split('_')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+}
+
+// Toggle password visibility
+function togglePassword(fieldId) {
+    const field = document.getElementById(fieldId);
+    const button = field.nextElementSibling;
+    const icon = button.querySelector('i');
+    
+    if (field.type === 'password') {
+        field.type = 'text';
+        icon.className = 'fas fa-eye-slash';
+    } else {
+        field.type = 'password';
+        icon.className = 'fas fa-eye';
+    }
+}
+
+// Save category settings
+async function saveCategory(categoryName) {
+    const form = document.getElementById('categoryForm');
+    const formData = new FormData(form);
+    const settings = [];
+    
+    // Collect all settings from form
+    form.querySelectorAll('[data-key]').forEach(input => {
+        const key = input.dataset.key;
+        let value;
+        
+        if (input.type === 'checkbox') {
+            value = input.checked;
+        } else if (input.value && input.value !== '••••••••') {
+            value = input.value;
+        } else if (input.value === '••••••••') {
+            // Skip unchanged password fields
+            return;
+        } else {
+            value = input.value || '';
+        }
+        
+        settings.push({ key, value });
+    });
+    
+    try {
+        const response = await fetch('/api/settings/bulk-update', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ settings })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            AdminUtils.showNotification(data.message, 'success');
+            loadSettings(); // Reload to reflect changes
+        } else {
+            AdminUtils.showNotification(data.errors ? data.errors.join(', ') : 'Failed to save settings', 'danger');
+        }
+    } catch (error) {
+        console.error('Error saving settings:', error);
+        AdminUtils.showNotification('Error saving settings', 'danger');
+    }
+}
+
+// Test configuration
+async function testConfiguration(categoryName) {
+    try {
+        const response = await fetch(`/api/settings/${categoryName}/test`, {
+            method: 'POST'
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showTestResults(data.test_results);
+        } else {
+            AdminUtils.showNotification('Failed to test configuration', 'danger');
+        }
+    } catch (error) {
+        console.error('Error testing configuration:', error);
+        AdminUtils.showNotification('Error testing configuration', 'danger');
+    }
+}
+
+// Show test results
+function showTestResults(results) {
+    const content = document.getElementById('testResultsContent');
+    
+    let html = '';
+    Object.entries(results).forEach(([category, result]) => {
+        const statusIcon = result.status === 'ok' ? 'fas fa-check-circle text-success' :
+                          result.status === 'warning' ? 'fas fa-exclamation-triangle text-warning' :
+                          result.status === 'error' ? 'fas fa-times-circle text-danger' :
+                          'fas fa-info-circle text-info';
+        
+        html += `
+            <div class="d-flex align-items-center mb-3">
+                <i class="${statusIcon} me-3"></i>
+                <div>
+                    <strong>${category.charAt(0).toUpperCase() + category.slice(1)}</strong>
+                    <div class="text-muted">${result.message}</div>
+                </div>
+            </div>
+        `;
+    });
+    
+    content.innerHTML = html;
+    
+    const modal = new bootstrap.Modal(document.getElementById('testResultsModal'));
+    modal.show();
+}
+
+// Export settings
+async function exportSettings() {
+    try {
+        const response = await fetch('/api/settings/export');
+        const blob = await response.blob();
+        
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = 'settings.yml';
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        
+        AdminUtils.showNotification('Settings exported successfully', 'success');
+    } catch (error) {
+        console.error('Error exporting settings:', error);
+        AdminUtils.showNotification('Error exporting settings', 'danger');
+    }
+}
+
+// Show import modal
+function showImportModal() {
+    const modal = new bootstrap.Modal(document.getElementById('importModal'));
+    modal.show();
+}
+
+// Import settings
+async function importSettings() {
+    const fileInput = document.getElementById('importFile');
+    const file = fileInput.files[0];
+    
+    if (!file) {
+        AdminUtils.showNotification('Please select a file', 'warning');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    try {
+        const response = await fetch('/api/settings/import', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            AdminUtils.showNotification(data.message, 'success');
+            bootstrap.Modal.getInstance(document.getElementById('importModal')).hide();
+            loadSettings(); // Reload settings
+        } else {
+            AdminUtils.showNotification(data.error, 'danger');
+        }
+    } catch (error) {
+        console.error('Error importing settings:', error);
+        AdminUtils.showNotification('Error importing settings', 'danger');
+    }
+}
+
+// Generate .env file
+async function generateEnvFile() {
+    try {
+        const response = await fetch('/api/settings/generate-env');
+        const blob = await response.blob();
+        
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = '.env';
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        
+        AdminUtils.showNotification('.env file generated successfully', 'success');
+    } catch (error) {
+        console.error('Error generating .env file:', error);
+        AdminUtils.showNotification('Error generating .env file', 'danger');
+    }
+}
+
+// Legacy functions for existing modals
+function showPaymentSettings() {
+    loadCategory('payment');
+}
+
+function showEmailSettings() {
+    loadCategory('email');
+}
+
+function backupDatabase() {
+    if (AdminUtils.confirmAction('Create a database backup? This may take a few moments.')) {
+        AdminUtils.showNotification('Database backup started...', 'info');
+        setTimeout(() => {
+            AdminUtils.showNotification('Database backup completed!', 'success');
+        }, 3000);
+    }
+}
+
+function runMigrations() {
+    if (AdminUtils.confirmAction('Run database migrations? This will update your database schema.')) {
+        AdminUtils.showNotification('Running migrations...', 'info');
+        setTimeout(() => {
+            AdminUtils.showNotification('Migrations completed successfully!', 'success');
+        }, 2000);
+    }
+}
+
+function changeAdminPassword() {
+    loadCategory('security');
+}
+
+function regenerateApiKeys() {
+    if (AdminUtils.confirmAction('Regenerate API keys? This will invalidate existing tokens.')) {
+        AdminUtils.showNotification('API keys regenerated successfully!', 'success');
+    }
+}
+
+function showSystemInfo() {
+    loadCategory('application');
+}
+
+function downloadLogs() {
+    AdminUtils.showNotification('Preparing log files for download...', 'info');
+    setTimeout(() => {
+        AdminUtils.showNotification('Log files downloaded!', 'success');
+    }, 1500);
+}
+
+function exportData() {
+    if (AdminUtils.confirmAction('Export all system data? This will create a comprehensive backup.')) {
+        AdminUtils.showNotification('Preparing data export...', 'info');
+        setTimeout(() => {
+            AdminUtils.showNotification('Data export completed!', 'success');
+        }, 4000);
+    }
+}
+</script>

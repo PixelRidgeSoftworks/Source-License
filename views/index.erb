@@ -1,0 +1,456 @@
+<head>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+</head>
+<!-- Hero Section -->
+<section class="hero-section">
+    <div class="hero-content">
+        <div class="container">
+            <div class="row align-items-center min-vh-50">
+                <div class="col-lg-6">
+                    <div class="hero-text">
+                        <h1 class="display-3 fw-bold mb-4">
+                            <%= custom('text.hero_title', 'Professional Software Licensing Made Simple') %>
+                        </h1>
+                        <p class="lead mb-4 text-secondary fs-4">
+                            <%= custom('text.hero_subtitle', 'Secure, reliable, and easy-to-manage software licenses for developers and businesses. Support for both one-time purchases and subscriptions with integrated payment processing.') %>
+                        </p>
+                        
+                        <!-- CTA Buttons -->
+                        <div class="d-flex gap-3 mb-5">
+                            <a href="#products" class="btn btn-primary btn-lg px-4 py-3">
+                                <i class="fas fa-boxes me-2"></i>
+                                Browse Products
+                            </a>
+                            <a href="/my-licenses" class="btn btn-outline-primary btn-lg px-4 py-3">
+                                <i class="fas fa-key me-2"></i>
+                                My Licenses
+                            </a>
+                        </div>
+                        
+                        <!-- Trust Indicators -->
+                        <div class="row g-4 text-center">
+                            <div class="col-4">
+                                <div class="d-flex flex-column align-items-center">
+                                    <i class="fas fa-shield-alt text-success mb-2" style="font-size: 1.5rem;"></i>
+                                    <small class="text-secondary fw-medium">SSL Secured</small>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="d-flex flex-column align-items-center">
+                                    <i class="fas fa-lock text-success mb-2" style="font-size: 1.5rem;"></i>
+                                    <small class="text-secondary fw-medium">PCI Compliant</small>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="d-flex flex-column align-items-center">
+                                    <i class="fas fa-clock text-success mb-2" style="font-size: 1.5rem;"></i>
+                                    <small class="text-secondary fw-medium">24/7 Support</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-6">
+                    <div class="hero-visual text-center position-relative">
+                        <!-- Floating License Card -->
+                        <div class="card shadow-xl" style="max-width: 400px; margin: 0 auto; transform: rotate(-5deg);">
+                            <div class="card-header text-center py-3">
+                                <h6 class="mb-0 fw-bold">
+                                    <i class="fas fa-certificate text-warning me-2"></i>
+                                    Software License
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row align-items-center mb-3">
+                                    <div class="col-8">
+                                        <h6 class="mb-1">Premium Software Pro</h6>
+                                        <small class="text-muted">Version 2.1.0</small>
+                                    </div>
+                                    <div class="col-4 text-end">
+                                        <span class="status-badge status-active">Active</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label small text-muted">License Key</label>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <code class="bg-dark text-light px-2 py-1 rounded flex-grow-1 small">
+                                            PSP-2024-XXXX-XXXX
+                                        </code>
+                                        <button class="btn btn-sm btn-outline-primary" onclick="SourceLicense.copyToClipboard('PSP-2024-XXXX-XXXX')">
+                                            <i class="fas fa-copy"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div class="row text-center">
+                                    <div class="col-6">
+                                        <div class="border-end">
+                                            <div class="fw-bold text-success">2/5</div>
+                                            <small class="text-muted">Activations</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="fw-bold text-info">365 days</div>
+                                        <small class="text-muted">Remaining</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Background Elements -->
+                        <div class="position-absolute top-0 start-0 w-100 h-100" style="z-index: -1;">
+                            <div class="position-absolute" style="top: 20%; left: 10%; animation: float 6s ease-in-out infinite;">
+                                <i class="fas fa-shield-alt text-success" style="font-size: 2rem; opacity: 0.3;"></i>
+                            </div>
+                            <div class="position-absolute" style="top: 60%; right: 20%; animation: float 8s ease-in-out infinite reverse;">
+                                <i class="fas fa-key text-primary" style="font-size: 1.5rem; opacity: 0.3;"></i>
+                            </div>
+                            <div class="position-absolute" style="bottom: 30%; left: 20%; animation: float 7s ease-in-out infinite;">
+                                <i class="fas fa-lock text-warning" style="font-size: 1.8rem; opacity: 0.3;"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+@keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-20px); }
+}
+
+.min-vh-50 {
+    min-height: 50vh;
+}
+</style>
+
+<!-- Features Section -->
+<section class="py-5">
+    <div class="container">
+        <div class="row text-center mb-5">
+            <div class="col-lg-8 mx-auto">
+                <h2 class="fw-bold mb-3">
+                    <%= custom('text.features_title', 'Why Choose Source License?') %>
+                </h2>
+                <p class="lead text-secondary">
+                    <%= custom('text.features_subtitle', 'Built with modern technology and security best practices to ensure your software licensing is handled professionally.') %>
+                </p>
+            </div>
+        </div>
+        
+        <div class="row g-4">
+            <!-- Feature 1: Secure -->
+            <div class="col-lg-4 col-md-6">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <h5 class="fw-bold mb-3">Ultra Secure</h5>
+                    <p class="text-secondary">
+                        Military-grade encryption, secure API endpoints, and comprehensive license validation 
+                        protect your intellectual property.
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Feature 2: Easy Integration -->
+            <div class="col-lg-4 col-md-6">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-code"></i>
+                    </div>
+                    <h5 class="fw-bold mb-3">Easy Integration</h5>
+                    <p class="text-secondary">
+                        RESTful API with comprehensive documentation makes it simple to integrate 
+                        license validation into your software.
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Feature 3: Payment Processing -->
+            <div class="col-lg-4 col-md-6">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-credit-card"></i>
+                    </div>
+                    <h5 class="fw-bold mb-3">Payment Processing</h5>
+                    <p class="text-secondary">
+                        Integrated Stripe and PayPal support for seamless payment processing 
+                        and automatic license generation.
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Feature 4: Real-time Management -->
+            <div class="col-lg-4 col-md-6">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-tachometer-alt"></i>
+                    </div>
+                    <h5 class="fw-bold mb-3">Real-time Management</h5>
+                    <p class="text-secondary">
+                        Instantly activate, suspend, or revoke licenses. Monitor usage and 
+                        activations in real-time through the admin dashboard.
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Feature 5: Subscription Support -->
+            <div class="col-lg-4 col-md-6">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-sync-alt"></i>
+                    </div>
+                    <h5 class="fw-bold mb-3">Subscription Support</h5>
+                    <p class="text-secondary">
+                        Support for both one-time purchases and recurring subscriptions 
+                        with automatic renewal and billing management.
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Feature 6: Multi-Platform -->
+            <div class="col-lg-4 col-md-6">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-laptop"></i>
+                    </div>
+                    <h5 class="fw-bold mb-3">Multi-Platform</h5>
+                    <p class="text-secondary">
+                        Cross-platform support with activation tracking across Windows, 
+                        macOS, and Linux environments.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Products Section -->
+<section id="products" class="py-5">
+    <div class="container">
+        <div class="row text-center mb-5">
+            <div class="col-lg-8 mx-auto">
+                <h2 class="fw-bold mb-3">
+                    <%= custom('text.products_title', 'Available Software Products') %>
+                </h2>
+                <p class="lead text-secondary">
+                    <%= custom('text.products_subtitle', 'Choose from our selection of professional software solutions. All products include secure licensing and instant delivery.') %>
+                </p>
+            </div>
+        </div>
+        
+        <% if @products && @products.any? %>
+        <div class="row g-4">
+            <% @products.each do |product| %>
+            <div class="col-lg-4 col-md-6">
+                <div class="card h-100">
+                    <div class="card-header border-0 pb-0">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <h5 class="fw-bold mb-0"><%= h(product.name) %></h5>
+                            <% if product.subscription? %>
+                                <span class="badge bg-info">Subscription</span>
+                            <% else %>
+                                <span class="badge bg-success">One-time</span>
+                            <% end %>
+                        </div>
+                    </div>
+                    
+                    <div class="card-body">
+                        <div class="price-display mb-3">
+                            $<%= product.price %>
+                            <% if product.subscription? %>
+                                <small class="text-muted">/month</small>
+                            <% end %>
+                        </div>
+                        
+                        <p class="text-secondary mb-3">
+                            <%= h(product.description) %>
+                        </p>
+                        
+                        <!-- License Info -->
+                        <div class="small text-muted mb-3">
+                            <div class="d-flex justify-content-between">
+                                <span>Max Activations:</span>
+                                <span class="fw-bold"><%= product.max_activations %></span>
+                            </div>
+                            <% if product.version %>
+                            <div class="d-flex justify-content-between">
+                                <span>Version:</span>
+                                <span class="fw-bold"><%= h(product.version) %></span>
+                            </div>
+                            <% end %>
+                        </div>
+                    </div>
+                    
+                    <div class="card-footer border-0">
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-primary" onclick="window.cart.addItem(<%= product.id %>)">
+                                <i class="fas fa-cart-plus me-2"></i>
+                                Add to Cart
+                            </button>
+                            <a href="/product/<%= product.id %>" class="btn btn-outline-secondary">
+                                <i class="fas fa-info-circle me-2"></i>
+                                View Details
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <% end %>
+        </div>
+        <% else %>
+        <!-- No Products Available -->
+        <div class="row">
+            <div class="col-12 text-center">
+                <div class="card">
+                    <div class="card-body py-5">
+                        <i class="fas fa-box-open text-muted mb-3" style="font-size: 4rem;"></i>
+                        <h4 class="text-muted">No Products Available</h4>
+                        <p class="text-muted mb-4">
+                            Products are currently being configured. Please check back soon or contact support.
+                        </p>
+                        <% if admin_logged_in? %>
+                        <a href="/admin/products" class="btn btn-primary">
+                            <i class="fas fa-plus me-2"></i>
+                            Add Products
+                        </a>
+                        <% end %>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <% end %>
+    </div>
+</section>
+
+<!-- How It Works Section -->
+<section class="py-5">
+    <div class="container">
+        <div class="row text-center mb-5">
+            <div class="col-lg-8 mx-auto">
+                <h2 class="fw-bold mb-3">
+                    <%= custom('text.how_it_works_title', 'How It Works') %>
+                </h2>
+                <p class="lead text-secondary">
+                    <%= custom('text.how_it_works_subtitle', 'Get your software license in three simple steps.') %>
+                </p>
+            </div>
+        </div>
+        
+        <div class="row g-4">
+            <!-- Step 1 -->
+            <div class="col-lg-4 text-center">
+                <div class="position-relative mb-4">
+                    <div class="feature-icon" style="background: var(--gradient-primary);">
+                        <i class="fas fa-shopping-cart"></i>
+                    </div>
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-info">
+                        1
+                    </span>
+                </div>
+                <h5 class="fw-bold mb-3">Choose & Purchase</h5>
+                <p class="text-secondary">
+                    Select your desired software product and complete the secure checkout process 
+                    using your preferred payment method.
+                </p>
+            </div>
+            
+            <!-- Step 2 -->
+            <div class="col-lg-4 text-center">
+                <div class="position-relative mb-4">
+                    <div class="feature-icon" style="background: var(--gradient-primary);">
+                        <i class="fas fa-key"></i>
+                    </div>
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-info">
+                        2
+                    </span>
+                </div>
+                <h5 class="fw-bold mb-3">Receive License</h5>
+                <p class="text-secondary">
+                    Get your license key instantly via email with download instructions 
+                    and activation guidelines.
+                </p>
+            </div>
+            
+            <!-- Step 3 -->
+            <div class="col-lg-4 text-center">
+                <div class="position-relative mb-4">
+                    <div class="feature-icon" style="background: var(--gradient-primary);">
+                        <i class="fas fa-rocket"></i>
+                    </div>
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-info">
+                        3
+                    </span>
+                </div>
+                <h5 class="fw-bold mb-3">Activate & Use</h5>
+                <p class="text-secondary">
+                    Download your software, activate it with your license key, 
+                    and start using it immediately.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Support Section -->
+<section id="support" class="py-5">
+    <div class="container">
+        <div class="row text-center mb-5">
+            <div class="col-lg-8 mx-auto">
+                <h2 class="fw-bold mb-3">
+                    <%= custom('text.support_title', 'Need Help?') %>
+                </h2>
+                <p class="lead text-secondary">
+                    <%= custom('text.support_subtitle', 'We\'re here to help you with any questions about your licenses or our products.') %>
+                </p>
+            </div>
+        </div>
+        
+        <div class="row g-4">
+            <!-- License Lookup -->
+            <div class="col-lg-6">
+                <div class="card h-100">
+                    <div class="card-body text-center p-4">
+                        <div class="feature-icon mb-3" style="background: var(--gradient-primary);">
+                            <i class="fas fa-search"></i>
+                        </div>
+                        <h5 class="fw-bold">License Lookup</h5>
+                        <p class="text-secondary mb-4">
+                            Check your license status, download your software, or manage your activations.
+                        </p>
+                        <a href="/my-licenses" class="btn btn-primary">
+                            <i class="fas fa-key me-2"></i>
+                            Check My Licenses
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Contact Support -->
+            <div class="col-lg-6">
+                <div class="card h-100">
+                    <div class="card-body text-center p-4">
+                        <div class="feature-icon mb-3" style="background: var(--gradient-primary);">
+                            <i class="fas fa-life-ring"></i>
+                        </div>
+                        <h5 class="fw-bold">Contact Support</h5>
+                        <p class="text-secondary mb-4">
+                            Get help from our support team for technical issues or licensing questions.
+                        </p>
+                        <a href="mailto:<%= custom('branding.support_email', ENV['ADMIN_EMAIL'] || 'support@example.com') %>" 
+                           class="btn btn-success">
+                            <i class="fas fa-envelope me-2"></i>
+                            Email Support
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

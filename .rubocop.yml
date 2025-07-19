@@ -1,0 +1,189 @@
+# RuboCop Configuration for Source License
+# Ruby/Sinatra License Management System
+
+plugins:
+  - rubocop-performance
+  - rubocop-minitest
+  - rubocop-sequel
+  - rubocop-factory_bot
+
+AllCops:
+  NewCops: enable
+  TargetRubyVersion: 3.4
+  Exclude:
+    - 'vendor/**/*'
+    - 'tmp/**/*'
+    - 'log/**/*'
+    - 'public/**/*'
+    - 'downloads/**/*'
+    - 'licenses/**/*'
+    - 'config/customizations.yml'
+
+# Layout & Formatting
+Layout/LineLength:
+  Max: 120
+  AllowedPatterns: ['\A\s*#']
+
+Layout/MultilineMethodCallIndentation:
+  EnforcedStyle: indented
+
+Layout/FirstHashElementIndentation:
+  EnforcedStyle: consistent
+
+Layout/FirstArrayElementIndentation:
+  EnforcedStyle: consistent
+
+# Style Guidelines
+Style/Documentation:
+  Enabled: false
+
+Style/FrozenStringLiteralComment:
+  Enabled: true
+  EnforcedStyle: always
+
+Style/StringLiterals:
+  EnforcedStyle: single_quotes
+  ConsistentQuotesInMultiline: true
+
+Style/HashSyntax:
+  EnforcedStyle: ruby19_no_mixed_keys
+
+Style/TrailingCommaInArrayLiteral:
+  EnforcedStyleForMultiline: consistent_comma
+
+Style/TrailingCommaInHashLiteral:
+  EnforcedStyleForMultiline: consistent_comma
+
+Style/Lambda:
+  EnforcedStyle: literal
+
+Style/ClassAndModuleChildren:
+  EnforcedStyle: compact
+
+Style/MethodDefParentheses:
+  EnforcedStyle: require_parentheses
+
+Style/GlobalVars:
+  Enabled: false  # We use some global vars for Sinatra
+
+# Metrics
+Metrics/MethodLength:
+  Max: 35
+  CountAsOne: ['array', 'hash']
+
+Metrics/ClassLength:
+  Max: 400  # Web applications often have larger classes
+
+Metrics/ModuleLength:
+  Max: 300  # Helper modules can be larger
+
+Metrics/BlockLength:
+  Max: 50
+  AllowedMethods: ['describe', 'context', 'namespace', 'configure']
+  Exclude:
+    - 'test/**/*'
+    - 'spec/**/*'
+
+Metrics/AbcSize:
+  Max: 35  # More lenient for web app methods
+
+Metrics/CyclomaticComplexity:
+  Max: 15  # More lenient for validation methods
+
+Metrics/PerceivedComplexity:
+  Max: 15  # More lenient for complex business logic
+
+# Naming
+Naming/VariableNumber:
+  EnforcedStyle: snake_case
+  AllowedPatterns: ['\A.*[0-9]+\z']  # Allow HTTP error codes like 404, 500
+
+Naming/MemoizedInstanceVariableName:
+  EnforcedStyleForLeadingUnderscores: disallowed
+
+Naming/PredicateMethod:
+  AllowedMethods: 
+    - 'authenticate_admin'  # This method has side effects, not a pure predicate
+    - 'revoke_license'      # Action method with side effects
+    - 'suspend_license'     # Action method with side effects  
+    - 'reactivate_license'  # Action method with side effects
+    - 'extend_license'      # Action method with side effects
+    - 'transfer_license'    # Action method with side effects
+    - 'verify_license_signature'  # Verification method, not a pure predicate
+    - 'activate!'           # Action method with side effects
+    - 'deactivate!'         # Action method with side effects
+
+# Security
+Security/Eval:
+  Enabled: true
+
+Security/YAMLLoad:
+  Enabled: true
+
+# Performance
+Performance/StringReplacement:
+  Enabled: true
+
+Performance/RedundantMerge:
+  Enabled: true
+
+Performance/UnfreezeString:
+  Enabled: true
+
+# Minitest specific
+Minitest/MultipleAssertions:
+  Max: 10
+
+Minitest/AssertTruthy:
+  Enabled: true
+
+# Sequel specific
+Sequel/SaveChanges:
+  Enabled: true
+
+Sequel/IrreversibleMigration:
+  Enabled: true
+
+# Disable some cops that conflict with Sinatra style
+Style/RegexpLiteral:
+  Enabled: false
+
+Style/SpecialGlobalVars:
+  Enabled: false
+
+Layout/EmptyLinesAroundClassBody:
+  Enabled: false
+
+Layout/EmptyLinesAroundModuleBody:
+  Enabled: false
+
+# Disable some cops for specific files
+Style/MixinUsage:
+  Exclude:
+    - 'app.rb'
+    - 'lib/**/*'
+
+# Allow method visibility modifiers
+Style/AccessModifierDeclarations:
+  EnforcedStyle: group
+
+# Allow top-level constants
+Style/MutableConstant:
+  Enabled: false
+
+# Database and Sinatra specific exclusions
+Lint/MissingSuper:
+  Exclude:
+    - 'lib/models.rb'
+
+Style/OptionalBooleanParameter:
+  Enabled: false
+
+# Web app specific
+Lint/Void:
+  CheckForMethodsWithNoSideEffects: false
+
+# ERB template specific
+Naming/HeredocDelimiterNaming:
+  Exclude:
+    - 'views/**/*'

@@ -1,0 +1,392 @@
+<!-- Dashboard Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-1">Dashboard Overview</h1>
+        <p class="text-muted mb-0">Welcome back, <%= current_secure_admin&.email || 'Admin' %>!</p>
+    </div>
+    <div>
+        <small class="text-muted">Last updated: <%= Time.now.strftime('%I:%M %p') %></small>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row g-4 mb-4">
+    <!-- Total Licenses -->
+    <div class="col-xl-3 col-md-6">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <div class="stat-number text-primary"><%= @stats[:total_licenses] %></div>
+                    <div class="stat-label">Total Licenses</div>
+                </div>
+                <div class="text-primary">
+                    <i class="fas fa-key fa-2x"></i>
+                </div>
+            </div>
+            <div class="mt-3">
+                <small class="text-success">
+                    <i class="fas fa-arrow-up me-1"></i>
+                    <%= @stats[:active_licenses] %> active
+                </small>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Active Licenses -->
+    <div class="col-xl-3 col-md-6">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <div class="stat-number text-success"><%= @stats[:active_licenses] %></div>
+                    <div class="stat-label">Active Licenses</div>
+                </div>
+                <div class="text-success">
+                    <i class="fas fa-check-circle fa-2x"></i>
+                </div>
+            </div>
+            <div class="mt-3">
+                <small class="text-muted">
+                    <%= ((@stats[:active_licenses].to_f / [@stats[:total_licenses], 1].max) * 100).round(1) %>% of total
+                </small>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Total Revenue -->
+    <div class="col-xl-3 col-md-6">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <div class="stat-number text-warning">
+                        <%= format_currency(@stats[:total_revenue]) %>
+                    </div>
+                    <div class="stat-label">Total Revenue</div>
+                </div>
+                <div class="text-warning">
+                    <i class="fas fa-dollar-sign fa-2x"></i>
+                </div>
+            </div>
+            <div class="mt-3">
+                <small class="text-muted">
+                    From completed orders
+                </small>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Orders -->
+    <div class="col-xl-3 col-md-6">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <div class="stat-number text-info"><%= @stats[:recent_orders].count %></div>
+                    <div class="stat-label">Recent Orders</div>
+                </div>
+                <div class="text-info">
+                    <i class="fas fa-shopping-cart fa-2x"></i>
+                </div>
+            </div>
+            <div class="mt-3">
+                <small class="text-muted">
+                    Last 10 orders
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Recent Orders Table -->
+    <div class="col-lg-8">
+        <div class="data-table">
+            <h5 class="table-header">
+                <i class="fas fa-shopping-cart me-2"></i>
+                Recent Orders
+            </h5>
+            
+            <div class="table-responsive">
+                <% if @stats[:recent_orders] && @stats[:recent_orders].any? %>
+                <table class="table table-hover mb-0" data-auto-refresh="true">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Order ID</th>
+                            <th>Customer</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                            <th>Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% @stats[:recent_orders].each do |order| %>
+                        <tr>
+                            <td>
+                                <code>#<%= order.id %></code>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-user-circle text-muted me-2"></i>
+                                    <%= h(truncate(order.email, 30)) %>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="fw-bold text-success">
+                                    <%= format_currency(order.amount, order.currency) %>
+                                </span>
+                            </td>
+                            <td>
+                                <%= status_badge(order.status) %>
+                            </td>
+                            <td>
+                                <small class="text-muted">
+                                    <%= time_ago(order.created_at) %>
+                                </small>
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="/admin/orders/<%= order.id %>" 
+                                       class="btn btn-outline-primary btn-sm"
+                                       title="View Details">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <% if order.completed? %>
+                                    <a href="/admin/licenses?order_id=<%= order.id %>" 
+                                       class="btn btn-outline-success btn-sm"
+                                       title="View Licenses">
+                                        <i class="fas fa-key"></i>
+                                    </a>
+                                    <% end %>
+                                </div>
+                            </td>
+                        </tr>
+                        <% end %>
+                    </tbody>
+                </table>
+                <% else %>
+                <div class="text-center py-5">
+                    <i class="fas fa-shopping-cart text-muted mb-3" style="font-size: 3rem;"></i>
+                    <h5 class="text-muted">No Recent Orders</h5>
+                    <p class="text-muted">Orders will appear here once customers start making purchases.</p>
+                </div>
+                <% end %>
+            </div>
+            
+            <div class="card-footer bg-light">
+                <div class="d-flex justify-content-between align-items-center">
+                    <small class="text-muted">
+                        Showing last 10 orders
+                    </small>
+                    <a href="/admin/orders" class="btn btn-outline-primary btn-sm">
+                        View All Orders
+                        <i class="fas fa-arrow-right ms-1"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Quick Actions -->
+    <div class="col-lg-4">
+        <div class="admin-card">
+            <div class="admin-card-header">
+                <i class="fas fa-bolt me-2"></i>
+                Quick Actions
+            </div>
+            <div class="admin-card-body">
+                <div class="d-grid gap-2">
+                    <a href="/admin/products/new" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>
+                        Add New Product
+                    </a>
+                    <a href="/admin/licenses/generate" class="btn btn-success">
+                        <i class="fas fa-key me-2"></i>
+                        Generate License
+                    </a>
+                    <a href="/admin/licenses" class="btn btn-info">
+                        <i class="fas fa-search me-2"></i>
+                        Search Licenses
+                    </a>
+                    <a href="/admin/settings" class="btn btn-secondary">
+                        <i class="fas fa-cog me-2"></i>
+                        System Settings
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- System Status -->
+        <div class="admin-card mt-4">
+            <div class="admin-card-header">
+                <i class="fas fa-server me-2"></i>
+                System Status
+            </div>
+            <div class="admin-card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span>Database</span>
+                    <span class="badge bg-success">
+                        <i class="fas fa-check me-1"></i>Online
+                    </span>
+                </div>
+                
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span>API Endpoints</span>
+                    <span class="badge bg-success">
+                        <i class="fas fa-check me-1"></i>Active
+                    </span>
+                </div>
+                
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span>Payment Processing</span>
+                    <% if stripe_enabled? || paypal_enabled? %>
+                        <span class="badge bg-success">
+                            <i class="fas fa-check me-1"></i>Configured
+                        </span>
+                    <% else %>
+                        <span class="badge bg-warning">
+                            <i class="fas fa-exclamation-triangle me-1"></i>Not Configured
+                        </span>
+                    <% end %>
+                </div>
+                
+                <div class="d-flex justify-content-between align-items-center">
+                    <span>Email Service</span>
+                    <% if ENV['SMTP_HOST'] %>
+                        <span class="badge bg-success">
+                            <i class="fas fa-check me-1"></i>Configured
+                        </span>
+                    <% else %>
+                        <span class="badge bg-warning">
+                            <i class="fas fa-exclamation-triangle me-1"></i>Not Configured
+                        </span>
+                    <% end %>
+                </div>
+                
+                <hr>
+                
+                <div class="text-center">
+                    <small class="text-muted">
+                        <i class="fas fa-clock me-1"></i>
+                        Uptime: <%= Time.now.strftime('%H:%M:%S') %>
+                    </small>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Recent Activity -->
+        <div class="admin-card mt-4">
+            <div class="admin-card-header">
+                <i class="fas fa-history me-2"></i>
+                Recent Activity
+            </div>
+            <div class="admin-card-body">
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <div class="timeline-marker bg-success"></div>
+                        <div class="timeline-content">
+                            <small class="text-muted">5 minutes ago</small>
+                            <div>Admin logged in</div>
+                        </div>
+                    </div>
+                    
+                    <% if @stats[:recent_orders].any? %>
+                    <div class="timeline-item">
+                        <div class="timeline-marker bg-primary"></div>
+                        <div class="timeline-content">
+                            <small class="text-muted"><%= time_ago(@stats[:recent_orders].first.created_at) %></small>
+                            <div>New order received</div>
+                        </div>
+                    </div>
+                    <% end %>
+                    
+                    <div class="timeline-item">
+                        <div class="timeline-marker bg-info"></div>
+                        <div class="timeline-content">
+                            <small class="text-muted">1 hour ago</small>
+                            <div>System backup completed</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="text-center mt-3">
+                    <a href="/admin/logs" class="btn btn-outline-secondary btn-sm">
+                        View All Activity
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Custom Dashboard Styles -->
+<style>
+    .timeline {
+        position: relative;
+        padding-left: 1.5rem;
+    }
+    
+    .timeline::before {
+        content: '';
+        position: absolute;
+        left: 0.5rem;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: #dee2e6;
+    }
+    
+    .timeline-item {
+        position: relative;
+        margin-bottom: 1rem;
+    }
+    
+    .timeline-marker {
+        position: absolute;
+        left: -1rem;
+        top: 0.25rem;
+        width: 0.75rem;
+        height: 0.75rem;
+        border-radius: 50%;
+        border: 2px solid #fff;
+        box-shadow: 0 0 0 2px #dee2e6;
+    }
+    
+    .timeline-content {
+        font-size: 0.875rem;
+    }
+</style>
+
+<!-- Dashboard JavaScript -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-refresh dashboard data every 30 seconds
+    setInterval(function() {
+        // Update timestamp
+        const timestampElement = document.querySelector('small:contains("Last updated")');
+        if (timestampElement) {
+            const now = new Date();
+            timestampElement.textContent = 'Last updated: ' + now.toLocaleTimeString();
+        }
+    }, 30000);
+    
+    // Add click handlers for stat cards
+    document.querySelectorAll('.stat-card').forEach(card => {
+        card.style.cursor = 'pointer';
+        card.addEventListener('click', function() {
+            const label = this.querySelector('.stat-label').textContent.toLowerCase();
+            
+            switch(label) {
+                case 'total licenses':
+                case 'active licenses':
+                    window.location.href = '/admin/licenses';
+                    break;
+                case 'total revenue':
+                    window.location.href = '/admin/orders';
+                    break;
+                case 'recent orders':
+                    window.location.href = '/admin/orders';
+                    break;
+            }
+        });
+    });
+});
+</script>

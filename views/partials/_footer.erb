@@ -1,0 +1,204 @@
+<!-- Footer -->
+<footer class="footer mt-auto" style="background: var(--surface-primary); border-top: 1px solid var(--border-default);">
+    <div class="container">
+        <div class="row">
+            <!-- Company Info -->
+            <div class="col-lg-4 col-md-6 mb-4">
+                <h5 class="mb-3 text-light">
+                    <i class="fas fa-shield-alt me-2"></i>
+                    <%= custom('branding.site_name', 'Source License') %>
+                </h5>
+                <p class="text-light mb-3">
+                    <%= custom('branding.footer_text', 'Professional software licensing management system. Secure, reliable, and easy to use for both vendors and customers.') %>
+                </p>
+                <div class="d-flex gap-3">
+                    <a href="#" class="text-light" title="GitHub">
+                        <i class="fab fa-github fa-lg"></i>
+                    </a>
+                    <a href="#" class="text-light" title="Twitter">
+                        <i class="fab fa-twitter fa-lg"></i>
+                    </a>
+                    <a href="#" class="text-light" title="LinkedIn">
+                        <i class="fab fa-linkedin fa-lg"></i>
+                    </a>
+                    <a href="mailto:<%= custom('branding.support_email', ENV['ADMIN_EMAIL'] || 'support@example.com') %>" class="text-light" title="Email">
+                        <i class="fas fa-envelope fa-lg"></i>
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Quick Links -->
+            <div class="col-lg-2 col-md-6 mb-4">
+                <h6 class="mb-3 text-light">Quick Links</h6>
+                <ul class="list-unstyled">
+                    <li class="mb-2">
+                        <a href="/" class="text-light text-decoration-none">
+                            <i class="fas fa-home me-1"></i> Home
+                        </a>
+                    </li>
+                    <li class="mb-2">
+                        <a href="/my-licenses" class="text-light text-decoration-none">
+                            <i class="fas fa-key me-1"></i> My Licenses
+                        </a>
+                    </li>
+                    <li class="mb-2">
+                        <a href="/cart" class="text-light text-decoration-none">
+                            <i class="fas fa-shopping-cart me-1"></i> Shopping Cart
+                        </a>
+                    </li>
+                    <li class="mb-2">
+                        <a href="#support" class="text-light text-decoration-none">
+                            <i class="fas fa-life-ring me-1"></i> Support
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            
+            <!-- Support -->
+            <div class="col-lg-3 col-md-6 mb-4">
+                <h6 class="mb-3 text-light">Support</h6>
+                <ul class="list-unstyled">
+                    <li class="mb-2">
+                        <a href="#" class="text-light text-decoration-none">
+                            <i class="fas fa-question-circle me-1"></i> FAQ
+                        </a>
+                    </li>
+                    <li class="mb-2">
+                        <a href="#" class="text-light text-decoration-none">
+                            <i class="fas fa-book me-1"></i> Documentation
+                        </a>
+                    </li>
+                    <li class="mb-2">
+                        <a href="mailto:<%= custom('branding.support_email', ENV['ADMIN_EMAIL'] || 'support@example.com') %>" class="text-light text-decoration-none">
+                            <i class="fas fa-comments me-1"></i> Contact Us
+                        </a>
+                    </li>
+                    <li class="mb-2">
+                        <a href="#" class="text-light text-decoration-none">
+                            <i class="fas fa-bug me-1"></i> Report Issue
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            
+            <!-- Contact Info -->
+            <div class="col-lg-3 col-md-6 mb-4">
+                <h6 class="mb-3 text-light">Contact Information</h6>
+                <div class="text-light">
+                    <div class="mb-2">
+                        <i class="fas fa-envelope me-2"></i>
+                        <a href="mailto:<%= custom('branding.support_email', ENV['ADMIN_EMAIL'] || 'support@example.com') %>" class="text-light text-decoration-none">
+                            <%= custom('branding.support_email', ENV['ADMIN_EMAIL'] || 'support@example.com') %>
+                        </a>
+                    </div>
+                    <div class="mb-2">
+                        <i class="fas fa-globe me-2"></i>
+                        <a href="/" class="text-light text-decoration-none">
+                            <%= ENV['APP_HOST'] || 'localhost:4567' %>
+                        </a>
+                    </div>
+                    <div class="mb-2">
+                        <i class="fas fa-clock me-2"></i>
+                        24/7 License Validation
+                    </div>
+                </div>
+                
+                <!-- API Status -->
+                <div class="mt-3">
+                    <small class="text-light d-flex align-items-center">
+                        <span class="me-2" style="width: 8px; height: 8px; border-radius: 50%; background-color: <%= custom_color('success', '#27ae60') %>"></span>
+                        API Status: Online
+                    </small>
+                </div>
+            </div>
+        </div>
+        
+        <hr class="my-4" style="border-color: rgba(255,255,255,0.2);">
+        
+        <!-- Bottom Footer -->
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <p class="mb-0 text-light">
+                    &copy; <%= Date.today.year %> <%= custom('branding.company_name', 'Your Company') %>. 
+                    Licensed under <a href="/LICENSE" class="text-light">GPL v2</a>.
+                </p>
+            </div>
+            <div class="col-md-6 text-md-end">
+                <div class="d-flex justify-content-md-end justify-content-start align-items-center gap-3">
+                    <!-- Security Badges -->
+                    <small class="text-light d-flex align-items-center">
+                        <i class="fas fa-shield-alt me-1" style="color: <%= custom_color('success', '#27ae60') %>"></i>
+                        SSL Secured
+                    </small>
+                    
+                    <!-- Payment Security -->
+                    <% if stripe_enabled? || paypal_enabled? %>
+                    <small class="text-light d-flex align-items-center">
+                        <i class="fas fa-lock me-1" style="color: <%= custom_color('success', '#27ae60') %>"></i>
+                        PCI Compliant
+                    </small>
+                    <% end %>
+                    
+                    <!-- Version Info (for development) -->
+                    <% if development? && feature_enabled?('show_version_info') %>
+                    <small class="text-muted">
+                        v1.0.0-dev
+                    </small>
+                    <% end %>
+                </div>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<!-- Support Chat/Help Widget (customizable) -->
+<% unless request.path.start_with?('/admin') %>
+<% if feature_enabled?('show_help_widget') %>
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1000;">
+    <div class="toast" id="helpToast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header text-white" style="background-color: <%= custom_color('primary', '#2c3e50') %>">
+            <i class="fas fa-question-circle me-2"></i>
+            <strong class="me-auto">Need Help?</strong>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+        </div>
+        <div class="toast-body">
+            <p class="mb-2">Having trouble with your license?</p>
+            <div class="d-grid gap-2">
+                <a href="/my-licenses" class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-key me-1"></i> Check My Licenses
+                </a>
+                <a href="#support" class="btn btn-sm btn-outline-secondary">
+                    <i class="fas fa-life-ring me-1"></i> Get Support
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Help Button -->
+    <button class="btn rounded-circle shadow" 
+            onclick="toggleHelpToast()" 
+            style="width: 56px; height: 56px; background-color: <%= custom_color('primary', '#2c3e50') %>; border-color: <%= custom_color('primary', '#2c3e50') %>">
+        <i class="fas fa-question fa-lg text-white"></i>
+    </button>
+</div>
+
+<script>
+// Help toast functionality
+function toggleHelpToast() {
+    const toastElement = document.getElementById('helpToast');
+    const toast = new bootstrap.Toast(toastElement);
+    toast.show();
+}
+
+// Auto-show help toast on first visit (using localStorage)
+document.addEventListener('DOMContentLoaded', function() {
+    if (!localStorage.getItem('helpToastShown') && !window.location.pathname.startsWith('/admin')) {
+        setTimeout(() => {
+            toggleHelpToast();
+            localStorage.setItem('helpToastShown', 'true');
+        }, 5000); // Show after 5 seconds
+    }
+});
+</script>
+<% end %>
+<% end %>

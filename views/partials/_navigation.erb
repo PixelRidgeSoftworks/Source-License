@@ -1,0 +1,90 @@
+<!-- Main Navigation -->
+<div class="w-100" style="background: var(--surface-primary); border-bottom: 1px solid var(--border-default); position: sticky; top: 0; z-index: 1020;">
+    <div class="container-fluid">
+        <div class="d-flex align-items-center py-3">
+            <!-- Brand -->
+            <a class="navbar-brand fw-bold text-decoration-none" href="/" style="color: var(--text-primary); margin-right: 3rem;">
+                <i class="fas fa-shield-alt me-2" style="color: var(--accent-primary);"></i>
+                <%= custom('branding.logo_text', 'Source License') %>
+            </a>
+            
+            <!-- Navigation Links - Single Row with proper spacing -->
+            <div class="d-flex align-items-center flex-grow-1">
+                <!-- Left Navigation -->
+                <div class="d-flex align-items-center">
+                    <a class="text-decoration-none <%= 'text-warning' if request.path == '/' %>" 
+                       href="/" style="color: var(--text-secondary); transition: color 0.3s; white-space: nowrap; margin-right: 2rem;"
+                       onmouseover="this.style.color='var(--accent-primary)'" 
+                       onmouseout="this.style.color='<%= request.path == '/' ? 'var(--bs-warning)' : 'var(--text-secondary)' %>'">
+                        <i class="fas fa-home me-2"></i>Home
+                    </a>
+                    <a class="text-decoration-none" 
+                       href="/#products" style="color: var(--text-secondary); transition: color 0.3s; white-space: nowrap; margin-right: 2rem;"
+                       onmouseover="this.style.color='var(--accent-primary)'" 
+                       onmouseout="this.style.color='var(--text-secondary)'">
+                        <i class="fas fa-boxes me-2"></i>Products
+                    </a>
+                    <a class="text-decoration-none <%= 'text-warning' if request.path == '/my-licenses' %>" 
+                       href="/my-licenses" style="color: var(--text-secondary); transition: color 0.3s; white-space: nowrap; margin-right: 2rem;"
+                       onmouseover="this.style.color='var(--accent-primary)'" 
+                       onmouseout="this.style.color='<%= request.path == '/my-licenses' ? 'var(--bs-warning)' : 'var(--text-secondary)' %>'">
+                        <i class="fas fa-key me-2"></i>My Licenses
+                    </a>
+                    <a class="text-decoration-none" 
+                       href="#support" style="color: var(--text-secondary); transition: color 0.3s; white-space: nowrap;"
+                       onmouseover="this.style.color='var(--accent-primary)'" 
+                       onmouseout="this.style.color='var(--text-secondary)'">
+                        <i class="fas fa-life-ring me-2"></i>Support
+                    </a>
+                </div>
+                
+                <!-- Right Navigation -->
+                <div class="d-flex align-items-center ms-auto">
+                    <!-- Shopping Cart -->
+                    <a class="text-decoration-none position-relative <%= 'text-warning' if request.path == '/cart' %>" 
+                       href="/cart" style="color: var(--text-secondary); transition: color 0.3s; white-space: nowrap; margin-right: 2rem;"
+                       onmouseover="this.style.color='var(--accent-primary)'" 
+                       onmouseout="this.style.color='<%= request.path == '/cart' ? 'var(--bs-warning)' : 'var(--text-secondary)' %>'">
+                        <i class="fas fa-shopping-cart me-2"></i>Cart
+                        <span class="cart-badge" style="display: none;">0</span>
+                    </a>
+                    
+                    <!-- Admin Link -->
+                    <% if admin_logged_in? %>
+                    <a class="text-decoration-none text-warning" 
+                       href="/admin" style="transition: opacity 0.3s; white-space: nowrap;"
+                       onmouseover="this.style.opacity='0.8'" 
+                       onmouseout="this.style.opacity='1'">
+                        <i class="fas fa-cogs me-2"></i>Admin
+                    </a>
+                    <% end %>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Breadcrumb (for inner pages) -->
+<% if @page_title && @page_title != custom('branding.site_name', 'Software License Store') %>
+<nav aria-label="breadcrumb" style="background: var(--surface-secondary); border-bottom: 1px solid var(--border-default);">
+    <div class="container">
+        <ol class="breadcrumb py-3 mb-0" style="background: transparent;">
+            <li class="breadcrumb-item">
+                <a href="/" class="text-decoration-none">
+                    <i class="fas fa-home me-1"></i>Home
+                </a>
+            </li>
+            <% if request.path.start_with?('/admin') %>
+            <li class="breadcrumb-item">
+                <a href="/admin" class="text-decoration-none text-warning">
+                    <i class="fas fa-cogs me-1"></i>Admin
+                </a>
+            </li>
+            <% end %>
+            <li class="breadcrumb-item active" aria-current="page">
+                <%= h(@page_title) %>
+            </li>
+        </ol>
+    </div>
+</nav>
+<% end %>

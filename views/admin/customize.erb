@@ -230,6 +230,9 @@ function generateCategoryForm(categoryId, data) {
             html = `
                 <div class="row g-3">
                     <div class="col-12">
+                        <h6 class="text-primary mb-3">Homepage Text</h6>
+                    </div>
+                    <div class="col-12">
                         <label class="form-label">Hero Title</label>
                         <input type="text" class="form-control" name="hero_title" value="${data.hero_title || ''}" placeholder="Professional Software Licensing Made Simple">
                     </div>
@@ -260,6 +263,154 @@ function generateCategoryForm(categoryId, data) {
                     <div class="col-md-6">
                         <label class="form-label">Support Section Title</label>
                         <input type="text" class="form-control" name="support_title" value="${data.support_title || ''}" placeholder="Need Help?">
+                    </div>
+                    
+                    <hr class="my-4">
+                    <div class="col-12">
+                        <h6 class="text-primary mb-3">Cart & Checkout Text</h6>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Cart Title</label>
+                        <input type="text" class="form-control" name="cart_title" value="${data.cart_title || ''}" placeholder="Shopping Cart">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Cart Clear Button</label>
+                        <input type="text" class="form-control" name="cart_clear_button" value="${data.cart_clear_button || ''}" placeholder="Clear Cart">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Cart Empty Title</label>
+                        <input type="text" class="form-control" name="cart_empty_title" value="${data.cart_empty_title || ''}" placeholder="Your Cart is Empty">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Browse Products Button</label>
+                        <input type="text" class="form-control" name="cart_browse_products" value="${data.cart_browse_products || ''}" placeholder="Browse Products">
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Cart Empty Message</label>
+                        <input type="text" class="form-control" name="cart_empty_message" value="${data.cart_empty_message || ''}" placeholder="Browse our products and add items to your cart to get started.">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Order Summary</label>
+                        <input type="text" class="form-control" name="cart_order_summary" value="${data.cart_order_summary || ''}" placeholder="Order Summary">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Proceed to Checkout</label>
+                        <input type="text" class="form-control" name="cart_proceed_checkout" value="${data.cart_proceed_checkout || ''}" placeholder="Proceed to Checkout">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Checkout Title</label>
+                        <input type="text" class="form-control" name="checkout_title" value="${data.checkout_title || ''}" placeholder="Checkout">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Customer Information</label>
+                        <input type="text" class="form-control" name="checkout_customer_info" value="${data.checkout_customer_info || ''}" placeholder="Customer Information">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Payment Method</label>
+                        <input type="text" class="form-control" name="checkout_payment_method" value="${data.checkout_payment_method || ''}" placeholder="Payment Method">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Secure Checkout</label>
+                        <input type="text" class="form-control" name="checkout_secure_title" value="${data.checkout_secure_title || ''}" placeholder="Secure Checkout">
+                    </div>
+                    
+                    <hr class="my-4">
+                    <div class="col-12">
+                        <h6 class="text-primary mb-3">License Validation Text</h6>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Validation Title</label>
+                        <input type="text" class="form-control" name="validate_title" value="${data.validate_title || ''}" placeholder="Validate License">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Validation Button</label>
+                        <input type="text" class="form-control" name="validate_button" value="${data.validate_button || ''}" placeholder="Validate License">
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Validation Description</label>
+                        <textarea class="form-control" name="validate_description" rows="2" placeholder="Enter your license key below to verify its status and validity...">${data.validate_description || ''}</textarea>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">License Key Label</label>
+                        <input type="text" class="form-control" name="validate_license_key" value="${data.validate_license_key || ''}" placeholder="License Key">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Key Placeholder</label>
+                        <input type="text" class="form-control" name="validate_placeholder" value="${data.validate_placeholder || ''}" placeholder="Enter your license key...">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Valid License Title</label>
+                        <input type="text" class="form-control" name="validate_valid_title" value="${data.validate_valid_title || ''}" placeholder="Valid License">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Invalid License Title</label>
+                        <input type="text" class="form-control" name="validate_invalid_title" value="${data.validate_invalid_title || ''}" placeholder="Invalid License">
+                    </div>
+                    
+                    <hr class="my-4">
+                    <div class="col-12">
+                        <h6 class="text-primary mb-3">User Dashboard Text</h6>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Dashboard Welcome</label>
+                        <input type="text" class="form-control" name="dashboard_welcome" value="${data.dashboard_welcome || ''}" placeholder="Welcome back">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Dashboard Subtitle</label>
+                        <input type="text" class="form-control" name="dashboard_subtitle" value="${data.dashboard_subtitle || ''}" placeholder="Manage your licenses and account settings">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Total Licenses</label>
+                        <input type="text" class="form-control" name="dashboard_total_licenses" value="${data.dashboard_total_licenses || ''}" placeholder="Total Licenses">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Active Licenses</label>
+                        <input type="text" class="form-control" name="dashboard_active_licenses" value="${data.dashboard_active_licenses || ''}" placeholder="Active Licenses">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Downloads</label>
+                        <input type="text" class="form-control" name="dashboard_downloads" value="${data.dashboard_downloads || ''}" placeholder="Downloads">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Quick Actions</label>
+                        <input type="text" class="form-control" name="dashboard_quick_actions" value="${data.dashboard_quick_actions || ''}" placeholder="Quick Actions">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Your Licenses</label>
+                        <input type="text" class="form-control" name="dashboard_your_licenses" value="${data.dashboard_your_licenses || ''}" placeholder="Your Licenses">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">No Licenses Title</label>
+                        <input type="text" class="form-control" name="dashboard_no_licenses_title" value="${data.dashboard_no_licenses_title || ''}" placeholder="No Licenses Found">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Browse Products</label>
+                        <input type="text" class="form-control" name="dashboard_browse_products" value="${data.dashboard_browse_products || ''}" placeholder="Browse Products">
+                    </div>
+                    
+                    <hr class="my-4">
+                    <div class="col-12">
+                        <h6 class="text-primary mb-3">Login Page Text</h6>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Login Title</label>
+                        <input type="text" class="form-control" name="login_title" value="${data.login_title || ''}" placeholder="Sign In">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Login Button</label>
+                        <input type="text" class="form-control" name="login_button" value="${data.login_button || ''}" placeholder="Sign In">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Email Label</label>
+                        <input type="text" class="form-control" name="login_email" value="${data.login_email || ''}" placeholder="Email Address">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Password Label</label>
+                        <input type="text" class="form-control" name="login_password" value="${data.login_password || ''}" placeholder="Password">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Create Account</label>
+                        <input type="text" class="form-control" name="login_create_account" value="${data.login_create_account || ''}" placeholder="Create Account">
                     </div>
                 </div>
             `;

@@ -1,0 +1,688 @@
+<!-- Order Details Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-1">Order #<%= @order.id %></h1>
+        <p class="text-muted mb-0">
+            Created <%= format_date(@order.created_at, :datetime) %> 
+            <span class="mx-2">•</span>
+            <%= time_ago(@order.created_at) %>
+        </p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="/admin/orders" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Back to Orders
+        </a>
+        <div class="dropdown">
+            <button class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown">
+                <i class="fas fa-cog me-2"></i>Actions
+            </button>
+            <ul class="dropdown-menu">
+                <li>
+                    <a class="dropdown-item" href="mailto:<%= h(@order.email) %>?subject=Regarding Order #<%= @order.id %>">
+                        <i class="fas fa-envelope me-2"></i>Email Customer
+                    </a>
+                </li>
+                <% if @order.licenses.any? %>
+                <li>
+                    <a class="dropdown-item" href="/admin/licenses?search=<%= u(@order.email) %>">
+                        <i class="fas fa-key me-2"></i>View Licenses
+                    </a>
+                </li>
+                <% end %>
+                <li><hr class="dropdown-divider"></li>
+                <% if @order.pending? %>
+                <li>
+                    <button class="dropdown-item" onclick="updateOrderStatus('completed')">
+                        <i class="fas fa-check me-2"></i>Mark as Completed
+                    </button>
+                </li>
+                <% elsif @order.completed? %>
+                <li>
+                    <button class="dropdown-item text-warning" onclick="updateOrderStatus('refunded')">
+                        <i class="fas fa-undo me-2"></i>Refund Order
+                    </button>
+                </li>
+                <% end %>
+                <% if @order.pending? || @order.failed? %>
+                <li>
+                    <button class="dropdown-item text-danger" onclick="deleteOrder()">
+                        <i class="fas fa-trash me-2"></i>Delete Order
+                    </button>
+                </li>
+                <% end %>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- Order Status Banner -->
+<div class="alert alert-<%= order_status_class(@order.status) %> mb-4">
+    <div class="d-flex align-items-center">
+        <div class="me-3">
+            <%= order_status_icon(@order.status) %>
+        </div>
+        <div class="flex-grow-1">
+            <h5 class="alert-heading mb-1">Order Status: <%= @order.status.capitalize %></h5>
+            <p class="mb-0">
+                <% case @order.status %>
+                <% when 'pending' %>
+                This order is awaiting payment or manual completion.
+                <% when 'completed' %>
+                This order has been completed and licenses have been generated.
+                <% when 'failed' %>
+                This order failed to process. Check payment details or contact the customer.
+                <% when 'refunded' %>
+                This order has been refunded and associated licenses have been revoked.
+                <% end %>
+            </p>
+        </div>
+        <% if @order.completed_at %>
+        <div class="text-end">
+            <small class="text-muted">
+                Completed: <%= format_date(@order.completed_at, :datetime) %>
+            </small>
+        </div>
+        <% elsif @order.refunded_at %>
+        <div class="text-end">
+            <small class="text-muted">
+                Refunded: <%= format_date(@order.refunded_at, :datetime) %>
+            </small>
+        </div>
+        <% end %>
+    </div>
+</div>
+
+<!-- Main Content Grid -->
+<div class="row g-4">
+    <!-- Left Column: Order Details -->
+    <div class="col-lg-8">
+        <!-- Customer Information -->
+        <div class="admin-card mb-4">
+            <div class="admin-card-header">
+                <i class="fas fa-user me-2"></i>Customer Information
+            </div>
+            <div class="admin-card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-muted mb-2">Customer Name</h6>
+                        <p class="fw-bold">
+                            <%= h(@order.customer_name || 'Not provided') %>
+                        </p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-muted mb-2">Email Address</h6>
+                        <p class="fw-bold">
+                            <a href="mailto:<%= h(@order.email) %>" class="text-decoration-none">
+                                <%= h(@order.email) %>
+                            </a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Order Items -->
+        <div class="admin-card mb-4">
+            <div class="admin-card-header">
+                <i class="fas fa-shopping-cart me-2"></i>Order Items
+            </div>
+            <div class="admin-card-body">
+                <% if @order.order_items.any? %>
+                <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th class="text-center">Quantity</th>
+                                <th class="text-end">Unit Price</th>
+                                <th class="text-end">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% @order.order_items.each do |item| %>
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="me-3">
+                                            <% if item.product %>
+                                            <i class="fas fa-box text-primary"></i>
+                                            <% else %>
+                                            <i class="fas fa-exclamation-triangle text-warning"></i>
+                                            <% end %>
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold">
+                                                <% if item.product %>
+                                                <a href="/admin/products/<%= item.product.id %>" class="text-decoration-none">
+                                                    <%= h(item.product.name) %>
+                                                </a>
+                                                <% else %>
+                                                Unknown Product (Deleted)
+                                                <% end %>
+                                            </div>
+                                            <% if item.product&.version %>
+                                            <small class="text-muted">Version: <%= h(item.product.version) %></small>
+                                            <% end %>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-secondary">×<%= item.quantity %></span>
+                                </td>
+                                <td class="text-end">
+                                    <%= format_currency(item.price, @order.currency) %>
+                                </td>
+                                <td class="text-end fw-bold">
+                                    <%= format_currency(item.total, @order.currency) %>
+                                </td>
+                            </tr>
+                            <% end %>
+                        </tbody>
+                        <tfoot>
+                            <tr class="table-active">
+                                <th colspan="3" class="text-end">Total:</th>
+                                <th class="text-end">
+                                    <%= format_currency(@order.amount, @order.currency) %>
+                                </th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                <% else %>
+                <div class="text-center py-4">
+                    <i class="fas fa-box-open text-muted mb-3" style="font-size: 2rem;"></i>
+                    <p class="text-muted mb-0">No items in this order</p>
+                </div>
+                <% end %>
+            </div>
+        </div>
+
+        <!-- Generated Licenses -->
+        <div class="admin-card">
+            <div class="admin-card-header d-flex justify-content-between align-items-center">
+                <span>
+                    <i class="fas fa-key me-2"></i>Generated Licenses
+                </span>
+                <% if @order.completed? && @order.licenses.empty? %>
+                <button class="btn btn-sm btn-primary" onclick="generateLicenses()">
+                    <i class="fas fa-plus me-1"></i>Generate Licenses
+                </button>
+                <% end %>
+            </div>
+            <div class="admin-card-body">
+                <% if @order.licenses.any? %>
+                <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                        <thead>
+                            <tr>
+                                <th>License Key</th>
+                                <th>Product</th>
+                                <th>Status</th>
+                                <th>Activations</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% @order.licenses.each do |license| %>
+                            <tr>
+                                <td>
+                                    <div class="font-monospace">
+                                        <a href="/admin/licenses/<%= license.id %>" class="text-decoration-none">
+                                            <%= format_license_key(license.license_key) %>
+                                        </a>
+                                    </div>
+                                </td>
+                                <td>
+                                    <% if license.product %>
+                                    <a href="/admin/products/<%= license.product.id %>" class="text-decoration-none">
+                                        <%= h(license.product.name) %>
+                                    </a>
+                                    <% else %>
+                                    <span class="text-muted">Unknown Product</span>
+                                    <% end %>
+                                </td>
+                                <td>
+                                    <%= status_badge(license.status) %>
+                                </td>
+                                <td>
+                                    <span class="<%= license.activation_count >= license.effective_max_activations ? 'text-danger' : 'text-success' %>">
+                                        <%= license.activation_count %>/<%= license.effective_max_activations %>
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="/admin/licenses/<%= license.id %>" class="btn btn-outline-primary btn-sm">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <button class="btn btn-outline-secondary btn-sm" onclick="copyLicenseKey('<%= license.license_key %>')">
+                                            <i class="fas fa-copy"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <% end %>
+                        </tbody>
+                    </table>
+                </div>
+                <% else %>
+                <div class="text-center py-4">
+                    <i class="fas fa-key text-muted mb-3" style="font-size: 2rem;"></i>
+                    <p class="text-muted mb-0">
+                        <% if @order.completed? %>
+                        No licenses have been generated for this order yet.
+                        <% else %>
+                        Licenses will be generated when the order is completed.
+                        <% end %>
+                    </p>
+                </div>
+                <% end %>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Order Summary & Actions -->
+    <div class="col-lg-4">
+        <!-- Order Summary -->
+        <div class="admin-card mb-4">
+            <div class="admin-card-header">
+                <i class="fas fa-info-circle me-2"></i>Order Summary
+            </div>
+            <div class="admin-card-body">
+                <div class="row g-3">
+                    <div class="col-12">
+                        <div class="d-flex justify-content-between">
+                            <span class="text-muted">Order ID:</span>
+                            <span class="fw-bold">#<%= @order.id %></span>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="d-flex justify-content-between">
+                            <span class="text-muted">Status:</span>
+                            <%= status_badge(@order.status) %>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="d-flex justify-content-between">
+                            <span class="text-muted">Amount:</span>
+                            <span class="fw-bold">
+                                <%= format_currency(@order.amount, @order.currency) %>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="d-flex justify-content-between">
+                            <span class="text-muted">Currency:</span>
+                            <span><%= @order.currency.upcase %></span>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="d-flex justify-content-between">
+                            <span class="text-muted">Payment Method:</span>
+                            <span class="d-flex align-items-center">
+                                <%= payment_method_icon(@order.payment_method) %>
+                                <span class="ms-2"><%= @order.payment_method.capitalize %></span>
+                            </span>
+                        </div>
+                    </div>
+                    <% if @order.payment_intent_id %>
+                    <div class="col-12">
+                        <div class="d-flex justify-content-between">
+                            <span class="text-muted">Payment ID:</span>
+                            <span class="font-monospace text-break">
+                                <%= truncate(@order.payment_intent_id, 15) %>
+                            </span>
+                        </div>
+                    </div>
+                    <% end %>
+                    <div class="col-12">
+                        <hr class="my-2">
+                    </div>
+                    <div class="col-12">
+                        <div class="d-flex justify-content-between">
+                            <span class="text-muted">Created:</span>
+                            <span><%= format_date(@order.created_at, :short) %></span>
+                        </div>
+                    </div>
+                    <% if @order.completed_at %>
+                    <div class="col-12">
+                        <div class="d-flex justify-content-between">
+                            <span class="text-muted">Completed:</span>
+                            <span><%= format_date(@order.completed_at, :short) %></span>
+                        </div>
+                    </div>
+                    <% end %>
+                    <% if @order.refunded_at %>
+                    <div class="col-12">
+                        <div class="d-flex justify-content-between">
+                            <span class="text-muted">Refunded:</span>
+                            <span><%= format_date(@order.refunded_at, :short) %></span>
+                        </div>
+                    </div>
+                    <% end %>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="admin-card mb-4">
+            <div class="admin-card-header">
+                <i class="fas fa-bolt me-2"></i>Quick Actions
+            </div>
+            <div class="admin-card-body">
+                <div class="d-grid gap-2">
+                    <% if @order.pending? %>
+                    <button class="btn btn-success" onclick="updateOrderStatus('completed')">
+                        <i class="fas fa-check me-2"></i>Mark as Completed
+                    </button>
+                    <button class="btn btn-danger" onclick="updateOrderStatus('failed')">
+                        <i class="fas fa-times me-2"></i>Mark as Failed
+                    </button>
+                    <% elsif @order.completed? %>
+                    <button class="btn btn-warning" onclick="updateOrderStatus('refunded')">
+                        <i class="fas fa-undo me-2"></i>Refund Order
+                    </button>
+                    <% end %>
+                    
+                    <a href="mailto:<%= h(@order.email) %>?subject=Regarding Order #<%= @order.id %>" class="btn btn-outline-primary">
+                        <i class="fas fa-envelope me-2"></i>Email Customer
+                    </a>
+                    
+                    <% if @order.licenses.any? %>
+                    <a href="/admin/licenses?search=<%= u(@order.email) %>" class="btn btn-outline-secondary">
+                        <i class="fas fa-key me-2"></i>View All Licenses
+                    </a>
+                    <% end %>
+                    
+                    <% if @order.pending? || @order.failed? %>
+                    <button class="btn btn-outline-danger" onclick="deleteOrder()">
+                        <i class="fas fa-trash me-2"></i>Delete Order
+                    </button>
+                    <% end %>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payment Details -->
+        <% if @order.payment_details_hash.any? %>
+        <div class="admin-card">
+            <div class="admin-card-header">
+                <i class="fas fa-credit-card me-2"></i>Payment Details
+            </div>
+            <div class="admin-card-body">
+                <% @order.payment_details_hash.each do |key, value| %>
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted"><%= key.humanize %>:</span>
+                    <span class="<%= key.include?('id') ? 'font-monospace' : '' %>">
+                        <%= truncate(value.to_s, 20) %>
+                    </span>
+                </div>
+                <% end %>
+            </div>
+        </div>
+        <% end %>
+    </div>
+</div>
+
+<!-- JavaScript -->
+<script>
+// Update order status
+function updateOrderStatus(newStatus) {
+    const confirmText = newStatus === 'completed' ? 
+        'Are you sure you want to mark this order as completed? This will generate licenses if not already done.' :
+        newStatus === 'refunded' ? 
+        'Are you sure you want to refund this order? This will revoke any associated licenses.' :
+        newStatus === 'failed' ?
+        'Are you sure you want to mark this order as failed?' :
+        `Are you sure you want to update this order status to ${newStatus}?`;
+    
+    if (confirm(confirmText)) {
+        fetch(`/admin/orders/<%= @order.id %>/update-status`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({ status: newStatus })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while updating the order status.');
+        });
+    }
+}
+
+// Delete order
+function deleteOrder() {
+    if (confirm('Are you sure you want to delete this order? This action cannot be undone.')) {
+        fetch('/admin/orders/bulk-action', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({
+                action: 'delete',
+                order_ids: [<%= @order.id %>]
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.href = '/admin/orders';
+            } else {
+                alert('Error: ' + (data.error || 'Unknown error occurred'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while deleting the order.');
+        });
+    }
+}
+
+// Generate licenses for completed order
+function generateLicenses() {
+    if (confirm('Generate licenses for this order? This will create licenses for all order items.')) {
+        fetch(`/admin/orders/<%= @order.id %>/update-status`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({ status: 'completed' })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while generating licenses.');
+        });
+    }
+}
+
+// Copy license key to clipboard
+function copyLicenseKey(licenseKey) {
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(licenseKey).then(() => {
+            AdminUtils.showNotification('License key copied to clipboard!', 'success');
+        }).catch(err => {
+            console.error('Failed to copy: ', err);
+            fallbackCopyTextToClipboard(licenseKey);
+        });
+    } else {
+        fallbackCopyTextToClipboard(licenseKey);
+    }
+}
+
+// Fallback copy function for older browsers
+function fallbackCopyTextToClipboard(text) {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.style.position = "fixed";
+    textArea.style.left = "-999999px";
+    textArea.style.top = "-999999px";
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    
+    try {
+        const successful = document.execCommand('copy');
+        if (successful) {
+            AdminUtils.showNotification('License key copied to clipboard!', 'success');
+        } else {
+            AdminUtils.showNotification('Failed to copy license key', 'error');
+        }
+    } catch (err) {
+        AdminUtils.showNotification('Failed to copy license key', 'error');
+    }
+    
+    document.body.removeChild(textArea);
+}
+</script>
+
+<!-- Custom Styles -->
+<style>
+.admin-card {
+    background: var(--surface-secondary);
+    border: 1px solid var(--border-default);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    color: var(--text-primary);
+}
+
+.admin-card-header {
+    background-color: var(--surface-tertiary);
+    border-bottom: 1px solid var(--border-default);
+    padding: 1rem 1.5rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.admin-card-body {
+    padding: 1.5rem;
+}
+
+.table {
+    color: var(--text-primary);
+}
+
+.table th {
+    border-bottom: 2px solid var(--border-default);
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.table td {
+    border-bottom: 1px solid var(--border-muted);
+}
+
+.table-active {
+    background-color: var(--surface-tertiary);
+}
+
+.alert {
+    border: none;
+    border-radius: 12px;
+}
+
+.font-monospace {
+    font-family: 'Courier New', monospace;
+    letter-spacing: 0.5px;
+}
+
+.text-break {
+    word-break: break-all;
+}
+
+/* Status-specific alert styling */
+.alert-success {
+    background: rgba(46, 160, 67, 0.1);
+    color: var(--text-primary);
+    border-left: 4px solid #2ea043;
+}
+
+.alert-warning {
+    background: rgba(251, 133, 0, 0.1);
+    color: var(--text-primary);
+    border-left: 4px solid #fb8500;
+}
+
+.alert-danger {
+    background: rgba(218, 54, 51, 0.1);
+    color: var(--text-primary);
+    border-left: 4px solid #da3633;
+}
+
+.alert-info {
+    background: rgba(9, 105, 218, 0.1);
+    color: var(--text-primary);
+    border-left: 4px solid #0969da;
+}
+
+/* Dropdown menu styling */
+.dropdown-menu {
+    background: var(--surface-secondary);
+    border: 1px solid var(--border-default);
+    box-shadow: var(--shadow-lg);
+}
+
+.dropdown-item {
+    color: var(--text-primary);
+}
+
+.dropdown-item:hover {
+    background: var(--surface-tertiary);
+    color: var(--accent-primary);
+}
+
+.dropdown-divider {
+    border-color: var(--border-default);
+}
+
+/* Button styling improvements */
+.btn {
+    border-radius: 8px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .admin-card-body {
+        padding: 1rem;
+    }
+    
+    .table-responsive {
+        font-size: 0.875rem;
+    }
+    
+    .d-flex.justify-content-between {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: 0.5rem;
+    }
+    
+    .d-flex.justify-content-between > span:last-child {
+        margin-left: auto;
+    }
+}
+</style>

@@ -6,11 +6,11 @@
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2 class="fw-bold mb-0">
                     <i class="fas fa-shopping-cart me-2"></i>
-                    Shopping Cart
+                    <%= custom_text('cart_title', 'Shopping Cart') %>
                 </h2>
                 <button class="btn btn-outline-secondary" onclick="window.cart.clearCart()">
                     <i class="fas fa-trash me-2"></i>
-                    Clear Cart
+                    <%= custom_text('cart_clear_button', 'Clear Cart') %>
                 </button>
             </div>
             
@@ -24,13 +24,13 @@
                 <div class="card">
                     <div class="card-body py-5">
                         <i class="fas fa-shopping-cart text-muted mb-3" style="font-size: 4rem;"></i>
-                        <h4 class="text-muted">Your Cart is Empty</h4>
+                        <h4 class="text-muted"><%= custom_text('cart_empty_title', 'Your Cart is Empty') %></h4>
                         <p class="text-muted mb-4">
-                            Browse our products and add items to your cart to get started.
+                            <%= custom_text('cart_empty_message', 'Browse our products and add items to your cart to get started.') %>
                         </p>
                         <a href="/#products" class="btn btn-primary">
                             <i class="fas fa-boxes me-2"></i>
-                            Browse Products
+                            <%= custom_text('cart_browse_products', 'Browse Products') %>
                         </a>
                     </div>
                 </div>
@@ -43,7 +43,7 @@
                 <div class="card-header">
                     <h5 class="fw-bold mb-0">
                         <i class="fas fa-receipt me-2"></i>
-                        Order Summary
+                        <%= custom_text('cart_order_summary', 'Order Summary') %>
                     </h5>
                 </div>
                 <div class="card-body">
@@ -55,7 +55,7 @@
                     <div class="d-grid">
                         <button id="checkout-btn" class="btn btn-primary btn-lg" onclick="proceedToCheckout()" disabled>
                             <i class="fas fa-credit-card me-2"></i>
-                            Proceed to Checkout
+                            <%= custom_text('cart_proceed_checkout', 'Proceed to Checkout') %>
                         </button>
                     </div>
                     
@@ -63,15 +63,15 @@
                     <div class="row text-center mt-3">
                         <div class="col-4">
                             <i class="fas fa-shield-alt text-success"></i>
-                            <small class="d-block text-muted">SSL Secured</small>
+                            <small class="d-block text-muted"><%= custom_text('cart_security_ssl', 'SSL Secured') %></small>
                         </div>
                         <div class="col-4">
                             <i class="fas fa-lock text-success"></i>
-                            <small class="d-block text-muted">PCI Compliant</small>
+                            <small class="d-block text-muted"><%= custom_text('cart_security_pci', 'PCI Compliant') %></small>
                         </div>
                         <div class="col-4">
                             <i class="fas fa-award text-success"></i>
-                            <small class="d-block text-muted">Trusted</small>
+                            <small class="d-block text-muted"><%= custom_text('cart_security_trusted', 'Trusted') %></small>
                         </div>
                     </div>
                 </div>

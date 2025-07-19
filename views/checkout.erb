@@ -9,7 +9,7 @@
                 </a>
                 <h2 class="fw-bold mb-0">
                     <i class="fas fa-credit-card me-2"></i>
-                    Checkout
+                    <%= custom_text('checkout_title', 'Checkout') %>
                 </h2>
             </div>
             
@@ -20,17 +20,17 @@
                         <div class="d-flex align-items-center">
                             <div class="step active">
                                 <span class="step-number">1</span>
-                                <span class="step-label">Information</span>
+                                <span class="step-label"><%= custom_text('checkout_step_information', 'Information') %></span>
                             </div>
                             <div class="step-divider"></div>
                             <div class="step">
                                 <span class="step-number">2</span>
-                                <span class="step-label">Payment</span>
+                                <span class="step-label"><%= custom_text('checkout_step_payment', 'Payment') %></span>
                             </div>
                             <div class="step-divider"></div>
                             <div class="step">
                                 <span class="step-number">3</span>
-                                <span class="step-label">Complete</span>
+                                <span class="step-label"><%= custom_text('checkout_step_complete', 'Complete') %></span>
                             </div>
                         </div>
                     </div>
@@ -42,7 +42,7 @@
                 <div class="card-header">
                     <h5 class="fw-bold mb-0">
                         <i class="fas fa-user me-2"></i>
-                        Customer Information
+                        <%= custom_text('checkout_customer_info', 'Customer Information') %>
                     </h5>
                 </div>
                 <div class="card-body">

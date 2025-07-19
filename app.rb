@@ -113,6 +113,7 @@ class SourceLicenseApp < Sinatra::Base
     include UserAuthHelpers
     include TemplateHelpers
     include LicenseHelpers
+    include OrderHelpers
     include CustomizationHelpers
     include SecurityHelpers
   end
@@ -1080,6 +1081,222 @@ class SourceLicenseApp < Sinatra::Base
     csv_data = "License Key,Customer Email,Customer Name,Product,Status,Created At,Expires At,Activations Used,Max Activations\n"
     licenses.each do |license|
       csv_data += "\"#{license.license_key}\",\"#{license.customer_email}\",\"#{license.customer_name || ''}\",\"#{license.product&.name || 'Unknown'}\",#{license.status},#{license.created_at},#{license.expires_at || ''},#{license.activation_count},#{license.effective_max_activations}\n"
+    end
+
+    csv_data
+  end
+
+  # ==================================================
+  # ORDER MANAGEMENT ROUTES
+  # ==================================================
+
+  # Order management
+  get '/admin/orders' do
+    require_secure_admin_auth
+
+    # Pagination
+    page = (params[:page] || 1).to_i
+    per_page = (params[:per_page] || 50).to_i
+    offset = (page - 1) * per_page
+
+    # Filters
+    status_filter = params[:status]
+    payment_method_filter = params[:payment_method]
+    search_query = params[:search]
+    date_filter = params[:date_filter]
+
+    # Build query
+    query = Order.order(Sequel.desc(:created_at))
+
+    # Apply filters
+    query = query.where(status: status_filter) if status_filter && !status_filter.empty?
+    query = query.where(payment_method: payment_method_filter) if payment_method_filter && !payment_method_filter.empty?
+
+    if search_query && !search_query.empty?
+      search_term = "%#{search_query}%"
+      query = query.where(
+        Sequel.|(
+          Sequel.ilike(:email, search_term),
+          Sequel.ilike(:customer_name, search_term),
+          Sequel.like(:id, search_term)
+        )
+      )
+    end
+
+    # Date filtering
+    if date_filter && !date_filter.empty?
+      case date_filter
+      when 'today'
+        query = query.where(created_at: Date.today..(Date.today + 1))
+      when 'week'
+        query = query.where(created_at: (Date.today - 7)..(Date.today + 1))
+      when 'month'
+        query = query.where(created_at: (Date.today - 30)..(Date.today + 1))
+      when 'year'
+        query = query.where(created_at: (Date.today - 365)..(Date.today + 1))
+      end
+    end
+
+    # Get total count for pagination
+    @total_orders = query.count
+
+    # Apply pagination
+    @orders = query.limit(per_page).offset(offset).all
+
+    # Pagination info
+    @current_page = page
+    @per_page = per_page
+    @total_pages = (@total_orders.to_f / per_page).ceil
+
+    @page_title = 'Manage Orders'
+    erb :'admin/orders', layout: :'layouts/admin_layout'
+  end
+
+  # View order details
+  get '/admin/orders/:id' do
+    require_secure_admin_auth
+    @order = Order[params[:id]]
+    halt 404 unless @order
+    @page_title = "Order ##{@order.id}"
+    erb :'admin/orders_show', layout: :'layouts/admin_layout'
+  end
+
+  # Update order status
+  post '/admin/orders/:id/update-status' do
+    require_secure_admin_auth
+    content_type :json
+
+    order = Order[params[:id]]
+    unless order
+      status 404
+      return { success: false, error: 'Order not found' }.to_json
+    end
+
+    new_status = params[:status]
+    unless %w[pending completed failed refunded].include?(new_status)
+      status 400
+      return { success: false, error: 'Invalid status' }.to_json
+    end
+
+    begin
+      case new_status
+      when 'completed'
+        order.complete!
+        # Generate licenses if not already generated
+        generate_licenses_for_order(order) if order.licenses.empty?
+      when 'refunded'
+        order.update(status: 'refunded', refunded_at: Time.now)
+        # Revoke associated licenses
+        order.licenses.each(&:revoke!)
+      else
+        order.update(status: new_status)
+      end
+
+      { success: true, status: order.status }.to_json
+    rescue StandardError => e
+      status 400
+      { success: false, error: e.message }.to_json
+    end
+  end
+
+  # Bulk order actions
+  post '/admin/orders/bulk-action' do
+    require_secure_admin_auth
+    content_type :json
+
+    begin
+      data = JSON.parse(request.body.read)
+      action = data['action']
+      order_ids = data['order_ids']
+
+      unless %w[complete refund delete].include?(action)
+        status 400
+        return { success: false, error: 'Invalid action' }.to_json
+      end
+
+      if order_ids.nil? || order_ids.empty?
+        status 400
+        return { success: false, error: 'No orders selected' }.to_json
+      end
+
+      # Find orders
+      orders = Order.where(id: order_ids)
+      if orders.count != order_ids.length
+        status 400
+        return { success: false, error: 'Some orders not found' }.to_json
+      end
+
+      results = { success: 0, failed: 0, errors: [] }
+
+      DB.transaction do
+        orders.each do |order|
+          case action
+          when 'complete'
+            if order.pending?
+              order.complete!
+              generate_licenses_for_order(order) if order.licenses.empty?
+              results[:success] += 1
+            else
+              results[:failed] += 1
+              results[:errors] << "Order ##{order.id}: Already #{order.status}"
+            end
+          when 'refund'
+            if order.completed?
+              order.update(status: 'refunded', refunded_at: Time.now)
+              order.licenses.each(&:revoke!)
+              results[:success] += 1
+            else
+              results[:failed] += 1
+              results[:errors] << "Order ##{order.id}: Cannot refund #{order.status} order"
+            end
+          when 'delete'
+            if order.pending? || order.failed?
+              # Remove associated licenses if any
+              order.licenses.each(&:destroy)
+              order.destroy
+              results[:success] += 1
+            else
+              results[:failed] += 1
+              results[:errors] << "Order ##{order.id}: Cannot delete #{order.status} order"
+            end
+          end
+        rescue StandardError => e
+          results[:failed] += 1
+          results[:errors] << "Order ##{order.id}: #{e.message}"
+        end
+      end
+
+      { success: true, results: results }.to_json
+    rescue JSON::ParserError
+      status 400
+      { success: false, error: 'Invalid JSON' }.to_json
+    rescue StandardError => e
+      status 500
+      { success: false, error: e.message }.to_json
+    end
+  end
+
+  # Export orders
+  get '/admin/orders/export' do
+    require_secure_admin_auth
+    content_type 'text/csv'
+
+    # Check if specific orders are requested
+    if params[:order_ids]
+      order_ids = params[:order_ids].split(',').map(&:to_i)
+      orders = Order.where(id: order_ids).order(:created_at)
+      filename = "selected_orders_#{Time.now.strftime('%Y%m%d_%H%M%S')}.csv"
+    else
+      orders = Order.order(:created_at)
+      filename = "all_orders_#{Time.now.strftime('%Y%m%d_%H%M%S')}.csv"
+    end
+
+    attachment filename
+
+    csv_data = "Order ID,Customer Email,Customer Name,Amount,Currency,Status,Payment Method,Created At,Completed At,Items\n"
+    orders.each do |order|
+      items = order.order_items.map { |item| "#{item.product&.name} (#{item.quantity}x)" }.join('; ')
+      csv_data += "#{order.id},\"#{order.email}\",\"#{order.customer_name || ''}\",#{order.amount},#{order.currency},#{order.status},#{order.payment_method},#{order.created_at},#{order.completed_at || ''},\"#{items}\"\n"
     end
 
     csv_data

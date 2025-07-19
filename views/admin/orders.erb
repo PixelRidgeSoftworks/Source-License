@@ -1,12 +1,12 @@
-<!-- License Management Header -->
+<!-- Order Management Header -->
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h1 class="h3 mb-1">License Management</h1>
-        <p class="text-muted mb-0">Manage software licenses, customers, and activations</p>
+        <h1 class="h3 mb-1">Order Management</h1>
+        <p class="text-muted mb-0">Manage customer orders, payments, and fulfillment</p>
     </div>
     <div>
         <a href="/admin/licenses/generate" class="btn btn-primary">
-            <i class="fas fa-plus me-2"></i>Generate License
+            <i class="fas fa-plus me-2"></i>Manual License
         </a>
     </div>
 </div>
@@ -17,11 +17,11 @@
         <div class="stat-card">
             <div class="d-flex justify-content-between align-items-start">
                 <div>
-                    <div class="stat-number text-primary"><%= @total_licenses %></div>
-                    <div class="stat-label">Total Licenses</div>
+                    <div class="stat-number text-primary"><%= @total_orders %></div>
+                    <div class="stat-label">Total Orders</div>
                 </div>
                 <div class="text-primary">
-                    <i class="fas fa-key fa-2x"></i>
+                    <i class="fas fa-shopping-cart fa-2x"></i>
                 </div>
             </div>
         </div>
@@ -31,8 +31,8 @@
         <div class="stat-card">
             <div class="d-flex justify-content-between align-items-start">
                 <div>
-                    <div class="stat-number text-success"><%= License.where(status: 'active').count %></div>
-                    <div class="stat-label">Active Licenses</div>
+                    <div class="stat-number text-success"><%= Order.where(status: 'completed').count %></div>
+                    <div class="stat-label">Completed</div>
                 </div>
                 <div class="text-success">
                     <i class="fas fa-check-circle fa-2x"></i>
@@ -45,11 +45,11 @@
         <div class="stat-card">
             <div class="d-flex justify-content-between align-items-start">
                 <div>
-                    <div class="stat-number text-warning"><%= License.where(status: 'suspended').count %></div>
-                    <div class="stat-label">Suspended</div>
+                    <div class="stat-number text-warning"><%= Order.where(status: 'pending').count %></div>
+                    <div class="stat-label">Pending</div>
                 </div>
                 <div class="text-warning">
-                    <i class="fas fa-pause-circle fa-2x"></i>
+                    <i class="fas fa-clock fa-2x"></i>
                 </div>
             </div>
         </div>
@@ -59,11 +59,11 @@
         <div class="stat-card">
             <div class="d-flex justify-content-between align-items-start">
                 <div>
-                    <div class="stat-number text-danger"><%= License.where(status: 'revoked').count %></div>
-                    <div class="stat-label">Revoked</div>
+                    <div class="stat-number text-info"><%= format_currency(Order.where(status: 'completed').sum(:amount) || 0) %></div>
+                    <div class="stat-label">Total Revenue</div>
                 </div>
-                <div class="text-danger">
-                    <i class="fas fa-times-circle fa-2x"></i>
+                <div class="text-info">
+                    <i class="fas fa-dollar-sign fa-2x"></i>
                 </div>
             </div>
         </div>
@@ -77,26 +77,32 @@
             <span class="input-group-text">
                 <i class="fas fa-search"></i>
             </span>
-            <input type="text" class="form-control" placeholder="Search licenses, emails, names..." 
-                   id="licenseSearch" value="<%= h(params[:search] || '') %>">
+            <input type="text" class="form-control" placeholder="Search orders, emails, customers..." 
+                   id="orderSearch" value="<%= h(params[:search] || '') %>">
         </div>
     </div>
     <div class="col-md-8">
         <div class="d-flex gap-2">
             <select class="form-select" id="statusFilter">
                 <option value="">All Status</option>
-                <option value="active" <%= 'selected' if params[:status] == 'active' %>>Active</option>
-                <option value="suspended" <%= 'selected' if params[:status] == 'suspended' %>>Suspended</option>
-                <option value="revoked" <%= 'selected' if params[:status] == 'revoked' %>>Revoked</option>
-                <option value="expired" <%= 'selected' if params[:status] == 'expired' %>>Expired</option>
+                <option value="pending" <%= 'selected' if params[:status] == 'pending' %>>Pending</option>
+                <option value="completed" <%= 'selected' if params[:status] == 'completed' %>>Completed</option>
+                <option value="failed" <%= 'selected' if params[:status] == 'failed' %>>Failed</option>
+                <option value="refunded" <%= 'selected' if params[:status] == 'refunded' %>>Refunded</option>
             </select>
-            <select class="form-select" id="productFilter">
-                <option value="">All Products</option>
-                <% @products.each do |product| %>
-                <option value="<%= product.id %>" <%= 'selected' if params[:product_id] == product.id.to_s %>>
-                    <%= h(product.name) %>
-                </option>
-                <% end %>
+            <select class="form-select" id="paymentMethodFilter">
+                <option value="">All Payment Methods</option>
+                <option value="stripe" <%= 'selected' if params[:payment_method] == 'stripe' %>>Stripe</option>
+                <option value="paypal" <%= 'selected' if params[:payment_method] == 'paypal' %>>PayPal</option>
+                <option value="free" <%= 'selected' if params[:payment_method] == 'free' %>>Free</option>
+                <option value="manual" <%= 'selected' if params[:payment_method] == 'manual' %>>Manual</option>
+            </select>
+            <select class="form-select" id="dateFilter">
+                <option value="">All Time</option>
+                <option value="today" <%= 'selected' if params[:date_filter] == 'today' %>>Today</option>
+                <option value="week" <%= 'selected' if params[:date_filter] == 'week' %>>This Week</option>
+                <option value="month" <%= 'selected' if params[:date_filter] == 'month' %>>This Month</option>
+                <option value="year" <%= 'selected' if params[:date_filter] == 'year' %>>This Year</option>
             </select>
             <select class="form-select" id="perPageFilter">
                 <option value="25" <%= 'selected' if @per_page == 25 %>>25 per page</option>
@@ -111,17 +117,17 @@
 <div id="bulkActionsToolbar" class="bulk-actions-toolbar mb-3" style="display: none;">
     <div class="d-flex justify-content-between align-items-center">
         <div class="bulk-actions-info">
-            <span id="selectedCount">0</span> licenses selected
+            <span id="selectedCount">0</span> orders selected
         </div>
         <div class="bulk-actions-buttons">
-            <button class="btn btn-success btn-sm me-2" onclick="bulkActivate()">
-                <i class="fas fa-play me-1"></i>Activate
+            <button class="btn btn-success btn-sm me-2" onclick="bulkComplete()">
+                <i class="fas fa-check me-1"></i>Complete
             </button>
-            <button class="btn btn-warning btn-sm me-2" onclick="bulkSuspend()">
-                <i class="fas fa-pause me-1"></i>Suspend
+            <button class="btn btn-warning btn-sm me-2" onclick="bulkRefund()">
+                <i class="fas fa-undo me-1"></i>Refund
             </button>
-            <button class="btn btn-danger btn-sm me-2" onclick="bulkRevoke()">
-                <i class="fas fa-ban me-1"></i>Revoke
+            <button class="btn btn-danger btn-sm me-2" onclick="bulkDelete()">
+                <i class="fas fa-trash me-1"></i>Delete
             </button>
             <button class="btn btn-info btn-sm me-2" onclick="bulkExport()">
                 <i class="fas fa-download me-1"></i>Export Selected
@@ -133,59 +139,61 @@
     </div>
 </div>
 
-<!-- Licenses Table -->
+<!-- Orders Table -->
 <div class="data-table">
     <h5 class="table-header">
-        <i class="fas fa-key me-2"></i>
-        Licenses
-        <% if @total_licenses > @per_page %>
+        <i class="fas fa-shopping-cart me-2"></i>
+        Orders
+        <% if @total_orders > @per_page %>
         <small class="text-muted ms-2">
-            (Showing <%= [(@current_page - 1) * @per_page + 1, @total_licenses].min %>-<%= [@current_page * @per_page, @total_licenses].min %> of <%= @total_licenses %>)
+            (Showing <%= [(@current_page - 1) * @per_page + 1, @total_orders].min %>-<%= [@current_page * @per_page, @total_orders].min %> of <%= @total_orders %>)
         </small>
         <% end %>
     </h5>
     
-    <div class="table-responsive">
-        <% if @licenses.any? %>
-        <table class="table table-hover table-dark mb-0" id="licensesTable">
+    <div class="table-responsive orders-table-container">
+        <% if @orders.any? %>
+        <table class="table table-hover table-dark mb-0" id="ordersTable">
             <thead>
                 <tr>
                     <th width="40">
                         <input type="checkbox" id="selectAll" class="form-check-input">
                     </th>
-                    <th>License Key</th>
+                    <th>Order ID</th>
                     <th>Customer</th>
-                    <th>Product</th>
+                    <th>Amount</th>
                     <th>Status</th>
-                    <th>Activations</th>
-                    <th>Expires</th>
+                    <th>Payment Method</th>
+                    <th>Items</th>
                     <th>Created</th>
                     <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
-                <% @licenses.each do |license| %>
-                <tr class="license-row" 
-                    data-status="<%= license.status %>"
-                    data-product="<%= license.product&.id || '' %>"
-                    data-customer="<%= h(license.customer_email.downcase) %>">
+                <% @orders.each do |order| %>
+                <tr class="order-row" 
+                    data-status="<%= order.status %>"
+                    data-payment-method="<%= order.payment_method %>"
+                    data-customer="<%= h(order.email.downcase) %>">
                     <td>
-                        <input type="checkbox" class="form-check-input license-checkbox" 
-                               value="<%= license.id %>" data-license-key="<%= h(license.license_key) %>">
+                        <input type="checkbox" class="form-check-input order-checkbox" 
+                               value="<%= order.id %>" data-order-id="<%= order.id %>">
                     </td>
                     <td>
                         <div class="d-flex align-items-center">
-                            <div class="license-icon me-3">
-                                <%= license_status_icon(license.status) %>
+                            <div class="order-icon me-3">
+                                <%= order_status_icon(order.status) %>
                             </div>
                             <div>
-                                <div class="fw-bold font-monospace text-primary">
-                                    <a href="/admin/licenses/<%= license.id %>" class="text-decoration-none">
-                                        <%= format_license_key(license.license_key) %>
+                                <div class="fw-bold text-primary">
+                                    <a href="/admin/orders/<%= order.id %>" class="text-decoration-none">
+                                        #<%= order.id %>
                                     </a>
                                 </div>
-                                <% if license.custom_config? %>
-                                <small class="badge bg-info">Custom Config</small>
+                                <% if order.payment_intent_id %>
+                                <small class="text-muted font-monospace">
+                                    <%= truncate(order.payment_intent_id, 20) %>
+                                </small>
                                 <% end %>
                             </div>
                         </div>
@@ -193,107 +201,95 @@
                     <td>
                         <div>
                             <div class="fw-bold">
-                                <%= h(license.customer_email.split('@').first.capitalize) %>
+                                <%= h(order.customer_name || order.email.split('@').first.capitalize) %>
                             </div>
                             <small class="text-muted">
-                                <a href="mailto:<%= h(license.customer_email) %>" class="text-decoration-none">
-                                    <%= h(license.customer_email) %>
+                                <a href="mailto:<%= h(order.email) %>" class="text-decoration-none">
+                                    <%= h(order.email) %>
                                 </a>
                             </small>
                         </div>
                     </td>
                     <td>
-                        <% if license.product %>
-                        <div>
-                            <div class="fw-bold">
-                                <a href="/admin/products/<%= license.product.id %>" class="text-decoration-none">
-                                    <%= h(license.product.name) %>
-                                </a>
-                            </div>
-                            <small class="text-muted">
-                                <% if license.product.subscription? %>
-                                <i class="fas fa-sync-alt"></i> Subscription
-                                <% else %>
-                                <i class="fas fa-shopping-cart"></i> One-time
-                                <% end %>
-                            </small>
+                        <div class="fw-bold">
+                            <%= format_currency(order.amount, order.currency) %>
                         </div>
-                        <% else %>
-                        <span class="text-muted">Unknown Product</span>
-                        <% end %>
+                        <small class="text-muted">
+                            <%= order.currency.upcase %>
+                        </small>
                     </td>
                     <td>
-                        <%= status_badge(license.status) %>
-                        <% if license.expired? %>
-                        <br><small class="text-danger">
-                            <i class="fas fa-clock me-1"></i>Expired
+                        <%= status_badge(order.status) %>
+                        <% if order.completed_at %>
+                        <br><small class="text-success">
+                            <i class="fas fa-check me-1"></i>
+                            Completed <%= time_ago(order.completed_at) %>
                         </small>
-                        <% elsif license.trial_active? %>
-                        <br><small class="text-info">
-                            <i class="fas fa-clock me-1"></i>Trial Active
-                        </small>
-                        <% elsif license.in_grace_period? %>
+                        <% elsif order.refunded_at %>
                         <br><small class="text-warning">
-                            <i class="fas fa-exclamation-triangle me-1"></i>Grace Period
+                            <i class="fas fa-undo me-1"></i>
+                            Refunded <%= time_ago(order.refunded_at) %>
                         </small>
                         <% end %>
                     </td>
                     <td>
                         <div class="d-flex align-items-center">
-                            <div class="me-2">
-                                <div class="fw-bold">
-                                    <span class="<%= license.activation_count >= license.effective_max_activations ? 'text-danger' : 'text-success' %>">
-                                        <%= license.activation_count %>
-                                    </span>
-                                    / <%= license.effective_max_activations %>
-                                </div>
-                                <small class="text-muted">
-                                    <%= license.remaining_activations %> remaining
-                                </small>
-                            </div>
-                            <div style="width: 40px;">
-                                <%= activation_progress(license.activation_count, license.effective_max_activations) %>
-                            </div>
+                            <%= payment_method_icon(order.payment_method) %>
+                            <span class="ms-2">
+                                <%= order.payment_method.capitalize %>
+                            </span>
                         </div>
                     </td>
                     <td>
-                        <% if license.effective_expires_at %>
-                        <div class="<%= license.expired? ? 'text-danger' : 'text-muted' %>">
-                            <%= format_date(license.effective_expires_at, :short) %>
+                        <div>
+                            <% if order.order_items.any? %>
+                            <div class="fw-bold">
+                                <%= order.order_items.count %> item(s)
+                            </div>
+                            <small class="text-muted">
+                                <% order.order_items.first(2).each do |item| %>
+                                    <div>
+                                        <%= h(item.product&.name || 'Unknown Product') %>
+                                        <% if item.quantity > 1 %>
+                                        (×<%= item.quantity %>)
+                                        <% end %>
+                                    </div>
+                                <% end %>
+                                <% if order.order_items.count > 2 %>
+                                <div>... and <%= order.order_items.count - 2 %> more</div>
+                                <% end %>
+                            </small>
+                            <% else %>
+                            <span class="text-muted">No items</span>
+                            <% end %>
                         </div>
-                        <small class="text-muted">
-                            <%= license_expires_in(license.effective_expires_at) %>
-                        </small>
-                        <% else %>
-                        <span class="text-success">Never</span>
-                        <% end %>
                     </td>
                     <td>
                         <div class="text-muted">
-                            <%= format_date(license.created_at, :short) %>
+                            <%= format_date(order.created_at, :short) %>
                         </div>
                         <small class="text-muted">
-                            <%= time_ago(license.created_at) %>
+                            <%= time_ago(order.created_at) %>
                         </small>
                     </td>
                     <td>
                         <div class="btn-group btn-group-sm">
-                            <a href="/admin/licenses/<%= license.id %>" 
+                            <a href="/admin/orders/<%= order.id %>" 
                                class="btn btn-outline-primary"
                                title="View Details">
                                 <i class="fas fa-eye"></i>
                             </a>
-                            <% if license.status == 'active' %>
-                            <button class="btn btn-outline-warning"
-                                    onclick="toggleLicenseStatus(<%= license.id %>, 'suspend')"
-                                    title="Suspend License">
-                                <i class="fas fa-pause"></i>
-                            </button>
-                            <% elsif license.status == 'suspended' %>
+                            <% if order.pending? %>
                             <button class="btn btn-outline-success"
-                                    onclick="toggleLicenseStatus(<%= license.id %>, 'activate')"
-                                    title="Activate License">
-                                <i class="fas fa-play"></i>
+                                    onclick="updateOrderStatus(<%= order.id %>, 'completed')"
+                                    title="Mark as Completed">
+                                <i class="fas fa-check"></i>
+                            </button>
+                            <% elsif order.completed? %>
+                            <button class="btn btn-outline-warning"
+                                    onclick="updateOrderStatus(<%= order.id %>, 'refunded')"
+                                    title="Refund Order">
+                                <i class="fas fa-undo"></i>
                             </button>
                             <% end %>
                             <div class="dropdown">
@@ -303,28 +299,23 @@
                                 </button>
                                 <ul class="dropdown-menu">
                                     <li>
-                                        <button class="dropdown-item" onclick="copyLicenseKey('<%= license.license_key %>')">
-                                            <i class="fas fa-copy me-2"></i>Copy License Key
-                                        </button>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item" href="mailto:<%= h(license.customer_email) %>?subject=Regarding License <%= license.license_key %>">
+                                        <a class="dropdown-item" href="mailto:<%= h(order.email) %>?subject=Regarding Order #<%= order.id %>">
                                             <i class="fas fa-envelope me-2"></i>Email Customer
                                         </a>
                                     </li>
-                                    <% if license.product %>
+                                    <% if order.licenses.any? %>
                                     <li>
-                                        <a class="dropdown-item" href="/admin/products/<%= license.product.id %>">
-                                            <i class="fas fa-box me-2"></i>View Product
+                                        <a class="dropdown-item" href="/admin/licenses?search=<%= u(order.email) %>">
+                                            <i class="fas fa-key me-2"></i>View Licenses
                                         </a>
                                     </li>
                                     <% end %>
                                     <li><hr class="dropdown-divider"></li>
-                                    <% unless license.status == 'revoked' %>
+                                    <% if order.pending? || order.failed? %>
                                     <li>
                                         <button class="dropdown-item text-danger" 
-                                                onclick="toggleLicenseStatus(<%= license.id %>, 'revoke')">
-                                            <i class="fas fa-ban me-2"></i>Revoke License
+                                                onclick="deleteOrder(<%= order.id %>)">
+                                            <i class="fas fa-trash me-2"></i>Delete Order
                                         </button>
                                     </li>
                                     <% end %>
@@ -338,23 +329,20 @@
         </table>
         <% else %>
         <div class="text-center py-5">
-            <i class="fas fa-key text-muted mb-3" style="font-size: 3rem;"></i>
-            <h5 class="text-muted">No Licenses Found</h5>
+            <i class="fas fa-shopping-cart text-muted mb-3" style="font-size: 3rem;"></i>
+            <h5 class="text-muted">No Orders Found</h5>
             <p class="text-muted mb-4">
-                <% if params[:search] || params[:status] || params[:product_id] %>
-                No licenses match your current filters. Try adjusting your search criteria.
+                <% if params[:search] || params[:status] || params[:payment_method] || params[:date_filter] %>
+                No orders match your current filters. Try adjusting your search criteria.
                 <% else %>
-                Start by generating your first license or wait for customer purchases.
+                Orders will appear here when customers make purchases.
                 <% end %>
             </p>
-            <% if params[:search] || params[:status] || params[:product_id] %>
-            <button class="btn btn-secondary me-2" onclick="clearFilters()">
+            <% if params[:search] || params[:status] || params[:payment_method] || params[:date_filter] %>
+            <button class="btn btn-secondary" onclick="clearFilters()">
                 <i class="fas fa-times me-2"></i>Clear Filters
             </button>
             <% end %>
-            <a href="/admin/licenses/generate" class="btn btn-primary">
-                <i class="fas fa-plus me-2"></i>Generate License
-            </a>
         </div>
         <% end %>
     </div>
@@ -364,7 +352,7 @@
     <div class="card-footer" style="background: var(--surface-tertiary); border-top: 1px solid var(--border-default);">
         <div class="d-flex justify-content-between align-items-center">
             <small class="text-muted">
-                Showing <%= [(@current_page - 1) * @per_page + 1, @total_licenses].min %>-<%= [@current_page * @per_page, @total_licenses].min %> of <%= @total_licenses %> licenses
+                Showing <%= [(@current_page - 1) * @per_page + 1, @total_orders].min %>-<%= [@current_page * @per_page, @total_orders].min %> of <%= @total_orders %> orders
             </small>
             
             <nav>
@@ -435,20 +423,20 @@
             </nav>
             
             <div class="btn-group btn-group-sm">
-                <button class="btn btn-outline-secondary" onclick="exportLicenses()">
+                <button class="btn btn-outline-secondary" onclick="exportOrders()">
                     <i class="fas fa-download me-1"></i>Export All
                 </button>
             </div>
         </div>
     </div>
-    <% elsif @licenses.any? %>
+    <% elsif @orders.any? %>
     <div class="card-footer" style="background: var(--surface-tertiary); border-top: 1px solid var(--border-default);">
         <div class="d-flex justify-content-between align-items-center">
             <small class="text-muted">
-                Showing all <%= @total_licenses %> licenses
+                Showing all <%= @total_orders %> orders
             </small>
             <div class="btn-group btn-group-sm">
-                <button class="btn btn-outline-secondary" onclick="exportLicenses()">
+                <button class="btn btn-outline-secondary" onclick="exportOrders()">
                     <i class="fas fa-download me-1"></i>Export All
                 </button>
             </div>
@@ -457,15 +445,16 @@
     <% end %>
 </div>
 
-<!-- License Management JavaScript -->
+<!-- Order Management JavaScript -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const searchInput = document.getElementById('licenseSearch');
+    const searchInput = document.getElementById('orderSearch');
     const statusFilter = document.getElementById('statusFilter');
-    const productFilter = document.getElementById('productFilter');
+    const paymentMethodFilter = document.getElementById('paymentMethodFilter');
+    const dateFilter = document.getElementById('dateFilter');
     const perPageFilter = document.getElementById('perPageFilter');
     const selectAllCheckbox = document.getElementById('selectAll');
-    const licenseCheckboxes = document.querySelectorAll('.license-checkbox');
+    const orderCheckboxes = document.querySelectorAll('.order-checkbox');
     const bulkToolbar = document.getElementById('bulkActionsToolbar');
     const selectedCountElement = document.getElementById('selectedCount');
     
@@ -482,12 +471,14 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const search = searchInput.value.trim();
         const status = statusFilter.value;
-        const product = productFilter.value;
+        const paymentMethod = paymentMethodFilter.value;
+        const dateRange = dateFilter.value;
         const perPage = perPageFilter.value;
         
         if (search) params.set('search', search);
         if (status) params.set('status', status);
-        if (product) params.set('product_id', product);
+        if (paymentMethod) params.set('payment_method', paymentMethod);
+        if (dateRange) params.set('date_filter', dateRange);
         if (perPage !== '50') params.set('per_page', perPage);
         
         const url = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
@@ -510,18 +501,19 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Filter change handlers
     if (statusFilter) statusFilter.addEventListener('change', applyFilters);
-    if (productFilter) productFilter.addEventListener('change', applyFilters);
+    if (paymentMethodFilter) paymentMethodFilter.addEventListener('change', applyFilters);
+    if (dateFilter) dateFilter.addEventListener('change', applyFilters);
     if (perPageFilter) perPageFilter.addEventListener('change', applyFilters);
     
     // Bulk selection functionality
     function updateBulkSelection() {
-        const checkedBoxes = Array.from(licenseCheckboxes).filter(cb => cb.checked);
+        const checkedBoxes = Array.from(orderCheckboxes).filter(cb => cb.checked);
         
         // Update select all checkbox state
         if (checkedBoxes.length === 0) {
             selectAllCheckbox.indeterminate = false;
             selectAllCheckbox.checked = false;
-        } else if (checkedBoxes.length === licenseCheckboxes.length) {
+        } else if (checkedBoxes.length === orderCheckboxes.length) {
             selectAllCheckbox.indeterminate = false;
             selectAllCheckbox.checked = true;
         } else {
@@ -541,7 +533,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Select all checkbox handler
     if (selectAllCheckbox) {
         selectAllCheckbox.addEventListener('change', function() {
-            licenseCheckboxes.forEach(checkbox => {
+            orderCheckboxes.forEach(checkbox => {
                 checkbox.checked = this.checked;
             });
             updateBulkSelection();
@@ -549,99 +541,90 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Individual checkbox handlers
-    licenseCheckboxes.forEach(checkbox => {
+    orderCheckboxes.forEach(checkbox => {
         checkbox.addEventListener('change', updateBulkSelection);
     });
 });
 
-// Get selected license IDs
-function getSelectedLicenseIds() {
-    return Array.from(document.querySelectorAll('.license-checkbox:checked')).map(cb => cb.value);
-}
-
-// Get selected license keys
-function getSelectedLicenseKeys() {
-    return Array.from(document.querySelectorAll('.license-checkbox:checked'))
-        .map(cb => cb.dataset.licenseKey);
+// Get selected order IDs
+function getSelectedOrderIds() {
+    return Array.from(document.querySelectorAll('.order-checkbox:checked')).map(cb => cb.value);
 }
 
 // Clear selection
 function clearSelection() {
-    document.querySelectorAll('.license-checkbox').forEach(cb => cb.checked = false);
+    document.querySelectorAll('.order-checkbox').forEach(cb => cb.checked = false);
     document.getElementById('selectAll').checked = false;
     document.getElementById('selectAll').indeterminate = false;
     document.getElementById('bulkActionsToolbar').style.display = 'none';
 }
 
-// Bulk activate licenses
-function bulkActivate() {
-    const licenseIds = getSelectedLicenseIds();
-    const licenseKeys = getSelectedLicenseKeys();
+// Bulk complete orders
+function bulkComplete() {
+    const orderIds = getSelectedOrderIds();
     
-    if (licenseIds.length === 0) {
-        alert('Please select licenses to activate.');
+    if (orderIds.length === 0) {
+        alert('Please select orders to complete.');
         return;
     }
     
-    if (confirm(`Are you sure you want to activate ${licenseIds.length} selected licenses?\n\n${licenseKeys.slice(0, 5).join(', ')}${licenseKeys.length > 5 ? '...' : ''}`)) {
-        performBulkAction('activate', licenseIds);
+    if (confirm(`Are you sure you want to mark ${orderIds.length} selected orders as completed?\n\nThis will generate licenses for pending orders.`)) {
+        performBulkAction('complete', orderIds);
     }
 }
 
-// Bulk suspend licenses
-function bulkSuspend() {
-    const licenseIds = getSelectedLicenseIds();
-    const licenseKeys = getSelectedLicenseKeys();
+// Bulk refund orders
+function bulkRefund() {
+    const orderIds = getSelectedOrderIds();
     
-    if (licenseIds.length === 0) {
-        alert('Please select licenses to suspend.');
+    if (orderIds.length === 0) {
+        alert('Please select orders to refund.');
         return;
     }
     
-    if (confirm(`Are you sure you want to suspend ${licenseIds.length} selected licenses?\n\n${licenseKeys.slice(0, 5).join(', ')}${licenseKeys.length > 5 ? '...' : ''}\n\nThis will prevent the licenses from being used until reactivated.`)) {
-        performBulkAction('suspend', licenseIds);
+    if (confirm(`⚠️ Are you sure you want to refund ${orderIds.length} selected orders?\n\nThis will refund the orders and revoke any associated licenses!`)) {
+        performBulkAction('refund', orderIds);
     }
 }
 
-// Bulk revoke licenses
-function bulkRevoke() {
-    const licenseIds = getSelectedLicenseIds();
-    const licenseKeys = getSelectedLicenseKeys();
+// Bulk delete orders
+function bulkDelete() {
+    const orderIds = getSelectedOrderIds();
     
-    if (licenseIds.length === 0) {
-        alert('Please select licenses to revoke.');
+    if (orderIds.length === 0) {
+        alert('Please select orders to delete.');
         return;
     }
     
-    if (confirm(`⚠️ WARNING: Are you sure you want to REVOKE ${licenseIds.length} selected licenses?\n\n${licenseKeys.slice(0, 5).join(', ')}${licenseKeys.length > 5 ? '...' : ''}\n\nThis will permanently disable the licenses and deactivate all activations!\nThis action CANNOT be undone!`)) {
-        performBulkAction('revoke', licenseIds);
+    if (confirm(`⚠️ WARNING: Are you sure you want to DELETE ${orderIds.length} selected orders?\n\nThis will permanently remove the orders and any associated data!\nThis action CANNOT be undone!`)) {
+        performBulkAction('delete', orderIds);
     }
 }
 
-// Bulk export licenses
+// Bulk export orders
 function bulkExport() {
-    const licenseIds = getSelectedLicenseIds();
+    const orderIds = getSelectedOrderIds();
     
-    if (licenseIds.length === 0) {
-        alert('Please select licenses to export.');
+    if (orderIds.length === 0) {
+        alert('Please select orders to export.');
         return;
     }
     
-    const params = new URLSearchParams({ license_ids: licenseIds.join(',') });
-    window.location.href = `/admin/licenses/export?${params.toString()}`;
+    const params = new URLSearchParams({ order_ids: orderIds.join(',') });
+    window.location.href = `/admin/orders/export?${params.toString()}`;
 }
 
 // Perform bulk action
-function performBulkAction(action, licenseIds) {
-    const loadingText = action === 'revoke' ? 'Revoking...' : 
-                       action === 'activate' ? 'Activating...' : 'Suspending...';
+function performBulkAction(action, orderIds) {
+    const loadingText = action === 'complete' ? 'Completing...' : 
+                       action === 'refund' ? 'Refunding...' : 'Deleting...';
     
     // Show loading state
     const toolbar = document.getElementById('bulkActionsToolbar');
     const originalHTML = toolbar.innerHTML;
     toolbar.innerHTML = `<div class="d-flex align-items-center"><div class="spinner-border spinner-border-sm me-2"></div>${loadingText}</div>`;
     
-    fetch('/admin/licenses/bulk-action', {
+    fetch('/admin/orders/bulk-action', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -649,7 +632,7 @@ function performBulkAction(action, licenseIds) {
         },
         body: JSON.stringify({
             action: action,
-            license_ids: licenseIds
+            order_ids: orderIds
         })
     })
     .then(response => response.json())
@@ -682,22 +665,22 @@ function performBulkAction(action, licenseIds) {
     });
 }
 
-// Toggle license status
-function toggleLicenseStatus(licenseId, action) {
-    const actionText = action === 'revoke' ? 'revoke' : 
-                      action === 'suspend' ? 'suspend' : 'activate';
-    const confirmText = action === 'revoke' ? 
-        'Are you sure you want to REVOKE this license? This will permanently disable it and deactivate all activations. This action CANNOT be undone!' :
-        `Are you sure you want to ${actionText} this license?`;
+// Update order status
+function updateOrderStatus(orderId, newStatus) {
+    const confirmText = newStatus === 'completed' ? 
+        'Are you sure you want to mark this order as completed? This will generate licenses if not already done.' :
+        newStatus === 'refunded' ? 
+        'Are you sure you want to refund this order? This will revoke any associated licenses.' :
+        `Are you sure you want to update this order status to ${newStatus}?`;
     
     if (confirm(confirmText)) {
-        fetch(`/admin/licenses/${licenseId}/toggle-status`, {
+        fetch(`/admin/orders/${orderId}/update-status`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'X-Requested-With': 'XMLHttpRequest'
             },
-            body: JSON.stringify({ action: action })
+            body: JSON.stringify({ status: newStatus })
         })
         .then(response => response.json())
         .then(data => {
@@ -709,53 +692,21 @@ function toggleLicenseStatus(licenseId, action) {
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('An error occurred while updating the license status.');
+            alert('An error occurred while updating the order status.');
         });
     }
 }
 
-// Copy license key to clipboard
-function copyLicenseKey(licenseKey) {
-    if (navigator.clipboard) {
-        navigator.clipboard.writeText(licenseKey).then(() => {
-            AdminUtils.showNotification('License key copied to clipboard!', 'success');
-        }).catch(err => {
-            console.error('Failed to copy: ', err);
-            fallbackCopyTextToClipboard(licenseKey);
-        });
-    } else {
-        fallbackCopyTextToClipboard(licenseKey);
+// Delete order
+function deleteOrder(orderId) {
+    if (confirm('Are you sure you want to delete this order? This action cannot be undone.')) {
+        performBulkAction('delete', [orderId]);
     }
 }
 
-// Fallback copy function for older browsers
-function fallbackCopyTextToClipboard(text) {
-    const textArea = document.createElement("textarea");
-    textArea.value = text;
-    textArea.style.position = "fixed";
-    textArea.style.left = "-999999px";
-    textArea.style.top = "-999999px";
-    document.body.appendChild(textArea);
-    textArea.focus();
-    textArea.select();
-    
-    try {
-        const successful = document.execCommand('copy');
-        if (successful) {
-            AdminUtils.showNotification('License key copied to clipboard!', 'success');
-        } else {
-            AdminUtils.showNotification('Failed to copy license key', 'error');
-        }
-    } catch (err) {
-        AdminUtils.showNotification('Failed to copy license key', 'error');
-    }
-    
-    document.body.removeChild(textArea);
-}
-
-// Export licenses
-function exportLicenses() {
-    window.location.href = '/admin/licenses/export';
+// Export orders
+function exportOrders() {
+    window.location.href = '/admin/orders/export';
 }
 
 // Stat card click handlers
@@ -769,14 +720,11 @@ document.querySelectorAll('.stat-card').forEach(card => {
         statusFilter.value = '';
         
         switch(label) {
-            case 'active licenses':
-                statusFilter.value = 'active';
+            case 'completed':
+                statusFilter.value = 'completed';
                 break;
-            case 'suspended':
-                statusFilter.value = 'suspended';
-                break;
-            case 'revoked':
-                statusFilter.value = 'revoked';
+            case 'pending':
+                statusFilter.value = 'pending';
                 break;
         }
         
@@ -790,7 +738,7 @@ document.querySelectorAll('.stat-card').forEach(card => {
 
 <!-- Custom Styles -->
 <style>
-.license-icon {
+.order-icon {
     width: 30px;
     height: 30px;
     display: flex;
@@ -808,7 +756,7 @@ document.querySelectorAll('.stat-card').forEach(card => {
     padding: 0.25rem 0.5rem;
 }
 
-.license-row:hover {
+.order-row:hover {
     background-color: var(--surface-tertiary);
 }
 
@@ -865,7 +813,7 @@ document.querySelectorAll('.stat-card').forEach(card => {
 }
 
 /* Selected row highlighting */
-.license-row:has(.license-checkbox:checked) {
+.order-row:has(.order-checkbox:checked) {
     background-color: rgba(35, 134, 54, 0.1) !important;
     border-left: 3px solid var(--accent-primary);
 }
@@ -878,16 +826,6 @@ document.querySelectorAll('.stat-card').forEach(card => {
 
 .form-check-input:focus {
     box-shadow: 0 0 0 0.25rem rgba(35, 134, 54, 0.25);
-}
-
-/* Progress bar improvements */
-.progress {
-    height: 6px !important;
-    background-color: var(--surface-tertiary);
-}
-
-.progress-bar {
-    transition: width 0.3s ease;
 }
 
 /* Pagination styling */
@@ -914,6 +852,66 @@ document.querySelectorAll('.stat-card').forEach(card => {
     color: var(--text-muted);
 }
 
+/* Font monospace for order IDs */
+.font-monospace {
+    font-family: 'Courier New', monospace;
+    letter-spacing: 0.5px;
+}
+
+/* Orders table container styling */
+.orders-table-container {
+    min-height: 400px; /* Reasonable minimum height for dropdowns without excessive scrolling */
+    position: relative;
+}
+
+.orders-table-container .table {
+    margin-bottom: 0;
+}
+
+/* Ensure dropdown menus don't cause scrolling */
+.dropdown-menu {
+    position: absolute;
+    z-index: 1050;
+    max-height: 300px;
+    overflow-y: auto;
+    /* Hide scrollbar while maintaining functionality */
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* Internet Explorer and Edge */
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.dropdown-menu::-webkit-scrollbar {
+    display: none;
+}
+
+/* Table wrapper to handle overflow properly */
+.data-table {
+    position: relative;
+    background: var(--surface-secondary);
+    border: 1px solid var(--border-default);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+}
+
+.table-header {
+    background-color: var(--surface-tertiary);
+    border-bottom: 1px solid var(--border-default);
+    padding: 1rem 1.5rem;
+    margin: 0;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* Empty state styling */
+.orders-table-container .text-center {
+    min-height: 350px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
 /* Responsive bulk actions */
 @media (max-width: 768px) {
     .bulk-actions-toolbar .d-flex {
@@ -935,19 +933,31 @@ document.querySelectorAll('.stat-card').forEach(card => {
         font-size: 0.875rem;
     }
     
-    .license-row .fw-bold {
+    .order-row .fw-bold {
         font-size: 0.8rem;
     }
     
-    .license-row small {
+    .order-row small {
         font-size: 0.7rem;
+    }
+    
+    /* Reduce minimum height on mobile */
+    .orders-table-container {
+        min-height: 50vh;
+    }
+    
+    .orders-table-container .text-center {
+        min-height: 40vh;
     }
 }
 
-/* Font monospace for license keys */
-.font-monospace {
-    font-family: 'Courier New', monospace;
-    letter-spacing: 0.5px;
+/* Ensure proper spacing for dropdown overlays */
+.btn-group {
+    position: relative;
+}
+
+.dropdown-toggle::after {
+    margin-left: 0.5em;
 }
 </style>
 

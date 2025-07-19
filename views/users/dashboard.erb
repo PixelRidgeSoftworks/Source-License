@@ -4,8 +4,8 @@
     <div class="col">
       <div class="d-flex justify-content-between align-items-center">
         <div>
-          <h2 class="mb-1">Welcome back, <%= h(@user.name || @user.email) %>!</h2>
-          <p class="text-muted mb-0">Manage your licenses and account settings</p>
+          <h2 class="mb-1"><%= custom_text('dashboard_welcome', 'Welcome back') %>, <%= h(@user.name || @user.email) %>!</h2>
+          <p class="text-muted mb-0"><%= custom_text('dashboard_subtitle', 'Manage your licenses and account settings') %></p>
         </div>
         <div class="dropdown">
           <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
@@ -35,7 +35,7 @@
         <div class="card-body">
           <div class="d-flex justify-content-between">
             <div>
-              <h5 class="card-title">Total Licenses</h5>
+              <h5 class="card-title"><%= custom_text('dashboard_total_licenses', 'Total Licenses') %></h5>
               <h3 class="mb-0"><%= @licenses.length %></h3>
             </div>
             <div class="align-self-center">
@@ -50,7 +50,7 @@
         <div class="card-body">
           <div class="d-flex justify-content-between">
             <div>
-              <h5 class="card-title">Active Licenses</h5>
+              <h5 class="card-title"><%= custom_text('dashboard_active_licenses', 'Active Licenses') %></h5>
               <h3 class="mb-0"><%= @licenses.count { |l| l.status == 'active' } %></h3>
             </div>
             <div class="align-self-center">
@@ -65,7 +65,7 @@
         <div class="card-body">
           <div class="d-flex justify-content-between">
             <div>
-              <h5 class="card-title">Downloads</h5>
+              <h5 class="card-title"><%= custom_text('dashboard_downloads', 'Downloads') %></h5>
               <h3 class="mb-0"><%= @licenses.sum(&:download_count) %></h3>
             </div>
             <div class="align-self-center">
@@ -84,7 +84,7 @@
         <div class="card-header">
           <h5 class="mb-0">
             <i class="fas fa-bolt me-2"></i>
-            Quick Actions
+            <%= custom_text('dashboard_quick_actions', 'Quick Actions') %>
           </h5>
         </div>
         <div class="card-body">
@@ -92,19 +92,19 @@
             <div class="col-md-4 mb-2">
               <a href="/licenses" class="btn btn-outline-primary w-100">
                 <i class="fas fa-list me-2"></i>
-                View All Licenses
+                <%= custom_text('dashboard_view_licenses', 'View All Licenses') %>
               </a>
             </div>
             <div class="col-md-4 mb-2">
               <a href="/validate-license" class="btn btn-outline-info w-100">
                 <i class="fas fa-shield-alt me-2"></i>
-                Validate License
+                <%= custom_text('dashboard_validate_license', 'Validate License') %>
               </a>
             </div>
             <div class="col-md-4 mb-2">
               <a href="/profile" class="btn btn-outline-secondary w-100">
                 <i class="fas fa-user-edit me-2"></i>
-                Edit Profile
+                <%= custom_text('dashboard_edit_profile', 'Edit Profile') %>
               </a>
             </div>
           </div>
@@ -120,23 +120,23 @@
         <div class="card-header d-flex justify-content-between align-items-center">
           <h5 class="mb-0">
             <i class="fas fa-history me-2"></i>
-            Your Licenses
+            <%= custom_text('dashboard_your_licenses', 'Your Licenses') %>
           </h5>
           <% if @licenses.length > 5 %>
-            <a href="/licenses" class="btn btn-sm btn-outline-primary">View All</a>
+            <a href="/licenses" class="btn btn-sm btn-outline-primary"><%= custom_text('dashboard_view_all_licenses', 'View All') %></a>
           <% end %>
         </div>
         <div class="card-body">
           <% if @licenses.empty? %>
             <div class="text-center py-4">
               <i class="fas fa-key fa-3x text-muted mb-3"></i>
-              <h5 class="text-muted">No Licenses Found</h5>
+              <h5 class="text-muted"><%= custom_text('dashboard_no_licenses_title', 'No Licenses Found') %></h5>
               <p class="text-muted">
-                You don't have any licenses yet. When you purchase software, your licenses will appear here.
+                <%= custom_text('dashboard_no_licenses_message', 'You don\'t have any licenses yet. When you purchase software, your licenses will appear here.') %>
               </p>
               <a href="/" class="btn btn-primary">
                 <i class="fas fa-shopping-cart me-2"></i>
-                Browse Products
+                <%= custom_text('dashboard_browse_products', 'Browse Products') %>
               </a>
             </div>
           <% else %>

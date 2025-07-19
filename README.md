@@ -1,5 +1,7 @@
 # Source License - Professional Software Licensing Platform
 
+> **IMPORTANT NOTE:** Source License is still in ***Alpha***. There **WILL** be issues, missing functionality, missing documentation, etc. Please let us know of any and all issues via a Issue!
+
 A comprehensive Ruby/Sinatra-based software licensing management system with integrated payment processing, secure API endpoints, and enterprise-grade features for software vendors.
 
 ## Overview
@@ -59,23 +61,29 @@ Source License is a complete solution for software vendors who need to sell, man
 
 ### Prerequisites
 - **Ruby 3.4.4** or higher
-- **Database**: MySQL, PostgreSQL, or SQLite
+- **Database**: MySQL, PostgreSQL, or SQLite (SQLite should ***not*** be used in production!!!)
 - **Git** for cloning the repository
 
 ### Installation
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/VetheonGames/Source-License.git
+   git clone https://github.com/PixelRidge-Softworks/Source-License.git
    cd Source-License
    ```
 
-2. **Launch the application**
+2. **Run the Install Script for your platform**
    ```bash
-   ruby launch.rb
+   .\install.ps1 (for windows)
+   ./install.sh (for linux/macos)
    ```
+
+3. **Run the deployment script for your platform**
+   ```bash
+   .\deploy.ps1 (for windows)
+   ./deploy.sh (for linux/macos)
    
-   The cross-platform launcher will automatically:
+   The launcher will automatically:
    - ✅ Verify Ruby version compatibility
    - 📦 Install required gems via Bundler
    - 🗄️ Set up and migrate the database
@@ -92,23 +100,99 @@ Source License is a complete solution for software vendors who need to sell, man
 The launcher creates a `.env` file from the template. Configure these essential settings:
 
 ```env
-# Database (SQLite recommended for development)
-DATABASE_ADAPTER=sqlite
-DATABASE_NAME=source_license.db
+# Application Settings
+APP_ENV=development
+APP_SECRET=your_secret_key_here_change_this_in_production
+APP_HOST=localhost
+APP_PORT=4567
 
-# Admin Access
+# Security Settings
+JWT_SECRET=your_jwt_secret_here_change_in_production
+SECURITY_WEBHOOK_URL=https://your-security-monitoring-service.com/webhook
+
+# Production Configuration
+APP_VERSION=1.0.0
+ALLOWED_ORIGINS=https://yourdomain.com,https://www.yourdomain.com
+
+# Logging & Monitoring
+LOG_LEVEL=info
+LOG_FORMAT=json
+ERROR_TRACKING_DSN=https://your-sentry-dsn@sentry.io/project
+
+# Performance & Caching
+REDIS_URL=redis://localhost:6379/0
+ENABLE_CACHING=true
+CACHE_TTL=3600
+
+# SSL/TLS Configuration
+FORCE_SSL=true
+HSTS_MAX_AGE=31536000
+
+# Database Connection Pool
+DB_POOL_SIZE=10
+DB_TIMEOUT=5000
+
+# Rate Limiting
+RATE_LIMIT_REQUESTS_PER_HOUR=1000
+RATE_LIMIT_ADMIN_REQUESTS_PER_HOUR=100
+
+# Session Configuration
+SESSION_TIMEOUT=28800
+SESSION_ROTATION_INTERVAL=7200
+
+# Database Configuration
+# Choose one: mysql, postgresql, or sqlite
+
+# Option 1: MySQL (requires MySQL server)
+DATABASE_ADAPTER=mysql
+DATABASE_HOST=localhost
+DATABASE_PORT=3306
+DATABASE_NAME=source_license
+DATABASE_USER=root
+DATABASE_PASSWORD=your_password
+
+# Option 2: PostgreSQL (requires PostgreSQL server)
+# DATABASE_ADAPTER=postgresql
+# DATABASE_HOST=localhost
+# DATABASE_PORT=5432
+# DATABASE_NAME=source_license
+# DATABASE_USER=postgres
+# DATABASE_PASSWORD=your_password
+
+# Option 3: SQLite (ONLY for development - no server required)
+# DATABASE_ADAPTER=sqlite
+# DATABASE_NAME=source_license.db
+
+# Admin Settings
 ADMIN_EMAIL=admin@yourdomain.com
-ADMIN_PASSWORD=secure_admin_password
+ADMIN_PASSWORD=change_this_secure_password
 
-# Payment Gateways
-STRIPE_PUBLISHABLE_KEY=pk_test_your_key_here
-STRIPE_SECRET_KEY=sk_test_your_key_here
+# Payment Gateway Settings
+# Stripe
+STRIPE_PUBLISHABLE_KEY=pk_test_your_stripe_publishable_key
+STRIPE_SECRET_KEY=sk_test_your_stripe_secret_key
+STRIPE_WEBHOOK_SECRET=whsec_your_webhook_secret
+
+# PayPal
 PAYPAL_CLIENT_ID=your_paypal_client_id
+PAYPAL_CLIENT_SECRET=your_paypal_client_secret
+PAYPAL_ENVIRONMENT=sandbox
 
-# Email Configuration
+# Email Configuration (for license delivery)
 SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
 SMTP_USERNAME=your_email@gmail.com
 SMTP_PASSWORD=your_app_password
+SMTP_TLS=true
+
+# License Settings
+# THESE SETTINGS ARE DEPRECATED
+LICENSE_VALIDITY_DAYS=365
+MAX_ACTIVATIONS_PER_LICENSE=3
+
+# File Storage
+DOWNLOADS_PATH=./downloads
+LICENSES_PATH=./licenses
 ```
 
 ## 📁 Project Architecture
@@ -184,7 +268,7 @@ The application uses a modular controller architecture:
 
 ### Database Options
 
-**SQLite (Recommended for Development)**
+**SQLite (ONLY for Development)**
 ```env
 DATABASE_ADAPTER=sqlite
 DATABASE_NAME=source_license.db
@@ -343,90 +427,23 @@ ruby launch.rb
 
 ### Production
 
-1. **Set environment variables**
+1. **Edit .env**
+
+2. **Run Install Script**
    ```bash
-   export APP_ENV=production
-   export DATABASE_URL=your_production_database_url
+   .\install.ps1 (windows)
+   ./install.sh (linux/macos)
    ```
 
-2. **Install dependencies**
+3. **Run deployment script**
    ```bash
-   bundle install --without development test
+   .\deploy.ps1 (windows)
+   ./deploy.sh (linux/macos)
    ```
-
-3. **Run migrations**
-   ```bash
-   ruby -r './lib/database' -e 'Database.setup'
-   ```
-
-4. **Start with Puma**
-   ```bash
-   bundle exec puma -C config/puma.rb
-   ```
-
-### Docker Deployment
-
-```dockerfile
-FROM ruby:3.4.4
-WORKDIR /app
-COPY . .
-RUN bundle install --without development test
-EXPOSE 4567
-CMD ["bundle", "exec", "rackup", "-o", "0.0.0.0", "-p", "4567"]
-```
-
-### Deployment Scripts
-
-Included deployment scripts for common platforms:
-
-- **Linux/macOS**: `./deploy.sh`
-- **Windows**: `.\deploy.ps1`
-
+   
 ## 🧪 Testing
 
-### Running Tests
-
-```bash
-# Run all tests
-ruby run_tests.rb
-
-# Run specific test file
-ruby -Itest test/app_test.rb
-
-# Run with coverage
-bundle exec ruby run_tests.rb
-```
-
-### Test Coverage
-
-The project includes comprehensive tests:
-
-- **Application Tests**: Full integration testing of all routes
-- **Model Tests**: Database model validation and business logic
-- **Authentication Tests**: Security and user management
-- **API Tests**: REST endpoint functionality
-- **Payment Tests**: Payment processing workflows
-
-### Test Utilities
-
-- **Factories**: Test data generation with FactoryBot
-- **Mocking**: VCR for HTTP interactions
-- **Coverage**: SimpleCov for code coverage reporting
-
-## 🔒 Security Features
-
-### Production Security Checklist
-
-- ✅ Strong password requirements for admin accounts
-- ✅ JWT tokens with expiration (24 hours)
-- ✅ CSRF protection on all forms
-- ✅ SQL injection protection via Sequel ORM
-- ✅ Secure session configuration with HttpOnly cookies
-- ✅ Rate limiting on API endpoints
-- ✅ Input validation and sanitization
-- ✅ Secure license key generation using cryptographic randomness
-- ✅ Payment webhook signature verification
-- ✅ Audit logging for all license operations
+### Test suite has yet to be implemented
 
 ### Recommended Production Settings
 
@@ -446,18 +463,8 @@ RATE_LIMIT_REQUESTS_PER_HOUR=1000
    ```bash
    bundle install
    ```
-
-2. **Set up database**
-   ```bash
-   ruby -r './lib/database' -e 'Database.setup'
-   ```
-
-3. **Run tests**
-   ```bash
-   ruby run_tests.rb
-   ```
-
-4. **Start development server**
+   
+2. **Start development server**
    ```bash
    ruby launch.rb
    ```
@@ -502,12 +509,10 @@ bundle exec rubocop -A
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Make your changes with tests
-4. Run the test suite (`ruby run_tests.rb`)
-5. Check code style (`bundle exec rubocop`)
-6. Commit your changes (`git commit -m 'Add amazing feature'`)
-7. Push to the branch (`git push origin feature/amazing-feature`)
-8. Open a Pull Request
+3. Check code style (`bundle exec rubocop`)
+4. Commit your changes (`git commit -m 'Add amazing feature'`)
+5. Push to the branch (`git push origin feature/amazing-feature`)
+6. Open a Pull Request
 
 ## 📄 License
 
@@ -515,13 +520,13 @@ This project is licensed under the GNU General Public License v2.0 - see the [LI
 
 ## 🆘 Support
 
-- **Issues**: [GitHub Issues](https://github.com/VetheonGames/Source-License/issues)
-- **Documentation**: [Project Wiki](https://github.com/VetheonGames/Source-License/wiki)
-- **Discussions**: [GitHub Discussions](https://github.com/VetheonGames/Source-License/discussions)
+- **Issues**: [GitHub Issues](https://github.com/PixelRidge-Softworks/Source-License/issues)
+- **Documentation**: [Project Wiki](https://github.com/PixelRidge-Softworks/Source-License/wiki)
+- **Discussions**: [GitHub Discussions](https://github.com/PixelRidge-Softworks/Source-License/discussions)
 
 ## 📈 Roadmap
 
-### Current Version (v1.0)
+### Current Version (v1.0-ALPHA)
 - ✅ Complete license management system
 - ✅ Stripe and PayPal integration
 - ✅ REST API with JWT authentication
@@ -539,6 +544,6 @@ This project is licensed under the GNU General Public License v2.0 - see the [LI
 
 ---
 
-**Built with ❤️ using Ruby and Sinatra by the VetheonGames team**
+**Built with ❤️ using Ruby and Sinatra by the PixelRidge Softworks team**
 
 *Source License - Empowering software vendors with professional licensing solutions*

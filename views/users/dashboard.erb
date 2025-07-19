@@ -159,12 +159,11 @@
                         <small class="text-muted">License: <%= h(license.license_key[0..15]) %>...</small>
                       </td>
                       <td>
-                        <% case license.status %>
-                        <% when 'active' %>
+                        <% if license.status == 'active' %>
                           <span class="badge bg-success">Active</span>
-                        <% when 'suspended' %>
+                        <% elsif license.status == 'suspended' %>
                           <span class="badge bg-warning">Suspended</span>
-                        <% when 'expired' %>
+                        <% elsif license.status == 'expired' %>
                           <span class="badge bg-danger">Expired</span>
                         <% else %>
                           <span class="badge bg-secondary"><%= license.status.capitalize %></span>

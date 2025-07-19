@@ -1,0 +1,322 @@
+<div class="container my-4">
+  <!-- Header -->
+  <div class="row mb-4">
+    <div class="col">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <h2 class="mb-1">License Details</h2>
+          <p class="text-muted mb-0"><%= h(@license.product.name) %></p>
+        </div>
+        <div>
+          <a href="/licenses" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>
+            Back to Licenses
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <!-- License Information -->
+    <div class="col-lg-8">
+      <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">
+            <i class="fas fa-certificate me-2"></i>
+            License Information
+          </h5>
+          <% if @license.status == 'active' %>
+            <span class="badge bg-success">Active</span>
+          <% elsif @license.status == 'suspended' %>
+            <span class="badge bg-warning">Suspended</span>
+          <% elsif @license.status == 'expired' %>
+            <span class="badge bg-danger">Expired</span>
+          <% else %>
+            <span class="badge bg-secondary"><%= @license.status.capitalize %></span>
+          <% end %>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label text-muted">Product Name</label>
+                <div class="fw-bold"><%= h(@license.product.name) %></div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label text-muted">Version</label>
+                <div class="fw-bold"><%= h(@license.product.version || 'N/A') %></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-12">
+              <div class="mb-3">
+                <label class="form-label text-muted">License Key</label>
+                <div class="d-flex align-items-center">
+                  <code class="bg-light px-3 py-2 rounded flex-grow-1 me-2"><%= h(@license.license_key) %></code>
+                  <button class="btn btn-outline-secondary" 
+                          onclick="navigator.clipboard.writeText('<%= @license.license_key %>')"
+                          title="Copy to clipboard">
+                    <i class="fas fa-copy"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-4">
+              <div class="mb-3">
+                <label class="form-label text-muted">License Type</label>
+                <div class="fw-bold"><%= h(@license.license_type || 'Standard') %></div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="mb-3">
+                <label class="form-label text-muted">Max Activations</label>
+                <div class="fw-bold"><%= @license.effective_max_activations %></div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="mb-3">
+                <label class="form-label text-muted">Activations Used</label>
+                <div class="fw-bold">
+                  <%= @license.activation_count %>
+                  <% if @license.activation_count >= @license.effective_max_activations %>
+                    <span class="badge bg-danger ms-2">Limit Reached</span>
+                  <% end %>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label text-muted">Expires</label>
+                <div class="fw-bold">
+                  <% if @license.effective_expires_at %>
+                    <%= @license.effective_expires_at.strftime('%B %d, %Y at %I:%M %p') %>
+                    <% if @license.effective_expires_at < Time.now %>
+                      <span class="badge bg-danger ms-2">Expired</span>
+                    <% elsif @license.effective_expires_at < Time.now + 30*24*60*60 %>
+                      <span class="badge bg-warning ms-2">Expires Soon</span>
+                    <% end %>
+                  <% else %>
+                    <span class="text-success">Never (Lifetime License)</span>
+                  <% end %>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label text-muted">Downloads</label>
+                <div class="fw-bold"><%= @license.download_count %></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label text-muted">Created</label>
+                <div class="fw-bold"><%= @license.created_at.strftime('%B %d, %Y at %I:%M %p') %></div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label text-muted">Last Downloaded</label>
+                <div class="fw-bold">
+                  <%= @license.last_downloaded_at ? @license.last_downloaded_at.strftime('%B %d, %Y at %I:%M %p') : 'Never' %>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <% if @license.product.description %>
+          <div class="row">
+            <div class="col-12">
+              <div class="mb-3">
+                <label class="form-label text-muted">Product Description</label>
+                <div class="text-secondary"><%= h(@license.product.description) %></div>
+              </div>
+            </div>
+          </div>
+          <% end %>
+        </div>
+      </div>
+
+      <!-- Download Section -->
+      <% if @license.valid? && @license.product.download_file %>
+      <div class="card mt-4">
+        <div class="card-header">
+          <h5 class="mb-0">
+            <i class="fas fa-download me-2"></i>
+            Download Software
+          </h5>
+        </div>
+        <div class="card-body">
+          <div class="row align-items-center">
+            <div class="col-md-8">
+              <h6 class="mb-1"><%= h(@license.product.name) %></h6>
+              <div class="text-muted">
+                <% if @license.product.file_size %>
+                  File size: <%= @license.product.file_size %>
+                <% end %>
+                <% if @license.product.version %>
+                  • Version <%= h(@license.product.version) %>
+                <% end %>
+              </div>
+            </div>
+            <div class="col-md-4 text-end">
+              <a href="/secure-download/<%= @license.id %>/<%= @license.product.download_file %>" 
+                 class="btn btn-success">
+                <i class="fas fa-download me-2"></i>
+                Download
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <% elsif @license.product.download_url %>
+      <div class="card mt-4">
+        <div class="card-header">
+          <h5 class="mb-0">
+            <i class="fas fa-external-link-alt me-2"></i>
+            External Download
+          </h5>
+        </div>
+        <div class="card-body">
+          <div class="row align-items-center">
+            <div class="col-md-8">
+              <h6 class="mb-1"><%= h(@license.product.name) %></h6>
+              <div class="text-muted">Download available from external source</div>
+            </div>
+            <div class="col-md-4 text-end">
+              <a href="<%= @license.product.download_url %>" 
+                 class="btn btn-primary"
+                 target="_blank">
+                <i class="fas fa-external-link-alt me-2"></i>
+                Download
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <% end %>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+      <!-- Quick Actions -->
+      <div class="card">
+        <div class="card-header">
+          <h6 class="mb-0">
+            <i class="fas fa-bolt me-2"></i>
+            Quick Actions
+          </h6>
+        </div>
+        <div class="card-body">
+          <div class="d-grid gap-2">
+            <% if @license.valid? && @license.product.download_file %>
+              <a href="/secure-download/<%= @license.id %>/<%= @license.product.download_file %>" 
+                 class="btn btn-success">
+                <i class="fas fa-download me-2"></i>
+                Download Software
+              </a>
+            <% end %>
+            <button class="btn btn-outline-secondary" 
+                    onclick="navigator.clipboard.writeText('<%= @license.license_key %>')">
+              <i class="fas fa-copy me-2"></i>
+              Copy License Key
+            </button>
+            <a href="/validate-license" class="btn btn-outline-info">
+              <i class="fas fa-shield-alt me-2"></i>
+              Validate License
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- License Status -->
+      <div class="card mt-4">
+        <div class="card-header">
+          <h6 class="mb-0">
+            <i class="fas fa-info-circle me-2"></i>
+            License Status
+          </h6>
+        </div>
+        <div class="card-body">
+          <% if @license.valid? %>
+            <div class="alert alert-success">
+              <i class="fas fa-check-circle me-2"></i>
+              <strong>Valid License</strong><br>
+              This license is active and ready to use.
+            </div>
+          <% else %>
+            <div class="alert alert-warning">
+              <i class="fas fa-exclamation-triangle me-2"></i>
+              <strong>License Issue</strong><br>
+              <% if @license.status == 'suspended' %>
+                This license has been suspended.
+              <% elsif @license.status == 'expired' %>
+                This license has expired.
+              <% elsif @license.status == 'revoked' %>
+                This license has been revoked.
+              <% else %>
+                This license is not currently active.
+              <% end %>
+            </div>
+          <% end %>
+
+          <% if @license.activation_count >= @license.effective_max_activations %>
+            <div class="alert alert-warning">
+              <i class="fas fa-exclamation-triangle me-2"></i>
+              <strong>Activation Limit Reached</strong><br>
+              You have used all available activations for this license.
+            </div>
+          <% end %>
+
+          <% if @license.effective_expires_at && @license.effective_expires_at < Time.now + 30*24*60*60 %>
+            <div class="alert alert-info">
+              <i class="fas fa-clock me-2"></i>
+              <strong>Expires Soon</strong><br>
+              This license expires on <%= @license.effective_expires_at.strftime('%B %d, %Y') %>.
+            </div>
+          <% end %>
+        </div>
+      </div>
+
+      <!-- Support -->
+      <div class="card mt-4">
+        <div class="card-body text-center">
+          <h6 class="card-title">
+            <i class="fas fa-life-ring me-2"></i>
+            Need Help?
+          </h6>
+          <p class="card-text small text-muted">
+            Contact our support team for assistance with your license.
+          </p>
+          <a href="mailto:<%= custom('branding.support_email', ENV['ADMIN_EMAIL'] || 'support@example.com') %>" 
+             class="btn btn-outline-primary btn-sm">
+            <i class="fas fa-envelope me-2"></i>
+            Contact Support
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function copyToClipboard(text) {
+  navigator.clipboard.writeText(text).then(function() {
+    // Could add a toast notification here
+    console.log('License key copied to clipboard');
+  });
+}
+</script>

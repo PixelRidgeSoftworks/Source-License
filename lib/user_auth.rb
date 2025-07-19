@@ -176,7 +176,7 @@ module UserAuthHelpers
   def get_user_licenses(user)
     return [] unless user
 
-    License.where(user_id: user.id).order(Sequel.desc(:created_at))
+    License.where(user_id: user.id).order(Sequel.desc(:created_at)).all
   end
 
   # Transfer licenses from email to user account

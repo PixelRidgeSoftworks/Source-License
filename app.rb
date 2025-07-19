@@ -75,10 +75,15 @@ class SourceLicenseApp < Sinatra::Base
         expire_after: 24 * 60 * 60, # 24 hours
       }
     else
-      set :sessions, true
-      set :session_secret,
-          ENV.fetch('APP_SECRET',
-                    'dev_secret_change_me_this_is_a_much_longer_fallback_secret_that_meets_the_64_character_minimum_requirement')
+      # Development session configuration with proper SameSite
+      use Rack::Session::Cookie, {
+        key: 'rack.session',
+        secret: ENV.fetch('APP_SECRET',
+                          'dev_secret_change_me_this_is_a_much_longer_fallback_secret_that_meets_the_64_character_minimum_requirement'),
+        httponly: true,
+        same_site: :lax, # Proper SameSite for development
+        expire_after: 24 * 60 * 60,
+      }
     end
 
     # Configure mail settings
@@ -140,12 +145,14 @@ class SourceLicenseApp < Sinatra::Base
 
   # Cart page
   get '/cart' do
+    @products = Product.where(active: true).order(:name).all
     @page_title = 'Shopping Cart'
     erb :cart, layout: :'layouts/main_layout'
   end
 
   # Checkout page
   get '/checkout' do
+    @products = Product.where(active: true).order(:name).all
     @page_title = 'Checkout'
     erb :checkout, layout: :'layouts/main_layout'
   end
@@ -199,7 +206,7 @@ class SourceLicenseApp < Sinatra::Base
 
   # Enhanced admin login handler
   post '/admin/login' do
-    require_csrf_protection unless ENV['APP_ENV'] == 'test' || ENV['RACK_ENV'] == 'test'
+    require_csrf_token unless ENV['APP_ENV'] == 'test' || ENV['RACK_ENV'] == 'test'
 
     # Gather request information
     request_info = {
@@ -256,31 +263,576 @@ class SourceLicenseApp < Sinatra::Base
     erb :'admin/products', layout: :'layouts/admin_layout'
   end
 
+  # Add new product form
+  get '/admin/products/new' do
+    require_secure_admin_auth
+    @page_title = 'Add New Product'
+    erb :'admin/products_new', layout: :'layouts/admin_layout'
+  end
+
+  # Auto-save product draft (AJAX)
+  post '/admin/products/auto-save' do
+    require_secure_admin_auth
+    content_type :json
+
+    # Just return success for now - this is a placeholder for auto-save functionality
+    { success: true, message: 'Draft saved' }.to_json
+  end
+
+  # Create new product
+  post '/admin/products' do
+    require_secure_admin_auth
+    require_csrf_token unless ENV['APP_ENV'] == 'test' || ENV['RACK_ENV'] == 'test'
+
+    begin
+      # Handle file upload if provided
+      download_file = nil
+      if params[:download_file] && params[:download_file][:tempfile]
+        upload = params[:download_file]
+        filename = "#{SecureRandom.hex(8)}_#{upload[:filename]}"
+        downloads_path = ENV['DOWNLOADS_PATH'] || './downloads'
+        FileUtils.mkdir_p(downloads_path)
+
+        file_path = File.join(downloads_path, filename)
+        File.binwrite(file_path, upload[:tempfile].read)
+        download_file = filename
+      end
+
+      # Create product
+      product_params = {
+        name: params[:name],
+        description: params[:description],
+        price: params[:price].to_f,
+        license_type: params[:license_type],
+        max_activations: params[:max_activations].to_i,
+        version: params[:version],
+        download_file: download_file,
+        download_url: params[:download_url],
+        file_size: params[:file_size],
+        active: params[:active] == 'on',
+        featured: params[:featured] == 'on',
+        created_at: Time.now,
+        updated_at: Time.now,
+      }
+
+      # Add subscription-specific fields
+      if params[:license_type] == 'subscription'
+        product_params.merge!(
+          setup_fee: params[:setup_fee].to_f,
+          billing_cycle: params[:billing_cycle],
+          billing_interval: params[:billing_interval].to_i,
+          license_duration_days: params[:license_duration_days].to_i,
+          trial_period_days: params[:trial_period_days].to_i
+        )
+      end
+
+      product = Product.create(product_params)
+
+      if product.valid?
+        flash :success, 'Product created successfully!'
+        redirect "/admin/products/#{product.id}"
+      else
+        flash :error, "Error creating product: #{product.errors.full_messages.join(', ')}"
+        @page_title = 'Add New Product'
+        erb :'admin/products_new', layout: :'layouts/admin_layout'
+      end
+    rescue StandardError => e
+      flash :error, "Error creating product: #{e.message}"
+      @page_title = 'Add New Product'
+      erb :'admin/products_new', layout: :'layouts/admin_layout'
+    end
+  end
+
+  # View product details
+  get '/admin/products/:id' do
+    require_secure_admin_auth
+    @product = Product[params[:id]]
+    halt 404 unless @product
+    @page_title = @product.name
+    erb :'admin/products_show', layout: :'layouts/admin_layout'
+  end
+
+  # Edit product form
+  get '/admin/products/:id/edit' do
+    require_secure_admin_auth
+    @product = Product[params[:id]]
+    halt 404 unless @product
+    @page_title = "Edit #{@product.name}"
+    erb :'admin/products_edit', layout: :'layouts/admin_layout'
+  end
+
+  # Update product
+  put '/admin/products/:id' do
+    require_secure_admin_auth
+    require_csrf_token unless ENV['APP_ENV'] == 'test' || ENV['RACK_ENV'] == 'test'
+
+    @product = Product[params[:id]]
+    halt 404 unless @product
+
+    begin
+      # Handle file upload if provided
+      if params[:download_file] && params[:download_file][:tempfile]
+        # Remove old file if exists
+        if @product.download_file
+          old_file_path = File.join(ENV['DOWNLOADS_PATH'] || './downloads', @product.download_file)
+          FileUtils.rm_f(old_file_path)
+        end
+
+        upload = params[:download_file]
+        filename = "#{SecureRandom.hex(8)}_#{upload[:filename]}"
+        downloads_path = ENV['DOWNLOADS_PATH'] || './downloads'
+        FileUtils.mkdir_p(downloads_path)
+
+        file_path = File.join(downloads_path, filename)
+        File.binwrite(file_path, upload[:tempfile].read)
+        params[:download_file] = filename
+      else
+        params.delete(:download_file)
+      end
+
+      # Update product
+      update_params = {
+        name: params[:name],
+        description: params[:description],
+        price: params[:price].to_f,
+        license_type: params[:license_type],
+        max_activations: params[:max_activations].to_i,
+        version: params[:version],
+        download_url: params[:download_url],
+        file_size: params[:file_size],
+        active: params[:active] == 'on',
+        featured: params[:featured] == 'on',
+        updated_at: Time.now,
+      }
+
+      # Add file if uploaded
+      update_params[:download_file] = params[:download_file] if params[:download_file]
+
+      # Add subscription-specific fields
+      if params[:license_type] == 'subscription'
+        update_params.merge!(
+          setup_fee: params[:setup_fee].to_f,
+          billing_cycle: params[:billing_cycle],
+          billing_interval: params[:billing_interval].to_i,
+          license_duration_days: params[:license_duration_days].to_i,
+          trial_period_days: params[:trial_period_days].to_i
+        )
+      else
+        # Clear subscription fields for one-time products
+        update_params.merge!(
+          setup_fee: 0,
+          billing_cycle: nil,
+          billing_interval: nil,
+          license_duration_days: nil,
+          trial_period_days: 0
+        )
+      end
+
+      @product.update(update_params)
+
+      flash :success, 'Product updated successfully!'
+      redirect "/admin/products/#{@product.id}"
+    rescue StandardError => e
+      flash :error, "Error updating product: #{e.message}"
+      @page_title = "Edit #{@product.name}"
+      erb :'admin/products_edit', layout: :'layouts/admin_layout'
+    end
+  end
+
+  # Toggle product status (AJAX)
+  post '/admin/products/:id/toggle-status' do
+    require_secure_admin_auth
+    content_type :json
+
+    product = Product[params[:id]]
+    unless product
+      status 404
+      return { success: false, error: 'Product not found' }.to_json
+    end
+
+    begin
+      new_status = params[:status] == 'active'
+      product.update(active: new_status)
+
+      { success: true, status: new_status ? 'active' : 'inactive' }.to_json
+    rescue StandardError => e
+      status 400
+      { success: false, error: e.message }.to_json
+    end
+  end
+
+  # Delete product
+  delete '/admin/products/:id' do
+    require_secure_admin_auth
+    content_type :json
+
+    product = Product[params[:id]]
+    unless product
+      status 404
+      return { success: false, error: 'Product not found' }.to_json
+    end
+
+    begin
+      # Check if product has associated licenses
+      return { success: false, error: 'Cannot delete product with existing licenses' }.to_json if product.licenses.any?
+
+      # Remove download file if exists
+      if product.download_file
+        file_path = File.join(ENV['DOWNLOADS_PATH'] || './downloads', product.download_file)
+        FileUtils.rm_f(file_path)
+      end
+
+      product.destroy
+      { success: true }.to_json
+    rescue StandardError => e
+      status 400
+      { success: false, error: e.message }.to_json
+    end
+  end
+
+  # Duplicate product
+  get '/admin/products/:id/duplicate' do
+    require_secure_admin_auth
+
+    original = Product[params[:id]]
+    halt 404 unless original
+
+    # Create duplicate with modified name
+    duplicate_params = original.values.dup
+    duplicate_params.delete(:id)
+    duplicate_params[:name] = "#{original.name} (Copy)"
+    duplicate_params[:active] = false # Start inactive
+    duplicate_params[:download_file] = nil # Don't copy file
+    duplicate_params[:created_at] = Time.now
+    duplicate_params[:updated_at] = Time.now
+
+    duplicate = Product.create(duplicate_params)
+
+    flash :success, 'Product duplicated successfully!'
+    redirect "/admin/products/#{duplicate.id}/edit"
+  end
+
+  # Export products
+  get '/admin/products/export' do
+    require_secure_admin_auth
+    content_type 'text/csv'
+    attachment 'products.csv'
+
+    # Check if specific products are requested
+    if params[:product_ids]
+      product_ids = params[:product_ids].split(',').map(&:to_i)
+      products = Product.where(id: product_ids).order(:name)
+      filename = "selected_products_#{Time.now.strftime('%Y%m%d_%H%M%S')}.csv"
+    else
+      products = Product.order(:name)
+      filename = "all_products_#{Time.now.strftime('%Y%m%d_%H%M%S')}.csv"
+    end
+
+    attachment filename
+
+    csv_data = "Name,Description,Price,License Type,Max Activations,Active,Created At\n"
+    products.each do |product|
+      csv_data += "\"#{product.name}\",\"#{product.description || ''}\",#{product.price},#{product.license_type},#{product.max_activations},#{product.active},#{product.created_at}\n"
+    end
+
+    csv_data
+  end
+
+  # Bulk actions for products
+  post '/admin/products/bulk-action' do
+    require_secure_admin_auth
+    content_type :json
+
+    begin
+      data = JSON.parse(request.body.read)
+      action = data['action']
+      product_ids = data['product_ids']
+
+      unless %w[activate deactivate delete].include?(action)
+        status 400
+        return { success: false, error: 'Invalid action' }.to_json
+      end
+
+      if product_ids.nil? || product_ids.empty?
+        status 400
+        return { success: false, error: 'No products selected' }.to_json
+      end
+
+      # Find products
+      products = Product.where(id: product_ids)
+      if products.count != product_ids.length
+        status 400
+        return { success: false, error: 'Some products not found' }.to_json
+      end
+
+      results = { success: 0, failed: 0, errors: [] }
+
+      DB.transaction do
+        products.each do |product|
+          case action
+          when 'activate'
+            product.update(active: true)
+            results[:success] += 1
+          when 'deactivate'
+            product.update(active: false)
+            results[:success] += 1
+          when 'delete'
+            # Check if product has licenses
+            if product.licenses.any?
+              results[:failed] += 1
+              results[:errors] << "#{product.name}: Cannot delete product with existing licenses"
+            else
+              # Remove download file if exists
+              if product.download_file
+                file_path = File.join(ENV['DOWNLOADS_PATH'] || './downloads', product.download_file)
+                FileUtils.rm_f(file_path)
+              end
+              product.destroy
+              results[:success] += 1
+            end
+          end
+        rescue StandardError => e
+          results[:failed] += 1
+          results[:errors] << "#{product.name}: #{e.message}"
+        end
+      end
+
+      { success: true, results: results }.to_json
+    rescue JSON::ParserError
+      status 400
+      { success: false, error: 'Invalid JSON' }.to_json
+    rescue StandardError => e
+      status 500
+      { success: false, error: e.message }.to_json
+    end
+  end
+
   # License management
   get '/admin/licenses' do
     require_secure_admin_auth
-    @licenses = License.order(Sequel.desc(:created_at)).limit(100)
+
+    # Pagination
+    page = (params[:page] || 1).to_i
+    per_page = (params[:per_page] || 50).to_i
+    offset = (page - 1) * per_page
+
+    # Filters
+    status_filter = params[:status]
+    product_filter = params[:product_id]
+    search_query = params[:search]
+
+    # Build query
+    query = License.order(Sequel.desc(:created_at))
+
+    # Apply filters
+    query = query.where(status: status_filter) if status_filter && !status_filter.empty?
+    query = query.where(product_id: product_filter) if product_filter && !product_filter.empty?
+
+    if search_query && !search_query.empty?
+      search_term = "%#{search_query}%"
+      query = query.where(
+        Sequel.|(
+          Sequel.ilike(:license_key, search_term),
+          Sequel.ilike(:customer_email, search_term),
+          Sequel.ilike(:customer_name, search_term)
+        )
+      )
+    end
+
+    # Get total count for pagination
+    @total_licenses = query.count
+
+    # Apply pagination
+    @licenses = query.limit(per_page).offset(offset).all
+
+    # Load related data
+    @products = Product.order(:name).all
+
+    # Pagination info
+    @current_page = page
+    @per_page = per_page
+    @total_pages = (@total_licenses.to_f / per_page).ceil
+
     @page_title = 'Manage Licenses'
     erb :'admin/licenses', layout: :'layouts/admin_layout'
   end
 
-  # Generate license page (placeholder)
-  get '/admin/licenses/generate' do
+  # View license details
+  get '/admin/licenses/:id' do
     require_secure_admin_auth
-    @page_title = 'Generate License'
-    # For now, redirect to main licenses page with a message
-    flash :info, 'License generation feature coming soon!'
-    redirect '/admin/licenses'
+    @license = License[params[:id]]
+    halt 404 unless @license
+    @page_title = "License #{@license.license_key}"
+    erb :'admin/licenses_show', layout: :'layouts/admin_layout'
   end
 
-  # Add product page (placeholder)
-  get '/admin/products/new' do
+  # Generate license page
+  get '/admin/licenses/generate' do
     require_secure_admin_auth
-    @page_title = 'Add Product'
-    # For now, redirect to main products page with a message
-    flash :info, 'Product creation feature coming soon!'
-    redirect '/admin/products'
+    @products = Product.where(active: true).order(:name)
+    @page_title = 'Generate License'
+    erb :'admin/licenses_generate', layout: :'layouts/admin_layout'
   end
+
+  # Create new license
+  post '/admin/licenses/generate' do
+    require_secure_admin_auth
+    require_csrf_token unless ENV['APP_ENV'] == 'test' || ENV['RACK_ENV'] == 'test'
+
+    begin
+      product = Product[params[:product_id]]
+      halt 404 unless product
+
+      # Create a manual order for the license
+      order = Order.create(
+        email: params[:customer_email],
+        customer_name: params[:customer_name],
+        amount: 0, # Manual generation
+        currency: 'USD',
+        status: 'completed',
+        payment_method: 'manual',
+        completed_at: Time.now
+      )
+
+      # Generate the license
+      license = LicenseGenerator.generate_for_product(product, order)
+
+      # Set custom parameters if provided
+      if params[:custom_max_activations] && !params[:custom_max_activations].empty?
+        license.update(custom_max_activations: params[:custom_max_activations].to_i)
+      end
+
+      if params[:custom_expires_at] && !params[:custom_expires_at].empty?
+        license.update(custom_expires_at: Time.parse(params[:custom_expires_at]))
+      end
+
+      flash :success, "License #{license.license_key} generated successfully!"
+      redirect "/admin/licenses/#{license.id}"
+    rescue StandardError => e
+      flash :error, "Error generating license: #{e.message}"
+      @products = Product.where(active: true).order(:name)
+      @page_title = 'Generate License'
+      erb :'admin/licenses_generate', layout: :'layouts/admin_layout'
+    end
+  end
+
+  # Toggle license status (AJAX)
+  post '/admin/licenses/:id/toggle-status' do
+    require_secure_admin_auth
+    content_type :json
+
+    license = License[params[:id]]
+    unless license
+      status 404
+      return { success: false, error: 'License not found' }.to_json
+    end
+
+    begin
+      case params[:action]
+      when 'activate'
+        license.reactivate!
+      when 'suspend'
+        license.suspend!
+      when 'revoke'
+        license.revoke!
+      else
+        status 400
+        return { success: false, error: 'Invalid action' }.to_json
+      end
+
+      { success: true, status: license.status }.to_json
+    rescue StandardError => e
+      status 400
+      { success: false, error: e.message }.to_json
+    end
+  end
+
+  # Bulk license actions
+  post '/admin/licenses/bulk-action' do
+    require_secure_admin_auth
+    content_type :json
+
+    begin
+      data = JSON.parse(request.body.read)
+      action = data['action']
+      license_ids = data['license_ids']
+
+      unless %w[activate suspend revoke delete].include?(action)
+        status 400
+        return { success: false, error: 'Invalid action' }.to_json
+      end
+
+      if license_ids.nil? || license_ids.empty?
+        status 400
+        return { success: false, error: 'No licenses selected' }.to_json
+      end
+
+      # Find licenses
+      licenses = License.where(id: license_ids)
+      if licenses.count != license_ids.length
+        status 400
+        return { success: false, error: 'Some licenses not found' }.to_json
+      end
+
+      results = { success: 0, failed: 0, errors: [] }
+
+      DB.transaction do
+        licenses.each do |license|
+          case action
+          when 'activate'
+            license.reactivate!
+            results[:success] += 1
+          when 'suspend'
+            license.suspend!
+            results[:success] += 1
+          when 'revoke'
+            license.revoke!
+            results[:success] += 1
+          when 'delete'
+            license.destroy
+            results[:success] += 1
+          end
+        rescue StandardError => e
+          results[:failed] += 1
+          results[:errors] << "#{license.license_key}: #{e.message}"
+        end
+      end
+
+      { success: true, results: results }.to_json
+    rescue JSON::ParserError
+      status 400
+      { success: false, error: 'Invalid JSON' }.to_json
+    rescue StandardError => e
+      status 500
+      { success: false, error: e.message }.to_json
+    end
+  end
+
+  # Export licenses
+  get '/admin/licenses/export' do
+    require_secure_admin_auth
+    content_type 'text/csv'
+
+    # Check if specific licenses are requested
+    if params[:license_ids]
+      license_ids = params[:license_ids].split(',').map(&:to_i)
+      licenses = License.where(id: license_ids).order(:created_at)
+      filename = "selected_licenses_#{Time.now.strftime('%Y%m%d_%H%M%S')}.csv"
+    else
+      licenses = License.order(:created_at)
+      filename = "all_licenses_#{Time.now.strftime('%Y%m%d_%H%M%S')}.csv"
+    end
+
+    attachment filename
+
+    csv_data = "License Key,Customer Email,Customer Name,Product,Status,Created At,Expires At,Activations Used,Max Activations\n"
+    licenses.each do |license|
+      csv_data += "\"#{license.license_key}\",\"#{license.customer_email}\",\"#{license.customer_name || ''}\",\"#{license.product&.name || 'Unknown'}\",#{license.status},#{license.created_at},#{license.expires_at || ''},#{license.activation_count},#{license.effective_max_activations}\n"
+    end
+
+    csv_data
+  end
+
 
   # Settings page
   get '/admin/settings' do
@@ -298,16 +850,16 @@ class SourceLicenseApp < Sinatra::Base
       # Create a simple database backup
       backup_filename = "backup_#{Time.now.strftime('%Y%m%d_%H%M%S')}.sql"
       backup_path = File.join(ENV['BACKUP_PATH'] || './backups', backup_filename)
-      
+
       # Ensure backup directory exists
       FileUtils.mkdir_p(File.dirname(backup_path))
-      
+
       # Simple backup for SQLite (adjust for other databases)
       if ENV['DATABASE_ADAPTER'] == 'sqlite' || !ENV['DATABASE_ADAPTER']
         db_path = ENV['DATABASE_PATH'] || './database.db'
         FileUtils.cp(db_path, backup_path) if File.exist?(db_path)
       end
-      
+
       { success: true, message: 'Database backup created successfully', filename: backup_filename }.to_json
     rescue StandardError => e
       status 500
@@ -324,7 +876,7 @@ class SourceLicenseApp < Sinatra::Base
       # Run any pending migrations
       require_relative 'lib/migrations'
       Migrations.run_all
-      
+
       { success: true, message: 'Migrations completed successfully' }.to_json
     rescue StandardError => e
       status 500
@@ -335,9 +887,9 @@ class SourceLicenseApp < Sinatra::Base
   # Download logs route
   get '/admin/logs/download' do
     require_secure_admin_auth
-    
+
     log_path = ENV['LOG_PATH'] || './log/application.log'
-    
+
     if File.exist?(log_path)
       send_file log_path, disposition: 'attachment', filename: "application_logs_#{Time.now.strftime('%Y%m%d')}.log"
     else
@@ -355,17 +907,17 @@ class SourceLicenseApp < Sinatra::Base
         licenses: License.all.map(&:values),
         products: Product.all.map(&:values),
         orders: Order.all.map(&:values),
-        exported_at: Time.now.iso8601
+        exported_at: Time.now.iso8601,
       }
-      
+
       filename = "data_export_#{Time.now.strftime('%Y%m%d_%H%M%S')}.json"
       export_path = File.join(ENV['EXPORT_PATH'] || './exports', filename)
-      
+
       # Ensure export directory exists
       FileUtils.mkdir_p(File.dirname(export_path))
-      
+
       File.write(export_path, JSON.pretty_generate(export_data))
-      
+
       { success: true, message: 'Data exported successfully', filename: filename }.to_json
     rescue StandardError => e
       status 500
@@ -380,11 +932,11 @@ class SourceLicenseApp < Sinatra::Base
 
     begin
       # Generate new JWT secret
-      new_secret = SecureRandom.hex(64)
-      
+      SecureRandom.hex(64)
+
       # In a real implementation, you'd update your environment or database
       # For now, we'll just simulate the action
-      
+
       { success: true, message: 'API keys regenerated successfully. Please restart the application.' }.to_json
     rescue StandardError => e
       status 500
@@ -486,6 +1038,242 @@ class SourceLicenseApp < Sinatra::Base
   # API ROUTES - Secure REST API
   # ==================================================
 
+  # Get all products (for cart/checkout)
+  get '/api/products' do
+    content_type :json
+
+    products = Product.where(active: true).order(:name).all
+    products.map(&:values).to_json
+  end
+
+  # Create order (for checkout)
+  post '/api/orders' do
+    content_type :json
+
+    begin
+      order_data = JSON.parse(request.body.read)
+
+      # Validate required fields
+      unless order_data['customer'] && order_data['customer']['email']
+        status 400
+        return { success: false, error: 'Customer email is required' }.to_json
+      end
+
+      unless order_data['items']&.any?
+        status 400
+        return { success: false, error: 'Order must contain items' }.to_json
+      end
+
+      # Create order in database
+      order = DB.transaction do
+        new_order = Order.create(
+          email: order_data['customer']['email'],
+          customer_name: order_data['customer']['name'],
+          amount: order_data['amount'] || 0,
+          currency: order_data['currency'] || 'USD',
+          status: 'pending',
+          payment_method: order_data['payment_method'] || 'stripe'
+        )
+
+        # Add order items
+        order_data['items'].each do |item|
+          product = Product[item['productId']]
+          next unless product
+
+          new_order.add_order_item(
+            product: product,
+            quantity: item['quantity'] || 1,
+            price: product.price
+          )
+        end
+
+        # Update order amount based on items
+        total = new_order.order_items.sum { |item| item.price * item.quantity }
+        new_order.update(amount: total)
+
+        new_order
+      end
+
+      # Create payment intent based on payment method
+      case order_data['payment_method']
+      when 'stripe'
+        if stripe_enabled?
+          payment_result = PaymentProcessor.create_payment_intent(order, 'stripe')
+          if payment_result[:client_secret]
+            status 201
+            {
+              success: true,
+              order_id: order.id,
+              client_secret: payment_result[:client_secret],
+            }.to_json
+          else
+            status 400
+            { success: false, error: 'Failed to create payment intent' }.to_json
+          end
+        else
+          status 400
+          { success: false, error: 'Stripe not configured' }.to_json
+        end
+      when 'paypal'
+        if paypal_enabled?
+          payment_result = PaymentProcessor.create_payment_intent(order, 'paypal')
+          if payment_result[:order_id]
+            status 201
+            {
+              success: true,
+              order_id: order.id,
+              paypal_order_id: payment_result[:order_id],
+              approval_url: payment_result[:approval_url],
+            }.to_json
+          else
+            status 400
+            { success: false, error: 'Failed to create PayPal order' }.to_json
+          end
+        else
+          status 400
+          { success: false, error: 'PayPal not configured' }.to_json
+        end
+      else
+        status 400
+        { success: false, error: 'Invalid payment method' }.to_json
+      end
+    rescue JSON::ParserError
+      status 400
+      { success: false, error: 'Invalid JSON' }.to_json
+    rescue StandardError => e
+      status 500
+      { success: false, error: e.message }.to_json
+    end
+  end
+
+  # Free order processing (for $0.00 orders)
+  post '/api/orders/free' do
+    content_type :json
+    
+    begin
+      order_data = JSON.parse(request.body.read)
+      
+      # Validate required fields
+      unless order_data['customer'] && order_data['customer']['email']
+        status 400
+        return { success: false, error: 'Customer email is required' }.to_json
+      end
+      
+      unless order_data['items']&.any?
+        status 400
+        return { success: false, error: 'Order must contain items' }.to_json
+      end
+      
+      # Verify the order is actually free
+      total = 0
+      order_data['items'].each do |item|
+        product = Product[item['productId']]
+        next unless product
+        
+        total += (product.price.to_f + (product.setup_fee || 0).to_f) * item['quantity']
+      end
+      
+      unless total == 0
+        status 400
+        return { success: false, error: 'This endpoint is only for free orders' }.to_json
+      end
+      
+      # Create order in database
+      order = DB.transaction do
+        new_order = Order.create(
+          email: order_data['customer']['email'],
+          customer_name: order_data['customer']['name'],
+          amount: 0,
+          currency: 'USD',
+          status: 'completed',
+          payment_method: 'free',
+          completed_at: Time.now
+        )
+        
+        # Add order items
+        order_data['items'].each do |item|
+          product = Product[item['productId']]
+          next unless product
+          
+          new_order.add_order_item(
+            product: product,
+            quantity: item['quantity'] || 1,
+            price: 0  # Free items
+          )
+        end
+        
+        new_order
+      end
+      
+      # Generate licenses for the free order
+      generate_licenses_for_order(order)
+      
+      # Send confirmation email if configured
+      send_order_confirmation_email(order) if ENV['SMTP_HOST']
+      
+      status 201
+      {
+        success: true,
+        order_id: order.id
+      }.to_json
+      
+    rescue JSON::ParserError
+      status 400
+      { success: false, error: 'Invalid JSON' }.to_json
+    rescue StandardError => e
+      status 500
+      { success: false, error: e.message }.to_json
+    end
+  end
+
+  # PayPal payment capture
+  post '/api/payment/paypal/capture' do
+    content_type :json
+
+    begin
+      data = JSON.parse(request.body.read)
+      order_id = data['order_id']
+
+      unless order_id
+        status 400
+        return { success: false, error: 'Order ID required' }.to_json
+      end
+
+      # Find the order in our database
+      order = Order.first(payment_intent_id: order_id)
+      unless order
+        status 404
+        return { success: false, error: 'Order not found' }.to_json
+      end
+
+      # Process PayPal payment
+      result = PaymentProcessor.process_payment(order, 'paypal', { order_id: order_id })
+
+      if result[:success]
+        # Generate licenses for successful payment
+        generate_licenses_for_order(order)
+
+        # Send confirmation email if configured
+        send_order_confirmation_email(order) if ENV['SMTP_HOST']
+
+        {
+          success: true,
+          order_id: order.id,
+          transaction_id: result[:transaction_id],
+        }.to_json
+      else
+        status 400
+        { success: false, error: result[:error] }.to_json
+      end
+    rescue JSON::ParserError
+      status 400
+      { success: false, error: 'Invalid JSON' }.to_json
+    rescue StandardError => e
+      status 500
+      { success: false, error: e.message }.to_json
+    end
+  end
+
   # API Authentication endpoint
   post '/api/auth' do
     content_type :json
@@ -564,27 +1352,6 @@ class SourceLicenseApp < Sinatra::Base
     { success: true }.to_json
   end
 
-  # Create new order
-  post '/api/orders' do
-    content_type :json
-    require_valid_api_token
-
-    begin
-      order_data = JSON.parse(request.body.read)
-      order = create_order(order_data)
-
-      status 201
-      {
-        success: true,
-        order_id: order.id,
-        payment_url: order.payment_url,
-      }.to_json
-    rescue StandardError => e
-      status 400
-      { success: false, error: e.message }.to_json
-    end
-  end
-
   # Get order status
   get '/api/orders/:id' do
     content_type :json
@@ -595,12 +1362,25 @@ class SourceLicenseApp < Sinatra::Base
       return { error: 'Order not found' }.to_json
     end
 
+    # Get license keys for this order
+    license_keys = order.licenses.map do |license|
+      {
+        key: license.license_key,
+        product_name: license.product&.name,
+        max_activations: license.effective_max_activations,
+        expires_at: license.effective_expires_at,
+      }
+    end
+
     {
       id: order.id,
       status: order.status,
       amount: order.amount,
+      email: order.email,
+      customer_name: order.customer_name,
+      payment_method: order.payment_method,
       created_at: order.created_at,
-      license_keys: order.licenses.map(&:license_key),
+      license_keys: license_keys,
     }.to_json
   end
 
@@ -877,5 +1657,17 @@ class SourceLicenseApp < Sinatra::Base
     })
 
     intent.id
+  end
+
+  # Generate licenses for completed order
+  def generate_licenses_for_order(order)
+    return unless order.completed?
+
+    order.order_items.each do |item|
+      item.quantity.times do
+        license = LicenseGenerator.generate_for_product(item.product, order)
+        order.add_license(license)
+      end
+    end
   end
 end

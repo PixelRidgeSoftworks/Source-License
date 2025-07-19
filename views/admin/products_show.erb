@@ -1,0 +1,386 @@
+<!-- Product Details Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-1"><%= h(@product.name) %></h1>
+        <p class="text-muted mb-0">Product details and management</p>
+    </div>
+    <div class="btn-group">
+        <a href="/admin/products/<%= @product.id %>/edit" class="btn btn-primary">
+            <i class="fas fa-edit me-2"></i>Edit Product
+        </a>
+        <a href="/admin/products" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Back to Products
+        </a>
+    </div>
+</div>
+
+<!-- Breadcrumbs -->
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/admin">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="/admin/products">Products</a></li>
+        <li class="breadcrumb-item active"><%= h(@product.name) %></li>
+    </ol>
+</nav>
+
+<!-- Product Information -->
+<div class="row">
+    <div class="col-lg-8">
+        <!-- Basic Information Card -->
+        <div class="admin-card mb-4">
+            <div class="admin-card-header">
+                <i class="fas fa-info-circle me-2"></i>
+                Product Information
+            </div>
+            <div class="admin-card-body">
+                <div class="row g-3">
+                    <div class="col-md-8">
+                        <h4 class="mb-1"><%= h(@product.name) %></h4>
+                        <% if @product.version %>
+                        <p class="text-muted mb-3">Version: <%= h(@product.version) %></p>
+                        <% end %>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <%= @product.active ? status_badge('active') : status_badge('inactive') %>
+                        <% if @product.featured %>
+                        <span class="badge bg-warning ms-2">
+                            <i class="fas fa-star me-1"></i>Featured
+                        </span>
+                        <% end %>
+                    </div>
+                </div>
+                
+                <% if @product.description %>
+                <div class="mt-3">
+                    <h6>Description</h6>
+                    <p class="text-muted"><%= h(@product.description) %></p>
+                </div>
+                <% end %>
+            </div>
+        </div>
+
+        <!-- Pricing Information Card -->
+        <div class="admin-card mb-4">
+            <div class="admin-card-header">
+                <i class="fas fa-dollar-sign me-2"></i>
+                Pricing & License Details
+            </div>
+            <div class="admin-card-body">
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <h6>License Type</h6>
+                        <% if @product.subscription? %>
+                            <span class="badge bg-info fs-6">
+                                <i class="fas fa-sync-alt me-1"></i>Subscription
+                            </span>
+                            <p class="text-muted mt-2">
+                                Recurring <%= @product.billing_frequency_text %>
+                                <% if @product.trial? %>
+                                <br><small>Includes <%= @product.trial_period_text %> trial</small>
+                                <% end %>
+                            </p>
+                        <% else %>
+                            <span class="badge bg-success fs-6">
+                                <i class="fas fa-shopping-cart me-1"></i>One-time Purchase
+                            </span>
+                            <p class="text-muted mt-2">Single payment, lifetime license</p>
+                        <% end %>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <h6>Pricing</h6>
+                        <div class="h4 text-success mb-1">
+                            <%= @product.formatted_price %>
+                            <% if @product.subscription? %>
+                            <small class="text-muted fs-6">/<%= @product.billing_cycle %></small>
+                            <% end %>
+                        </div>
+                        <% if @product.setup_fee && @product.setup_fee > 0 %>
+                        <p class="text-muted">+ <%= @product.formatted_setup_fee %> setup fee</p>
+                        <% elsif @product.price == 0 %>
+                        <p class="text-success"><i class="fas fa-gift me-1"></i>Free Product</p>
+                        <% end %>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <h6>License Restrictions</h6>
+                        <p class="mb-1">
+                            <strong>Max Activations:</strong> <%= @product.max_activations %>
+                        </p>
+                        <p class="text-muted small">
+                            Each license can be activated on up to <%= @product.max_activations %> 
+                            device<%= @product.max_activations == 1 ? '' : 's' %>
+                        </p>
+                    </div>
+                    
+                    <% if @product.subscription? && @product.license_duration_days %>
+                    <div class="col-md-6">
+                        <h6>License Duration</h6>
+                        <p class="mb-1">
+                            <strong><%= @product.license_duration_days %> days</strong>
+                        </p>
+                        <p class="text-muted small">
+                            License validity per billing period
+                        </p>
+                    </div>
+                    <% end %>
+                </div>
+            </div>
+        </div>
+
+        <!-- Download Information Card -->
+        <% if @product.download_file || @product.download_url %>
+        <div class="admin-card mb-4">
+            <div class="admin-card-header">
+                <i class="fas fa-download me-2"></i>
+                Download Information
+            </div>
+            <div class="admin-card-body">
+                <div class="row g-3">
+                    <% if @product.download_file %>
+                    <div class="col-md-6">
+                        <h6>Download File</h6>
+                        <p class="mb-1"><code><%= h(@product.download_file) %></code></p>
+                        <p class="text-muted small">Hosted file for automatic delivery</p>
+                    </div>
+                    <% end %>
+                    
+                    <% if @product.download_url %>
+                    <div class="col-md-6">
+                        <h6>Download URL</h6>
+                        <p class="mb-1">
+                            <a href="<%= h(@product.download_url) %>" target="_blank" class="text-decoration-none">
+                                <%= h(truncate(@product.download_url, 40)) %>
+                                <i class="fas fa-external-link-alt ms-1"></i>
+                            </a>
+                        </p>
+                        <p class="text-muted small">External download link</p>
+                    </div>
+                    <% end %>
+                    
+                    <% if @product.file_size %>
+                    <div class="col-md-6">
+                        <h6>File Size</h6>
+                        <p class="mb-1"><strong><%= h(@product.file_size) %></strong></p>
+                        <p class="text-muted small">Displayed to customers</p>
+                    </div>
+                    <% end %>
+                </div>
+            </div>
+        </div>
+        <% end %>
+    </div>
+    
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+        <!-- Quick Actions Card -->
+        <div class="admin-card mb-4">
+            <div class="admin-card-header">
+                <i class="fas fa-bolt me-2"></i>
+                Quick Actions
+            </div>
+            <div class="admin-card-body">
+                <div class="d-grid gap-2">
+                    <a href="/admin/products/<%= @product.id %>/edit" class="btn btn-primary">
+                        <i class="fas fa-edit me-2"></i>Edit Product
+                    </a>
+                    
+                    <button class="btn btn-outline-<%= @product.active ? 'warning' : 'success' %>"
+                            onclick="toggleProductStatus(<%= @product.id %>, '<%= @product.active ? 'inactive' : 'active' %>')">
+                        <i class="fas fa-<%= @product.active ? 'pause' : 'play' %> me-2"></i>
+                        <%= @product.active ? 'Deactivate' : 'Activate' %> Product
+                    </button>
+                    
+                    <a href="/admin/licenses?product_id=<%= @product.id %>" class="btn btn-outline-info">
+                        <i class="fas fa-key me-2"></i>View Licenses
+                    </a>
+                    
+                    <a href="/admin/products/<%= @product.id %>/duplicate" class="btn btn-outline-secondary">
+                        <i class="fas fa-copy me-2"></i>Duplicate Product
+                    </a>
+                    
+                    <hr>
+                    
+                    <button class="btn btn-outline-danger" 
+                            onclick="deleteProduct(<%= @product.id %>, '<%= h(@product.name) %>')">
+                        <i class="fas fa-trash me-2"></i>Delete Product
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics Card -->
+        <div class="admin-card mb-4">
+            <div class="admin-card-header">
+                <i class="fas fa-chart-bar me-2"></i>
+                Product Statistics
+            </div>
+            <div class="admin-card-body">
+                <% 
+                total_licenses = @product.licenses_dataset.count
+                active_licenses = @product.licenses_dataset.where(status: 'active').count
+                total_sales = @product.order_items_dataset.join(:orders, id: :order_id).where(Sequel[:orders][:status] => 'completed').sum(:price) || 0
+                units_sold = @product.order_items_dataset.join(:orders, id: :order_id).where(Sequel[:orders][:status] => 'completed').sum(:quantity) || 0
+                %>
+                
+                <div class="row text-center g-3">
+                    <div class="col-6">
+                        <div class="stat-item">
+                            <div class="h4 text-primary mb-1"><%= total_licenses %></div>
+                            <small class="text-muted">Total Licenses</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="stat-item">
+                            <div class="h4 text-success mb-1"><%= active_licenses %></div>
+                            <small class="text-muted">Active Licenses</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="stat-item">
+                            <div class="h4 text-info mb-1"><%= units_sold %></div>
+                            <small class="text-muted">Units Sold</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="stat-item">
+                            <div class="h4 text-warning mb-1"><%= format_currency(total_sales) %></div>
+                            <small class="text-muted">Total Revenue</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <hr class="my-3">
+                
+                <div class="small text-muted">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>Created:</span>
+                        <span><%= format_date(@product.created_at, :datetime) %></span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span>Updated:</span>
+                        <span><%= format_date(@product.updated_at, :datetime) %></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Product Preview Card -->
+        <div class="admin-card">
+            <div class="admin-card-header">
+                <i class="fas fa-eye me-2"></i>
+                Customer View Preview
+            </div>
+            <div class="admin-card-body">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between">
+                        <span class="fw-bold"><%= h(@product.name) %></span>
+                        <% if @product.subscription? %>
+                            <span class="badge bg-info">Subscription</span>
+                        <% else %>
+                            <span class="badge bg-success">One-time</span>
+                        <% end %>
+                    </div>
+                    <div class="card-body">
+                        <div class="h5 text-success mb-2">
+                            <%= @product.formatted_price %>
+                            <% if @product.subscription? %>
+                            <small class="text-muted">/<%= @product.billing_cycle %></small>
+                            <% end %>
+                        </div>
+                        <% if @product.description %>
+                        <p class="text-muted small"><%= h(truncate(@product.description, 100)) %></p>
+                        <% end %>
+                        <div class="small">
+                            <strong>Max Activations:</strong> <%= @product.max_activations %>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript for Actions -->
+<script>
+// Toggle product status
+function toggleProductStatus(productId, newStatus) {
+    if (confirm(`Are you sure you want to ${newStatus} this product?`)) {
+        fetch(`/admin/products/${productId}/toggle-status`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({ status: newStatus })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while updating the product status.');
+        });
+    }
+}
+
+// Delete product
+function deleteProduct(productId, productName) {
+    if (confirm(`Are you sure you want to delete "${productName}"? This action cannot be undone and will affect all associated licenses.`)) {
+        fetch(`/admin/products/${productId}`, {
+            method: 'DELETE',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.href = '/admin/products';
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while deleting the product.');
+        });
+    }
+}
+</script>
+
+<!-- Custom Styles -->
+<style>
+.stat-item {
+    padding: 1rem 0;
+}
+
+.admin-card .card {
+    border: 1px solid var(--border-default);
+    background: var(--surface-secondary);
+}
+
+.admin-card .card-header {
+    background: var(--surface-tertiary);
+    border-bottom: 1px solid var(--border-default);
+}
+
+.breadcrumb {
+    background: transparent;
+    padding: 0;
+}
+
+.breadcrumb-item a {
+    color: var(--accent-primary);
+    text-decoration: none;
+}
+
+.breadcrumb-item a:hover {
+    text-decoration: underline;
+}
+</style>

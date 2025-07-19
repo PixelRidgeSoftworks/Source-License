@@ -163,7 +163,7 @@ class Database
       db_name = ENV['DATABASE_NAME'] || 'source_license.db'
       # Ensure .db extension for SQLite
       db_name += '.db' unless db_name.end_with?('.db')
-      
+
       # Use relative path if it's just a filename, otherwise use as-is
       if File.dirname(db_name) == '.'
         # Simple filename - use relative to current directory
@@ -206,12 +206,23 @@ class Database
 
       return if Admin.first(email: admin_email)
 
-      Admin.create(
-        email: admin_email,
-        password: admin_password,
-        created_at: Time.now
-      )
-      puts "✓ Default admin user created: #{admin_email}"
+      begin
+        admin = Admin.new
+        admin.email = admin_email
+        admin.password = admin_password # This calls the setter which hashes the password
+        admin.status = 'active'
+        admin.roles = 'admin'
+        admin.created_at = Time.now
+        admin.password_changed_at = Time.now
+        admin.save_changes
+
+        puts "✓ Default admin user created: #{admin_email}"
+        puts "  Password: #{admin_password}"
+      rescue StandardError => e
+        puts "✗ Failed to create default admin user: #{e.message}"
+        puts "  Email: #{admin_email}"
+        puts "  Password: #{admin_password}"
+      end
     end
   end
 end

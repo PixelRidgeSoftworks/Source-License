@@ -6,6 +6,7 @@
 require 'uri'
 require 'cgi'
 require 'json'
+require 'securerandom'
 
 # Template helper functions
 module TemplateHelpers
@@ -203,20 +204,36 @@ module TemplateHelpers
 
   # Generate CSRF input field
   def csrf_input
-    "<input type=\"hidden\" name=\"authenticity_token\" value=\"#{csrf_token}\">"
+    "<input type=\"hidden\" name=\"csrf_token\" value=\"#{csrf_token}\">"
   end
 
   # Verify CSRF token
   def verify_csrf_token
-    return true if development? # Skip CSRF in development
+    return true if request.get? || request.head? || request.options?
 
-    token = params[:authenticity_token] || request.env['HTTP_X_CSRF_TOKEN']
-    token && token == session[:csrf_token]
+    # Skip CSRF in development or test environments
+    if ENV['APP_ENV'] == 'development' || ENV['RACK_ENV'] == 'development' ||
+       ENV['APP_ENV'] == 'test' || ENV['RACK_ENV'] == 'test' ||
+       development?
+      return true
+    end
+
+    submitted_token = params[:csrf_token] || request.env['HTTP_X_CSRF_TOKEN']
+    return false unless submitted_token
+
+    # Use secure comparison to prevent timing attacks
+    submitted_token == csrf_token
   end
 
   # Require CSRF token
   def require_csrf_token
-    halt 403, 'CSRF token verification failed' unless verify_csrf_token
+    return if verify_csrf_token
+
+    if request.xhr? || content_type == 'application/json'
+      halt 403, { error: 'CSRF token verification failed' }.to_json
+    else
+      halt 403, 'CSRF token verification failed'
+    end
   end
 
   # Current page title

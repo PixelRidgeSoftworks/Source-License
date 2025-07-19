@@ -150,7 +150,7 @@ class Admin < Sequel::Model
   end
 
   # Security role management
-  def has_role?(role_name)
+  def role?(role_name)
     roles_list.include?(role_name.to_s)
   end
 
@@ -286,38 +286,38 @@ class Product < Sequel::Model
   # Get billing cycle object
   def billing_cycle_object
     return nil unless billing_cycle
-    
+
     BillingCycle.by_name(billing_cycle)
   end
-  
+
   # Get formatted setup fee
   def formatted_setup_fee
-    return nil unless setup_fee && setup_fee > 0
-    
+    return nil unless setup_fee&.positive?
+
     "$#{format('%.2f', setup_fee)}"
   end
-  
+
   # Get total first payment (price + setup fee)
   def total_first_payment
     base_price = price || 0
     fee = setup_fee || 0
     base_price + fee
   end
-  
+
   # Get formatted total first payment
   def formatted_total_first_payment
     "$#{format('%.2f', total_first_payment)}"
   end
-  
+
   # Check if product has trial period
-  def has_trial?
-    trial_period_days && trial_period_days > 0
+  def trial?
+    trial_period_days&.positive?
   end
-  
+
   # Get trial period text
   def trial_period_text
     return 'No trial' unless has_trial?
-    
+
     if trial_period_days == 1
       '1 day trial'
     elsif trial_period_days < 30
@@ -334,25 +334,25 @@ class Product < Sequel::Model
       end
     end
   end
-  
+
   # Get billing frequency text
   def billing_frequency_text
     cycle = billing_cycle_object
     return 'One-time payment' unless cycle
-    
-    case billing_interval || 1
-    when 1
+
+    interval = billing_interval || 1
+    if interval == 1
       cycle.display_name
     else
-      "Every #{billing_interval} #{cycle.display_name.downcase}"
+      "Every #{interval} #{cycle.display_name.downcase}"
     end
   end
-  
+
   # Calculate next billing date from a start date
   def next_billing_date(from_date = Time.now)
     cycle = billing_cycle_object
     return nil unless cycle
-    
+
     interval = billing_interval || 1
     cycle.next_billing_date(from_date + ((interval - 1) * cycle.days * 24 * 60 * 60))
   end
@@ -361,7 +361,7 @@ class Product < Sequel::Model
   def validate
     super
     errors.add(:name, 'cannot be empty') if !name || name.strip.empty?
-    errors.add(:price, 'must be greater than 0') if !price || price <= 0
+    errors.add(:price, 'must be greater than or equal to 0') if !price || price.negative?
     errors.add(:license_type, 'must be one_time or subscription') unless %w[one_time
                                                                             subscription].include?(license_type)
     errors.add(:max_activations, 'must be greater than 0') if !max_activations || max_activations <= 0
@@ -445,7 +445,7 @@ class Order < Sequel::Model
       errors.add(:email,
                  'must be valid email format')
     end
-    errors.add(:amount, 'must be greater than 0') if !amount || amount <= 0
+    errors.add(:amount, 'must be greater than or equal to 0') if !amount || amount.negative?
     errors.add(:status, 'invalid status') unless %w[pending completed failed refunded].include?(status)
     errors.add(:payment_method, 'invalid payment method') unless %w[stripe paypal].include?(payment_method)
   end
@@ -477,7 +477,7 @@ class OrderItem < Sequel::Model
   def validate
     super
     errors.add(:quantity, 'must be greater than 0') if !quantity || quantity <= 0
-    errors.add(:price, 'must be greater than 0') if !price || price <= 0
+    errors.add(:price, 'must be greater than or equal to 0') if !price || price.negative?
   end
 end
 
@@ -529,80 +529,80 @@ class License < Sequel::Model
   def remaining_activations
     effective_max_activations - activation_count
   end
-  
+
   # Get effective max activations (custom override or product default)
   def effective_max_activations
     custom_max_activations || max_activations || product&.max_activations || 1
   end
-  
+
   # Get effective expiration date (custom override or product-based)
   def effective_expires_at
     custom_expires_at || expires_at
   end
-  
+
   # Check if license has custom configuration
-  def has_custom_config?
+  def custom_config?
     custom_max_activations || custom_expires_at
   end
-  
+
   # Check license type
   def perpetual?
     license_type == 'perpetual'
   end
-  
+
   def subscription_based?
     license_type == 'subscription'
   end
-  
+
   def trial?
     license_type == 'trial'
   end
-  
+
   # Check trial status
   def trial_active?
     trial? && trial_ends_at && trial_ends_at > Time.now
   end
-  
+
   def trial_expired?
     trial? && trial_ends_at && trial_ends_at <= Time.now
   end
-  
+
   # Check grace period status
   def in_grace_period?
     grace_period_ends_at && grace_period_ends_at > Time.now
   end
-  
+
   def grace_period_expired?
     grace_period_ends_at && grace_period_ends_at <= Time.now
   end
-  
+
   # Start trial period
   def start_trial!(days = nil)
     trial_days = days || product&.trial_period_days || 0
     return false if trial_days <= 0
-    
+
     update(
       license_type: 'trial',
       trial_ends_at: Time.now + (trial_days * 24 * 60 * 60),
       status: 'active'
     )
   end
-  
+
   # Convert trial to subscription
   def convert_trial_to_subscription!
     return false unless trial?
-    
+
     update(
       license_type: 'subscription',
       trial_ends_at: nil
     )
-    
+
     # Set up subscription if product is subscription-based
-    if product&.subscription?
-      create_subscription_from_product!
-    end
+    return unless product&.subscription?
+
+    create_subscription_from_product!
   end
-  
+
   # Enter grace period after failed payment
   def enter_grace_period!
     grace_days = product&.grace_period_days || 7
@@ -611,18 +611,18 @@ class License < Sequel::Model
       status: 'active' # Keep active during grace period
     )
   end
-  
+
   # Create subscription record from product configuration
   def create_subscription_from_product!
     return unless product&.subscription?
     return if subscription # Already has subscription
-    
+
     cycle = product.billing_cycle_object
     return unless cycle
-    
+
     now = Time.now
     period_end = cycle.next_billing_date(now)
-    
+
     Subscription.create(
       license_id: id,
       status: 'active',
@@ -828,30 +828,30 @@ end
 class BillingCycle < Sequel::Model
   include BaseModelMethods
   set_dataset :billing_cycles
-  
+
   # Get all active billing cycles
   def self.active
     where(active: true)
   end
-  
+
   # Get billing cycle by name
   def self.by_name(name)
     where(name: name).first
   end
-  
+
   # Calculate next billing date from a start date
   def next_billing_date(from_date = Time.now)
     from_date + (days * 24 * 60 * 60)
   end
-  
+
   # Get Stripe-compatible interval
   def stripe_pricing_config
     {
       interval: stripe_interval,
-      interval_count: stripe_interval_count
+      interval_count: stripe_interval_count,
     }
   end
-  
+
   # Validation
   def validate
     super
@@ -866,46 +866,46 @@ end
 # Subscription billing history tracking
 class SubscriptionBillingHistory < Sequel::Model
   include BaseModelMethods
-  set_dataset :subscription_billing_history
+  set_dataset :subscription_billing_histories
   many_to_one :subscription
-  
+
   # Check payment status
   def paid?
     status == 'paid'
   end
-  
+
   def failed?
     status == 'failed'
   end
-  
+
   def pending?
     status == 'pending'
   end
-  
+
   def refunded?
     status == 'refunded'
   end
-  
+
   # Mark as paid
   def mark_paid!(payment_date = Time.now)
     update(status: 'paid', paid_at: payment_date)
   end
-  
+
   # Mark as failed
   def mark_failed!(reason = nil)
     update(status: 'failed', failed_at: Time.now, failure_reason: reason)
   end
-  
+
   # Get formatted amount
   def formatted_amount
     "$#{format('%.2f', amount)}"
   end
-  
+
   # Get billing period duration in days
   def period_duration_days
     ((billing_period_end - billing_period_start) / (24 * 60 * 60)).round
   end
-  
+
   # Validation
   def validate
     super

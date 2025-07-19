@@ -173,7 +173,7 @@ class SourceLicenseLauncher
 
       puts '✅ Database connection successful'
       puts '✅ Database migrations completed'
-      
+
       # Create default admin user if none exists
       create_default_admin_user
     rescue StandardError => e
@@ -265,39 +265,36 @@ class SourceLicenseLauncher
   end
 
   def create_default_admin_user
-    begin
-      # Load models to access Admin class
-      require_relative 'lib/models'
-      require 'bcrypt'
+    # Load models to access Admin class
+    require_relative 'lib/models'
+    require 'bcrypt'
 
-      # Check if any admin users already exist
-      if defined?(Admin) && Admin.count > 0
-        puts '✅ Admin user already exists'
-        return
-      end
-
-      # Get admin credentials from environment
-      admin_email = ENV['ADMIN_EMAIL'] || 'admin@yourdomain.com'
-      admin_password = ENV['ADMIN_PASSWORD'] || 'admin123'
-
-      # Create the admin user using the secure method
-      admin = Admin.create_secure_admin(admin_email, admin_password, ['admin'])
-
-      if admin
-        puts '✅ Default admin user created successfully'
-        puts "   Email: #{admin_email}"
-        puts "   Password: #{admin_password}"
-        puts
-        puts '⚠️  IMPORTANT: Please change the default admin password after first login!'
-        puts '   You can do this through the admin panel or by updating the .env file'
-      else
-        puts '⚠️  Failed to create default admin user'
-      end
-
-    rescue StandardError => e
-      puts "⚠️  Could not create admin user: #{e.message}"
-      puts '   This is not critical - you can create an admin user manually'
+    # Check if any admin users already exist
+    if defined?(Admin) && Admin.any?
+      puts '✅ Admin user already exists'
+      return
     end
+
+    # Get admin credentials from environment
+    admin_email = ENV['ADMIN_EMAIL'] || 'admin@yourdomain.com'
+    admin_password = ENV['ADMIN_PASSWORD'] || 'admin123'
+
+    # Create the admin user using the secure method
+    admin = Admin.create_secure_admin(admin_email, admin_password, ['admin'])
+
+    if admin
+      puts '✅ Default admin user created successfully'
+      puts "   Email: #{admin_email}"
+      puts "   Password: #{admin_password}"
+      puts
+      puts '⚠️  IMPORTANT: Please change the default admin password after first login!'
+      puts '   You can do this through the admin panel or by updating the .env file'
+    else
+      puts '⚠️  Failed to create default admin user'
+    end
+  rescue StandardError => e
+    puts "⚠️  Could not create admin user: #{e.message}"
+    puts '   This is not critical - you can create an admin user manually'
   end
 
   def load_environment

@@ -1,0 +1,727 @@
+<!-- Products Management Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-1">Product Management</h1>
+        <p class="text-muted mb-0">Manage your software products and licensing options</p>
+    </div>
+    <div>
+        <a href="/admin/products/new" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i>Add New Product
+        </a>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row g-4 mb-4">
+    <div class="col-xl-3 col-md-6">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <div class="stat-number text-primary"><%= @products.count %></div>
+                    <div class="stat-label">Total Products</div>
+                </div>
+                <div class="text-primary">
+                    <i class="fas fa-box fa-2x"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <div class="stat-number text-success"><%= @products.select(&:active).count %></div>
+                    <div class="stat-label">Active Products</div>
+                </div>
+                <div class="text-success">
+                    <i class="fas fa-check-circle fa-2x"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <div class="stat-number text-info"><%= @products.select(&:subscription?).count %></div>
+                    <div class="stat-label">Subscription Products</div>
+                </div>
+                <div class="text-info">
+                    <i class="fas fa-sync-alt fa-2x"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <div class="stat-number text-warning"><%= @products.select(&:one_time?).count %></div>
+                    <div class="stat-label">One-time Products</div>
+                </div>
+                <div class="text-warning">
+                    <i class="fas fa-shopping-cart fa-2x"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filter and Search -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="input-group">
+            <span class="input-group-text">
+                <i class="fas fa-search"></i>
+            </span>
+            <input type="text" class="form-control" placeholder="Search products..." id="productSearch">
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="d-flex gap-2">
+            <select class="form-select" id="statusFilter">
+                <option value="">All Status</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+            </select>
+            <select class="form-select" id="typeFilter">
+                <option value="">All Types</option>
+                <option value="one_time">One-time</option>
+                <option value="subscription">Subscription</option>
+            </select>
+        </div>
+    </div>
+</div>
+
+<!-- Bulk Actions Toolbar (initially hidden) -->
+<div id="bulkActionsToolbar" class="bulk-actions-toolbar mb-3" style="display: none;">
+    <div class="d-flex justify-content-between align-items-center">
+        <div class="bulk-actions-info">
+            <span id="selectedCount">0</span> products selected
+        </div>
+        <div class="bulk-actions-buttons">
+            <button class="btn btn-success btn-sm me-2" onclick="bulkActivate()">
+                <i class="fas fa-play me-1"></i>Activate
+            </button>
+            <button class="btn btn-warning btn-sm me-2" onclick="bulkDeactivate()">
+                <i class="fas fa-pause me-1"></i>Deactivate
+            </button>
+            <button class="btn btn-info btn-sm me-2" onclick="bulkExport()">
+                <i class="fas fa-download me-1"></i>Export Selected
+            </button>
+            <button class="btn btn-danger btn-sm me-2" onclick="bulkDelete()">
+                <i class="fas fa-trash me-1"></i>Delete
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="clearSelection()">
+                <i class="fas fa-times me-1"></i>Clear Selection
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Products Table -->
+<div class="data-table">
+    <h5 class="table-header">
+        <i class="fas fa-box me-2"></i>
+        Products
+    </h5>
+    
+    <div class="table-responsive">
+        <% if @products.any? %>
+        <table class="table table-hover table-dark mb-0" id="productsTable">
+            <thead>
+                <tr>
+                    <th width="40">
+                        <input type="checkbox" id="selectAll" class="form-check-input">
+                    </th>
+                    <th>Product</th>
+                    <th>Type</th>
+                    <th>Price</th>
+                    <th>Status</th>
+                    <th>Licenses</th>
+                    <th>Sales</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% @products.each do |product| %>
+                <tr class="product-row" 
+                    data-status="<%= product.active ? 'active' : 'inactive' %>"
+                    data-type="<%= product.license_type %>"
+                    data-name="<%= h(product.name.downcase) %>">
+                    <td>
+                        <input type="checkbox" class="form-check-input product-checkbox" 
+                               value="<%= product.id %>" data-product-name="<%= h(product.name) %>">
+                    </td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <div class="product-icon me-3">
+                                <i class="fas fa-<%= product.subscription? ? 'sync-alt text-info' : 'box text-success' %>"></i>
+                            </div>
+                            <div>
+                                <div class="fw-bold"><%= h(product.name) %></div>
+                                <small class="text-muted">
+                                    <%= h(truncate(product.description || 'No description', 50)) %>
+                                </small>
+                                <% if product.version %>
+                                <br><small class="badge bg-light text-dark">v<%= h(product.version) %></small>
+                                <% end %>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <% if product.subscription? %>
+                            <span class="badge bg-info">
+                                <i class="fas fa-sync-alt me-1"></i>Subscription
+                            </span>
+                            <% if product.billing_cycle %>
+                            <br><small class="text-muted"><%= h(product.billing_frequency_text) %></small>
+                            <% end %>
+                        <% else %>
+                            <span class="badge bg-success">
+                                <i class="fas fa-shopping-cart me-1"></i>One-time
+                            </span>
+                        <% end %>
+                    </td>
+                    <td>
+                        <div class="fw-bold text-success">
+                            <%= product.formatted_price %>
+                        </div>
+                        <% if product.setup_fee && product.setup_fee > 0 %>
+                        <small class="text-muted">
+                            + <%= product.formatted_setup_fee %> setup
+                        </small>
+                        <% end %>
+                        <% if product.trial? %>
+                        <br><small class="badge bg-warning">
+                            <i class="fas fa-clock me-1"></i><%= product.trial_period_text %>
+                        </small>
+                        <% end %>
+                    </td>
+                    <td>
+                        <%= product.active ? status_badge('active') : status_badge('inactive') %>
+                        <% unless product.active %>
+                        <br><small class="text-muted">Hidden from store</small>
+                        <% end %>
+                    </td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <div class="me-2">
+                                <div class="fw-bold"><%= product.licenses.count %></div>
+                                <small class="text-muted">Total</small>
+                            </div>
+                            <div>
+                                <div class="text-success fw-bold"><%= product.licenses_dataset.where(status: 'active').count %></div>
+                                <small class="text-muted">Active</small>
+                            </div>
+                        </div>
+                        <small class="text-muted">
+                            Max: <%= product.max_activations %> per license
+                        </small>
+                    </td>
+                    <td>
+                        <% total_sales = product.order_items_dataset.join(:orders, id: :order_id).where(Sequel[:orders][:status] => 'completed').sum(:price) || 0 %>
+                        <div class="fw-bold text-primary">
+                            <%= format_currency(total_sales) %>
+                        </div>
+                        <small class="text-muted">
+                            <%= product.order_items_dataset.join(:orders, id: :order_id).where(Sequel[:orders][:status] => 'completed').sum(:quantity) || 0 %> sold
+                        </small>
+                    </td>
+                    <td>
+                        <div class="btn-group btn-group-sm">
+                            <a href="/admin/products/<%= product.id %>" 
+                               class="btn btn-outline-primary"
+                               title="View Details">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <a href="/admin/products/<%= product.id %>/edit" 
+                               class="btn btn-outline-secondary"
+                               title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <button class="btn btn-outline-<%= product.active ? 'warning' : 'success' %>"
+                                    onclick="toggleProductStatus(<%= product.id %>, '<%= product.active ? 'inactive' : 'active' %>')"
+                                    title="<%= product.active ? 'Deactivate' : 'Activate' %>">
+                                <i class="fas fa-<%= product.active ? 'pause' : 'play' %>"></i>
+                            </button>
+                            <div class="dropdown">
+                                <button class="btn btn-outline-secondary dropdown-toggle" 
+                                        data-bs-toggle="dropdown">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li>
+                                        <a class="dropdown-item" href="/admin/licenses?product_id=<%= product.id %>">
+                                            <i class="fas fa-key me-2"></i>View Licenses
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="/admin/products/<%= product.id %>/duplicate">
+                                            <i class="fas fa-copy me-2"></i>Duplicate
+                                        </a>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <button class="dropdown-item text-danger" 
+                                                onclick="deleteProduct(<%= product.id %>, '<%= h(product.name) %>')">
+                                            <i class="fas fa-trash me-2"></i>Delete
+                                        </button>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                <% end %>
+            </tbody>
+        </table>
+        <% else %>
+        <div class="text-center py-5">
+            <i class="fas fa-box text-muted mb-3" style="font-size: 3rem;"></i>
+            <h5 class="text-muted">No Products Yet</h5>
+            <p class="text-muted mb-4">
+                Start by creating your first software product to begin licensing.
+            </p>
+            <a href="/admin/products/new" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Create Your First Product
+            </a>
+        </div>
+        <% end %>
+    </div>
+    
+    <% if @products.any? %>
+    <div class="card-footer" style="background: var(--surface-tertiary); border-top: 1px solid var(--border-default);">
+        <div class="d-flex justify-content-between align-items-center">
+            <small class="text-muted">
+                Showing <%= @products.count %> products
+            </small>
+            <div class="btn-group btn-group-sm">
+                <button class="btn btn-outline-secondary" onclick="exportProducts()">
+                    <i class="fas fa-download me-1"></i>Export All
+                </button>
+            </div>
+        </div>
+    </div>
+    <% end %>
+</div>
+
+<!-- Product Management JavaScript -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('productSearch');
+    const statusFilter = document.getElementById('statusFilter');
+    const typeFilter = document.getElementById('typeFilter');
+    const table = document.getElementById('productsTable');
+    const selectAllCheckbox = document.getElementById('selectAll');
+    const productCheckboxes = document.querySelectorAll('.product-checkbox');
+    const bulkToolbar = document.getElementById('bulkActionsToolbar');
+    const selectedCountElement = document.getElementById('selectedCount');
+    
+    // Search and filter functionality
+    function filterProducts() {
+        const searchTerm = searchInput.value.toLowerCase();
+        const statusValue = statusFilter.value;
+        const typeValue = typeFilter.value;
+        const rows = document.querySelectorAll('.product-row');
+        
+        rows.forEach(row => {
+            const name = row.dataset.name;
+            const status = row.dataset.status;
+            const type = row.dataset.type;
+            
+            const matchesSearch = !searchTerm || name.includes(searchTerm);
+            const matchesStatus = !statusValue || status === statusValue;
+            const matchesType = !typeValue || type === typeValue;
+            
+            row.style.display = (matchesSearch && matchesStatus && matchesType) ? '' : 'none';
+        });
+        
+        // Update bulk selection after filtering
+        updateBulkSelection();
+    }
+    
+    // Bulk selection functionality
+    function updateBulkSelection() {
+        const visibleCheckboxes = Array.from(productCheckboxes).filter(cb => 
+            cb.closest('.product-row').style.display !== 'none'
+        );
+        const checkedBoxes = visibleCheckboxes.filter(cb => cb.checked);
+        
+        // Update select all checkbox state
+        if (checkedBoxes.length === 0) {
+            selectAllCheckbox.indeterminate = false;
+            selectAllCheckbox.checked = false;
+        } else if (checkedBoxes.length === visibleCheckboxes.length) {
+            selectAllCheckbox.indeterminate = false;
+            selectAllCheckbox.checked = true;
+        } else {
+            selectAllCheckbox.indeterminate = true;
+            selectAllCheckbox.checked = false;
+        }
+        
+        // Show/hide bulk actions toolbar
+        if (checkedBoxes.length > 0) {
+            bulkToolbar.style.display = 'block';
+            selectedCountElement.textContent = checkedBoxes.length;
+        } else {
+            bulkToolbar.style.display = 'none';
+        }
+    }
+    
+    // Select all checkbox handler
+    if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', function() {
+            const visibleCheckboxes = Array.from(productCheckboxes).filter(cb => 
+                cb.closest('.product-row').style.display !== 'none'
+            );
+            
+            visibleCheckboxes.forEach(checkbox => {
+                checkbox.checked = this.checked;
+            });
+            
+            updateBulkSelection();
+        });
+    }
+    
+    // Individual checkbox handlers
+    productCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', updateBulkSelection);
+    });
+    
+    // Search and filter event listeners
+    if (searchInput) searchInput.addEventListener('input', filterProducts);
+    if (statusFilter) statusFilter.addEventListener('change', filterProducts);
+    if (typeFilter) typeFilter.addEventListener('change', filterProducts);
+});
+
+// Get selected product IDs
+function getSelectedProductIds() {
+    return Array.from(document.querySelectorAll('.product-checkbox:checked')).map(cb => cb.value);
+}
+
+// Get selected product names
+function getSelectedProductNames() {
+    return Array.from(document.querySelectorAll('.product-checkbox:checked'))
+        .map(cb => cb.dataset.productName);
+}
+
+// Clear selection
+function clearSelection() {
+    document.querySelectorAll('.product-checkbox').forEach(cb => cb.checked = false);
+    document.getElementById('selectAll').checked = false;
+    document.getElementById('selectAll').indeterminate = false;
+    document.getElementById('bulkActionsToolbar').style.display = 'none';
+}
+
+// Bulk activate products
+function bulkActivate() {
+    const productIds = getSelectedProductIds();
+    const productNames = getSelectedProductNames();
+    
+    if (productIds.length === 0) {
+        alert('Please select products to activate.');
+        return;
+    }
+    
+    if (confirm(`Are you sure you want to activate ${productIds.length} selected products?\n\n${productNames.slice(0, 5).join(', ')}${productNames.length > 5 ? '...' : ''}`)) {
+        performBulkAction('activate', productIds);
+    }
+}
+
+// Bulk deactivate products
+function bulkDeactivate() {
+    const productIds = getSelectedProductIds();
+    const productNames = getSelectedProductNames();
+    
+    if (productIds.length === 0) {
+        alert('Please select products to deactivate.');
+        return;
+    }
+    
+    if (confirm(`Are you sure you want to deactivate ${productIds.length} selected products?\n\n${productNames.slice(0, 5).join(', ')}${productNames.length > 5 ? '...' : ''}`)) {
+        performBulkAction('deactivate', productIds);
+    }
+}
+
+// Bulk delete products
+function bulkDelete() {
+    const productIds = getSelectedProductIds();
+    const productNames = getSelectedProductNames();
+    
+    if (productIds.length === 0) {
+        alert('Please select products to delete.');
+        return;
+    }
+    
+    if (confirm(`⚠️ WARNING: Are you sure you want to DELETE ${productIds.length} selected products?\n\n${productNames.slice(0, 5).join(', ')}${productNames.length > 5 ? '...' : ''}\n\nThis action CANNOT be undone and will affect all associated licenses!`)) {
+        performBulkAction('delete', productIds);
+    }
+}
+
+// Bulk export products
+function bulkExport() {
+    const productIds = getSelectedProductIds();
+    
+    if (productIds.length === 0) {
+        alert('Please select products to export.');
+        return;
+    }
+    
+    const params = new URLSearchParams({ product_ids: productIds.join(',') });
+    window.location.href = `/admin/products/export?${params.toString()}`;
+}
+
+// Perform bulk action
+function performBulkAction(action, productIds) {
+    const loadingText = action === 'delete' ? 'Deleting...' : 
+                       action === 'activate' ? 'Activating...' : 'Deactivating...';
+    
+    // Show loading state
+    const toolbar = document.getElementById('bulkActionsToolbar');
+    const originalHTML = toolbar.innerHTML;
+    toolbar.innerHTML = `<div class="d-flex align-items-center"><div class="spinner-border spinner-border-sm me-2"></div>${loadingText}</div>`;
+    
+    fetch('/admin/products/bulk-action', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify({
+            action: action,
+            product_ids: productIds
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            if (data.results) {
+                let message = `Bulk ${action} completed:\n`;
+                message += `✓ Success: ${data.results.success || 0}\n`;
+                if (data.results.failed > 0) {
+                    message += `✗ Failed: ${data.results.failed}\n`;
+                    if (data.results.errors && data.results.errors.length > 0) {
+                        message += `\nErrors:\n${data.results.errors.slice(0, 3).join('\n')}`;
+                        if (data.results.errors.length > 3) {
+                            message += `\n... and ${data.results.errors.length - 3} more`;
+                        }
+                    }
+                }
+                alert(message);
+            }
+            location.reload();
+        } else {
+            alert('Error: ' + (data.error || 'Unknown error occurred'));
+            toolbar.innerHTML = originalHTML;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while performing the bulk action.');
+        toolbar.innerHTML = originalHTML;
+    });
+}
+
+// Toggle product status
+function toggleProductStatus(productId, newStatus) {
+    if (confirm(`Are you sure you want to ${newStatus} this product?`)) {
+        fetch(`/admin/products/${productId}/toggle-status`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({ status: newStatus })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while updating the product status.');
+        });
+    }
+}
+
+// Delete product
+function deleteProduct(productId, productName) {
+    if (confirm(`Are you sure you want to delete "${productName}"? This action cannot be undone and will affect all associated licenses.`)) {
+        fetch(`/admin/products/${productId}`, {
+            method: 'DELETE',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while deleting the product.');
+        });
+    }
+}
+
+// Export products
+function exportProducts() {
+    window.location.href = '/admin/products/export';
+}
+
+// Stat card click handlers
+document.querySelectorAll('.stat-card').forEach(card => {
+    card.style.cursor = 'pointer';
+    card.addEventListener('click', function() {
+        const label = this.querySelector('.stat-label').textContent.toLowerCase();
+        
+        const statusFilter = document.getElementById('statusFilter');
+        const typeFilter = document.getElementById('typeFilter');
+        
+        // Reset filters
+        statusFilter.value = '';
+        typeFilter.value = '';
+        
+        switch(label) {
+            case 'active products':
+                statusFilter.value = 'active';
+                break;
+            case 'subscription products':
+                typeFilter.value = 'subscription';
+                break;
+            case 'one-time products':
+                typeFilter.value = 'one_time';
+                break;
+        }
+        
+        // Trigger filter
+        statusFilter.dispatchEvent(new Event('change'));
+        typeFilter.dispatchEvent(new Event('change'));
+    });
+});
+</script>
+
+<!-- Custom Styles -->
+<style>
+.product-icon {
+    width: 40px;
+    height: 40px;
+    background: var(--surface-tertiary);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+.btn-group-sm .btn {
+    padding: 0.25rem 0.5rem;
+}
+
+.product-row:hover {
+    background-color: var(--surface-tertiary);
+}
+
+.table th {
+    border-bottom: 2px solid var(--border-default);
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.dropdown-menu {
+    background: var(--surface-secondary);
+    border: 1px solid var(--border-default);
+}
+
+.dropdown-item {
+    color: var(--text-primary);
+}
+
+.dropdown-item:hover {
+    background: var(--surface-tertiary);
+    color: var(--accent-primary);
+}
+
+/* Bulk Actions Toolbar */
+.bulk-actions-toolbar {
+    background: var(--surface-secondary);
+    border: 1px solid var(--accent-primary);
+    border-radius: 8px;
+    padding: 1rem;
+    box-shadow: var(--shadow);
+    animation: slideInDown 0.3s ease-out;
+}
+
+.bulk-actions-info {
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.bulk-actions-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+@keyframes slideInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Selected row highlighting */
+.product-row:has(.product-checkbox:checked) {
+    background-color: rgba(35, 134, 54, 0.1) !important;
+    border-left: 3px solid var(--accent-primary);
+}
+
+/* Checkbox styling */
+.form-check-input:checked {
+    background-color: var(--accent-primary);
+    border-color: var(--accent-primary);
+}
+
+.form-check-input:focus {
+    box-shadow: 0 0 0 0.25rem rgba(35, 134, 54, 0.25);
+}
+
+/* Responsive bulk actions */
+@media (max-width: 768px) {
+    .bulk-actions-toolbar .d-flex {
+        flex-direction: column;
+        align-items: stretch !important;
+    }
+    
+    .bulk-actions-buttons {
+        margin-top: 1rem;
+        justify-content: center;
+    }
+    
+    .bulk-actions-buttons .btn {
+        flex: 1;
+        min-width: 120px;
+    }
+}
+</style>

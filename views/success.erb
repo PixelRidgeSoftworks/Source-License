@@ -1,0 +1,618 @@
+<!-- Purchase Success Page -->
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Success Header -->
+            <div class="text-center mb-5">
+                <div class="success-icon mb-4">
+                    <i class="fas fa-check-circle text-success" style="font-size: 6rem;"></i>
+                </div>
+                <h1 class="fw-bold text-success mb-3">Payment Successful!</h1>
+                <p class="lead text-muted">
+                    Your order has been processed successfully. You should receive your license details via email shortly.
+                </p>
+            </div>
+            
+            <!-- Order Details Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="fw-bold mb-0">
+                        <i class="fas fa-receipt me-2"></i>
+                        Order Details
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="order-details">
+                        <!-- Order details will be populated via JavaScript -->
+                        <div class="text-center py-4">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="mt-3 text-muted">Loading order details...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- License Information Card -->
+            <div class="card mb-4" id="license-info-card" style="display: none;">
+                <div class="card-header">
+                    <h5 class="fw-bold mb-0">
+                        <i class="fas fa-key me-2"></i>
+                        Your License Keys
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Important:</strong> Please save your license keys in a secure location. 
+                        You will need them to activate your software.
+                    </div>
+                    <div id="license-keys">
+                        <!-- License keys will be populated here -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Download Instructions -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="fw-bold mb-0">
+                        <i class="fas fa-download me-2"></i>
+                        Next Steps
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-4">
+                            <div class="step-card">
+                                <div class="step-number">1</div>
+                                <h6 class="fw-bold">Check Your Email</h6>
+                                <p class="text-muted mb-0">
+                                    A confirmation email with your license details and download instructions 
+                                    has been sent to your email address.
+                                </p>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-4">
+                            <div class="step-card">
+                                <div class="step-number">2</div>
+                                <h6 class="fw-bold">Download Software</h6>
+                                <p class="text-muted mb-0">
+                                    Use the download links in your email or visit the product pages 
+                                    to download your software.
+                                </p>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-4">
+                            <div class="step-card">
+                                <div class="step-number">3</div>
+                                <h6 class="fw-bold">Activate License</h6>
+                                <p class="text-muted mb-0">
+                                    Enter your license key when prompted during software installation 
+                                    or in the application settings.
+                                </p>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-4">
+                            <div class="step-card">
+                                <div class="step-number">4</div>
+                                <h6 class="fw-bold">Get Support</h6>
+                                <p class="text-muted mb-0">
+                                    Need help? Contact our support team or check your license 
+                                    status in the customer portal.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Action Buttons -->
+            <div class="text-center">
+                <div class="d-flex gap-3 justify-content-center flex-wrap">
+                    <a href="/my-licenses" class="btn btn-primary">
+                        <i class="fas fa-key me-2"></i>
+                        Manage Licenses
+                    </a>
+                    <a href="/" class="btn btn-outline-secondary">
+                        <i class="fas fa-home me-2"></i>
+                        Back to Home
+                    </a>
+                    <a href="mailto:<%= custom('branding.support_email', ENV['ADMIN_EMAIL'] || 'support@example.com') %>" 
+                       class="btn btn-outline-info">
+                        <i class="fas fa-envelope me-2"></i>
+                        Contact Support
+                    </a>
+                </div>
+            </div>
+            
+            <!-- FAQ Section -->
+            <div class="card mt-5">
+                <div class="card-header">
+                    <h5 class="fw-bold mb-0">
+                        <i class="fas fa-question-circle me-2"></i>
+                        Frequently Asked Questions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="accordion" id="faqAccordion">
+                        <!-- FAQ Item 1 -->
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" 
+                                        data-bs-toggle="collapse" data-bs-target="#faq1">
+                                    When will I receive my license key?
+                                </button>
+                            </h2>
+                            <div id="faq1" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body">
+                                    License keys are generated automatically upon successful payment and sent to your 
+                                    email address within minutes. If you don't receive the email, please check your 
+                                    spam folder or contact support.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- FAQ Item 2 -->
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" 
+                                        data-bs-toggle="collapse" data-bs-target="#faq2">
+                                    How do I download my software?
+                                </button>
+                            </h2>
+                            <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body">
+                                    Download links are provided in your confirmation email. You can also access 
+                                    downloads through the "My Licenses" page using your email address and license key.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- FAQ Item 3 -->
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" 
+                                        data-bs-toggle="collapse" data-bs-target="#faq3">
+                                    Can I install the software on multiple computers?
+                                </button>
+                            </h2>
+                            <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body">
+                                    The number of allowed installations depends on your license type. Most licenses 
+                                    allow installation on a specific number of devices. Check your license details 
+                                    for activation limits.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- FAQ Item 4 -->
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" 
+                                        data-bs-toggle="collapse" data-bs-target="#faq4">
+                                    What if I have technical issues?
+                                </button>
+                            </h2>
+                            <div id="faq4" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body">
+                                    Our support team is available to help with technical issues, license activation 
+                                    problems, and general questions. Contact us via email and we'll respond as 
+                                    quickly as possible.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Success Page Styling */
+.success-icon {
+    animation: bounceIn 0.8s ease-out;
+}
+
+@keyframes bounceIn {
+    0% {
+        opacity: 0;
+        transform: scale(0.3);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.1);
+    }
+    70% {
+        transform: scale(0.9);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.step-card {
+    text-align: center;
+    padding: 1.5rem;
+    border: 1px solid var(--border-default);
+    border-radius: 8px;
+    height: 100%;
+    transition: all 0.3s ease;
+}
+
+.step-card:hover {
+    border-color: var(--accent-primary);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow);
+}
+
+.step-number {
+    width: 40px;
+    height: 40px;
+    background: var(--gradient-primary);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    margin: 0 auto 1rem;
+    font-size: 1.1rem;
+}
+
+.license-key-item {
+    background: var(--surface-tertiary);
+    border: 1px solid var(--border-default);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.license-key-display {
+    background: var(--surface-primary);
+    border: 1px solid var(--border-default);
+    border-radius: 4px;
+    padding: 0.75rem;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+    color: var(--accent-primary);
+    margin: 0.5rem 0;
+    word-break: break-all;
+}
+
+.copy-button {
+    transition: all 0.3s ease;
+}
+
+.copy-button:hover {
+    transform: scale(1.1);
+}
+
+.copy-success {
+    color: var(--bs-success) !important;
+}
+
+/* Accordion Styling */
+.accordion-item {
+    background: var(--surface-secondary);
+    border: 1px solid var(--border-default);
+}
+
+.accordion-button {
+    background: var(--surface-tertiary);
+    color: var(--text-primary);
+    border: none;
+}
+
+.accordion-button:not(.collapsed) {
+    background: var(--surface-secondary);
+    color: var(--accent-primary);
+    box-shadow: none;
+}
+
+.accordion-button:focus {
+    box-shadow: 0 0 0 0.25rem rgba(35, 134, 54, 0.25);
+}
+
+.accordion-body {
+    background: var(--surface-secondary);
+    color: var(--text-secondary);
+}
+
+/* Order Details Styling */
+.order-item {
+    border-bottom: 1px solid var(--border-default);
+    padding: 1rem 0;
+}
+
+.order-item:last-child {
+    border-bottom: none;
+}
+
+.order-total {
+    background: var(--surface-tertiary);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-top: 1rem;
+}
+</style>
+
+<script>
+class OrderSuccessManager {
+    constructor() {
+        this.orderId = this.getOrderIdFromUrl();
+        this.loadOrderDetails();
+    }
+    
+    getOrderIdFromUrl() {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get('order_id');
+    }
+    
+    async loadOrderDetails() {
+        if (!this.orderId) {
+            this.showOrderNotFound();
+            return;
+        }
+        
+        try {
+            const response = await fetch(`/api/orders/${this.orderId}`);
+            if (response.ok) {
+                const orderData = await response.json();
+                this.displayOrderDetails(orderData);
+                this.displayLicenseKeys(orderData.license_keys || []);
+            } else {
+                this.showOrderNotFound();
+            }
+        } catch (error) {
+            console.error('Failed to load order details:', error);
+            this.showOrderError();
+        }
+    }
+    
+    displayOrderDetails(order) {
+        const container = document.getElementById('order-details');
+        
+        const orderDate = new Date(order.created_at).toLocaleDateString();
+        const orderTime = new Date(order.created_at).toLocaleTimeString();
+        
+        container.innerHTML = `
+            <div class="row">
+                <div class="col-md-6">
+                    <h6 class="fw-bold mb-3">Order Information</h6>
+                    <div class="order-info">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted">Order ID:</span>
+                            <span class="fw-bold">${order.id}</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted">Date:</span>
+                            <span>${orderDate} at ${orderTime}</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted">Status:</span>
+                            <span class="badge bg-success">${order.status}</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted">Payment Method:</span>
+                            <span class="text-capitalize">${order.payment_method || 'N/A'}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <h6 class="fw-bold mb-3">Customer Information</h6>
+                    <div class="customer-info">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted">Email:</span>
+                            <span>${order.email}</span>
+                        </div>
+                        ${order.customer_name ? `
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="text-muted">Name:</span>
+                                <span>${order.customer_name}</span>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            </div>
+            
+            <hr>
+            
+            <div class="order-total">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h6 class="fw-bold mb-0">Total Amount Paid</h6>
+                    <h4 class="fw-bold text-success mb-0">${window.SourceLicense.formatCurrency(order.amount)}</h4>
+                </div>
+            </div>
+        `;
+    }
+    
+    displayLicenseKeys(licenseKeys) {
+        if (!licenseKeys || licenseKeys.length === 0) {
+            return;
+        }
+        
+        const container = document.getElementById('license-keys');
+        const licenseCard = document.getElementById('license-info-card');
+        
+        licenseCard.style.display = 'block';
+        
+        container.innerHTML = licenseKeys.map((licenseKey, index) => `
+            <div class="license-key-item">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div>
+                        <h6 class="fw-bold mb-1">License ${index + 1}</h6>
+                        <small class="text-muted">Product: ${licenseKey.product_name || 'Unknown'}</small>
+                    </div>
+                    <button class="btn btn-sm btn-outline-primary copy-button" 
+                            onclick="this.copyLicenseKey('${licenseKey.key}')"
+                            title="Copy to clipboard">
+                        <i class="fas fa-copy"></i>
+                    </button>
+                </div>
+                <div class="license-key-display">${licenseKey.key}</div>
+                <div class="row text-center mt-2">
+                    <div class="col-6">
+                        <small class="text-muted">Max Activations</small>
+                        <div class="fw-bold">${licenseKey.max_activations || 'Unlimited'}</div>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted">Expires</small>
+                        <div class="fw-bold">${licenseKey.expires_at ? new Date(licenseKey.expires_at).toLocaleDateString() : 'Never'}</div>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+    
+    copyLicenseKey(licenseKey) {
+        navigator.clipboard.writeText(licenseKey).then(() => {
+            // Find the button that was clicked
+            const buttons = document.querySelectorAll('.copy-button');
+            buttons.forEach(button => {
+                if (button.getAttribute('onclick').includes(licenseKey)) {
+                    const icon = button.querySelector('i');
+                    const originalClass = icon.className;
+                    
+                    // Change to check icon
+                    icon.className = 'fas fa-check';
+                    button.classList.add('copy-success');
+                    
+                    // Reset after 2 seconds
+                    setTimeout(() => {
+                        icon.className = originalClass;
+                        button.classList.remove('copy-success');
+                    }, 2000);
+                }
+            });
+            
+            this.showNotification('License key copied to clipboard!', 'success');
+        }).catch(err => {
+            console.error('Failed to copy: ', err);
+            this.showNotification('Failed to copy license key', 'danger');
+        });
+    }
+    
+    showOrderNotFound() {
+        const container = document.getElementById('order-details');
+        container.innerHTML = `
+            <div class="text-center py-4">
+                <i class="fas fa-exclamation-triangle text-warning mb-3" style="font-size: 3rem;"></i>
+                <h6 class="fw-bold">Order Not Found</h6>
+                <p class="text-muted">
+                    We couldn't find the order details. The order may still be processing, 
+                    or there may be an issue with the order ID.
+                </p>
+                <div class="mt-3">
+                    <a href="/my-licenses" class="btn btn-primary me-2">Check My Licenses</a>
+                    <a href="mailto:support@example.com" class="btn btn-outline-secondary">Contact Support</a>
+                </div>
+            </div>
+        `;
+    }
+    
+    showOrderError() {
+        const container = document.getElementById('order-details');
+        container.innerHTML = `
+            <div class="text-center py-4">
+                <i class="fas fa-exclamation-circle text-danger mb-3" style="font-size: 3rem;"></i>
+                <h6 class="fw-bold">Error Loading Order</h6>
+                <p class="text-muted">
+                    There was an error loading your order details. Please try refreshing the page 
+                    or contact support if the problem persists.
+                </p>
+                <div class="mt-3">
+                    <button onclick="window.location.reload()" class="btn btn-primary me-2">Retry</button>
+                    <a href="mailto:support@example.com" class="btn btn-outline-secondary">Contact Support</a>
+                </div>
+            </div>
+        `;
+    }
+    
+    showNotification(message, type = 'info') {
+        const notification = document.createElement('div');
+        notification.className = `alert alert-${type} flash-message position-fixed`;
+        notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; max-width: 300px;';
+        notification.textContent = message;
+        
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.style.transition = 'opacity 0.5s ease';
+            notification.style.opacity = '0';
+            setTimeout(() => notification.remove(), 500);
+        }, 3000);
+    }
+}
+
+// Initialize success page
+document.addEventListener('DOMContentLoaded', function() {
+    new OrderSuccessManager();
+});
+
+// Copy functionality extension
+OrderSuccessManager.prototype.copyLicenseKey = function(licenseKey) {
+    navigator.clipboard.writeText(licenseKey).then(() => {
+        // Find the button that was clicked
+        const buttons = document.querySelectorAll('.copy-button');
+        buttons.forEach(button => {
+            if (button.getAttribute('onclick') && button.getAttribute('onclick').includes(licenseKey)) {
+                const icon = button.querySelector('i');
+                const originalClass = icon.className;
+                
+                // Change to check icon
+                icon.className = 'fas fa-check';
+                button.classList.add('copy-success');
+                
+                // Reset after 2 seconds
+                setTimeout(() => {
+                    icon.className = originalClass;
+                    button.classList.remove('copy-success');
+                }, 2000);
+            }
+        });
+        
+        this.showNotification('License key copied to clipboard!', 'success');
+    }).catch(err => {
+        console.error('Failed to copy: ', err);
+        this.showNotification('Failed to copy license key', 'danger');
+    });
+};
+
+// Mock API for demonstration
+if (!window.location.pathname.includes('/api/')) {
+    const originalFetch = window.fetch;
+    window.fetch = function(url, options) {
+        if (url.includes('/api/orders/')) {
+            // Extract order ID from URL
+            const orderId = url.split('/').pop();
+            
+            // Mock order data
+            return Promise.resolve({
+                ok: true,
+                json: () => Promise.resolve({
+                    id: orderId,
+                    status: 'completed',
+                    amount: 99.99,
+                    email: 'customer@example.com',
+                    customer_name: 'John Doe',
+                    payment_method: 'stripe',
+                    created_at: new Date().toISOString(),
+                    license_keys: [
+                        {
+                            key: 'SL-' + Math.random().toString(36).substring(2, 15).toUpperCase(),
+                            product_name: 'Premium Software Pro',
+                            max_activations: 5,
+                            expires_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
+                        }
+                    ]
+                })
+            });
+        }
+        return originalFetch.apply(this, arguments);
+    };
+}
+</script>

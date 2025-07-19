@@ -1,0 +1,446 @@
+<!-- License Generation Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-1">Generate License</h1>
+        <p class="text-muted mb-0">Manually generate a new license for a customer</p>
+    </div>
+    <div>
+        <a href="/admin/licenses" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Back to Licenses
+        </a>
+    </div>
+</div>
+
+<!-- License Generation Form -->
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="admin-card">
+            <div class="admin-card-header">
+                <i class="fas fa-plus me-2"></i>Generate New License
+            </div>
+            <div class="admin-card-body">
+                <form method="post" action="/admin/licenses/generate" id="generateLicenseForm">
+                    <%= csrf_input %>
+                    
+                    <!-- Product Selection -->
+                    <div class="mb-4">
+                        <label for="product_id" class="form-label fw-bold">
+                            <i class="fas fa-box me-2"></i>Product *
+                        </label>
+                        <select class="form-select" id="product_id" name="product_id" required>
+                            <option value="">Select a product...</option>
+                            <% @products.each do |product| %>
+                            <option value="<%= product.id %>" 
+                                    data-max-activations="<%= product.max_activations %>"
+                                    data-license-type="<%= product.license_type %>"
+                                    data-duration="<%= product.license_duration_days || '' %>"
+                                    data-price="<%= product.price %>">
+                                <%= h(product.name) %> (<%= product.license_type.capitalize %> - <%= product.formatted_price %>)
+                            </option>
+                            <% end %>
+                        </select>
+                        <div class="form-text">
+                            Select the product for which you want to generate a license.
+                        </div>
+                    </div>
+                    
+                    <!-- Customer Information -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label for="customer_email" class="form-label fw-bold">
+                                <i class="fas fa-envelope me-2"></i>Customer Email *
+                            </label>
+                            <input type="email" class="form-control" id="customer_email" name="customer_email" required>
+                            <div class="form-text">
+                                The email address of the license holder.
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="customer_name" class="form-label fw-bold">
+                                <i class="fas fa-user me-2"></i>Customer Name
+                            </label>
+                            <input type="text" class="form-control" id="customer_name" name="customer_name">
+                            <div class="form-text">
+                                Optional: Full name of the customer.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Custom Configuration -->
+                    <div class="mb-4">
+                        <h5 class="text-primary mb-3">
+                            <i class="fas fa-cogs me-2"></i>Custom Configuration
+                            <small class="text-muted">(Optional)</small>
+                        </h5>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label for="custom_max_activations" class="form-label">
+                                    <i class="fas fa-key me-2"></i>Max Activations Override
+                                </label>
+                                <input type="number" class="form-control" id="custom_max_activations" 
+                                       name="custom_max_activations" min="1">
+                                <div class="form-text">
+                                    Override the product's default maximum activations.
+                                    <span id="defaultMaxActivations" class="text-primary"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="custom_expires_at" class="form-label">
+                                    <i class="fas fa-calendar me-2"></i>Expiration Date Override
+                                </label>
+                                <input type="datetime-local" class="form-control" id="custom_expires_at" 
+                                       name="custom_expires_at">
+                                <div class="form-text">
+                                    Set a custom expiration date for this license.
+                                    <span id="defaultExpiration" class="text-primary"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Product Information Display -->
+                    <div id="productInfo" class="alert alert-info" style="display: none;">
+                        <h6 class="alert-heading">
+                            <i class="fas fa-info-circle me-2"></i>Product Information
+                        </h6>
+                        <div id="productDetails"></div>
+                    </div>
+                    
+                    <!-- Form Actions -->
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="text-muted">
+                            <small>
+                                <i class="fas fa-info-circle me-1"></i>
+                                A new license key will be automatically generated.
+                            </small>
+                        </div>
+                        <div>
+                            <a href="/admin/licenses" class="btn btn-secondary me-2">
+                                <i class="fas fa-times me-2"></i>Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary" id="generateBtn">
+                                <i class="fas fa-plus me-2"></i>Generate License
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- License Generation JavaScript -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const productSelect = document.getElementById('product_id');
+    const productInfo = document.getElementById('productInfo');
+    const productDetails = document.getElementById('productDetails');
+    const defaultMaxActivations = document.getElementById('defaultMaxActivations');
+    const defaultExpiration = document.getElementById('defaultExpiration');
+    const customMaxActivations = document.getElementById('custom_max_activations');
+    const customExpiresAt = document.getElementById('custom_expires_at');
+    const generateBtn = document.getElementById('generateBtn');
+    const form = document.getElementById('generateLicenseForm');
+    
+    // Product selection handler
+    productSelect.addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        
+        if (this.value) {
+            const maxActivations = selectedOption.dataset.maxActivations;
+            const licenseType = selectedOption.dataset.licenseType;
+            const duration = selectedOption.dataset.duration;
+            const price = selectedOption.dataset.price;
+            
+            // Show product information
+            let infoHTML = `
+                <div class="row">
+                    <div class="col-md-3">
+                        <strong>Type:</strong><br>
+                        <span class="badge bg-${licenseType === 'subscription' ? 'info' : 'success'}">
+                            ${licenseType.charAt(0).toUpperCase() + licenseType.slice(1)}
+                        </span>
+                    </div>
+                    <div class="col-md-3">
+                        <strong>Price:</strong><br>
+                        ${price}
+                    </div>
+                    <div class="col-md-3">
+                        <strong>Max Activations:</strong><br>
+                        ${maxActivations}
+                    </div>
+                    <div class="col-md-3">
+                        <strong>Duration:</strong><br>
+                        ${duration ? duration + ' days' : 'Perpetual'}
+                    </div>
+                </div>
+            `;
+            
+            productDetails.innerHTML = infoHTML;
+            productInfo.style.display = 'block';
+            
+            // Update helper text
+            defaultMaxActivations.textContent = `(Default: ${maxActivations})`;
+            
+            if (duration) {
+                const expirationDate = new Date();
+                expirationDate.setDate(expirationDate.getDate() + parseInt(duration));
+                defaultExpiration.textContent = `(Default: ${expirationDate.toLocaleDateString()})`;
+            } else {
+                defaultExpiration.textContent = '(Default: Never expires)';
+            }
+            
+            // Clear custom values when product changes
+            customMaxActivations.value = '';
+            customExpiresAt.value = '';
+        } else {
+            productInfo.style.display = 'none';
+            defaultMaxActivations.textContent = '';
+            defaultExpiration.textContent = '';
+        }
+    });
+    
+    // Form submission handler
+    form.addEventListener('submit', function(e) {
+        // Show loading state
+        generateBtn.innerHTML = '<div class="spinner-border spinner-border-sm me-2"></div>Generating...';
+        generateBtn.disabled = true;
+        
+        // Validate form
+        if (!productSelect.value) {
+            e.preventDefault();
+            alert('Please select a product.');
+            generateBtn.innerHTML = '<i class="fas fa-plus me-2"></i>Generate License';
+            generateBtn.disabled = false;
+            return;
+        }
+        
+        const email = document.getElementById('customer_email').value;
+        if (!email || !isValidEmail(email)) {
+            e.preventDefault();
+            alert('Please enter a valid customer email address.');
+            generateBtn.innerHTML = '<i class="fas fa-plus me-2"></i>Generate License';
+            generateBtn.disabled = false;
+            return;
+        }
+        
+        // Validate custom max activations if provided
+        const customMax = customMaxActivations.value;
+        if (customMax && (parseInt(customMax) < 1 || parseInt(customMax) > 1000)) {
+            e.preventDefault();
+            alert('Custom max activations must be between 1 and 1000.');
+            generateBtn.innerHTML = '<i class="fas fa-plus me-2"></i>Generate License';
+            generateBtn.disabled = false;
+            return;
+        }
+        
+        // Validate expiration date if provided
+        const customExpiry = customExpiresAt.value;
+        if (customExpiry) {
+            const expiryDate = new Date(customExpiry);
+            const now = new Date();
+            
+            if (expiryDate <= now) {
+                e.preventDefault();
+                alert('Expiration date must be in the future.');
+                generateBtn.innerHTML = '<i class="fas fa-plus me-2"></i>Generate License';
+                generateBtn.disabled = false;
+                return;
+            }
+            
+            // Check if expiration is too far in the future (10 years)
+            const maxDate = new Date();
+            maxDate.setFullYear(maxDate.getFullYear() + 10);
+            
+            if (expiryDate > maxDate) {
+                if (!confirm('The expiration date is more than 10 years in the future. Are you sure you want to proceed?')) {
+                    e.preventDefault();
+                    generateBtn.innerHTML = '<i class="fas fa-plus me-2"></i>Generate License';
+                    generateBtn.disabled = false;
+                    return;
+                }
+            }
+        }
+    });
+    
+    // Email validation function
+    function isValidEmail(email) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(email);
+    }
+    
+    // Auto-fill customer name from email
+    document.getElementById('customer_email').addEventListener('blur', function() {
+        const nameField = document.getElementById('customer_name');
+        if (!nameField.value && this.value) {
+            const emailParts = this.value.split('@');
+            if (emailParts.length > 0) {
+                const username = emailParts[0];
+                // Convert username to a more readable name
+                const name = username.split(/[._-]/)
+                                   .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+                                   .join(' ');
+                nameField.value = name;
+            }
+        }
+    });
+    
+    // Keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+        // Ctrl/Cmd + Enter to submit form
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+            if (!generateBtn.disabled) {
+                form.submit();
+            }
+        }
+        
+        // Escape to cancel
+        if (e.key === 'Escape') {
+            if (confirm('Are you sure you want to cancel? Any entered data will be lost.')) {
+                window.location.href = '/admin/licenses';
+            }
+        }
+    });
+});
+</script>
+
+<!-- Custom Styles -->
+<style>
+.admin-card {
+    box-shadow: var(--shadow-lg);
+    border: none;
+}
+
+.form-label {
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 0.2rem rgba(35, 134, 54, 0.25);
+}
+
+.alert-info {
+    background-color: rgba(9, 105, 218, 0.1);
+    border-color: rgba(9, 105, 218, 0.3);
+    color: var(--text-primary);
+}
+
+.form-text {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+#productInfo {
+    border-radius: 8px;
+    animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.badge {
+    font-size: 0.875rem;
+    padding: 0.5rem 0.75rem;
+}
+
+/* Loading button animation */
+.spinner-border-sm {
+    width: 1rem;
+    height: 1rem;
+}
+
+/* Form validation styles */
+.form-control:invalid {
+    border-color: var(--bs-danger);
+}
+
+.form-control:valid {
+    border-color: var(--bs-success);
+}
+
+/* Responsive improvements */
+@media (max-width: 768px) {
+    .col-lg-8 {
+        padding: 0 1rem;
+    }
+    
+    .admin-card-body {
+        padding: 1rem;
+    }
+    
+    .d-flex.justify-content-between {
+        flex-direction: column;
+        align-items: stretch !important;
+    }
+    
+    .d-flex.justify-content-between > div:last-child {
+        margin-top: 1rem;
+        text-align: center;
+    }
+    
+    .btn {
+        margin-bottom: 0.5rem;
+    }
+}
+
+/* Improved focus styles for accessibility */
+.form-control:focus,
+.form-select:focus,
+.btn:focus {
+    outline: 2px solid var(--accent-primary);
+    outline-offset: 2px;
+}
+
+/* Better visual hierarchy */
+.fw-bold {
+    font-weight: 600;
+}
+
+h5.text-primary {
+    border-bottom: 2px solid var(--accent-primary);
+    padding-bottom: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+/* Custom datetime input styling */
+input[type="datetime-local"] {
+    position: relative;
+}
+
+input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+    background-color: var(--accent-primary);
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+/* Enhanced product selection styling */
+#product_id option {
+    padding: 0.5rem;
+}
+
+#product_id:invalid {
+    border-color: var(--bs-warning);
+}
+
+/* Success state for completed fields */
+.form-control:not(:placeholder-shown):valid,
+.form-select:not([value=""]):valid {
+    border-color: var(--bs-success);
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3e%3cpath fill='%23198754' d='m2.3 6.73.94-.94 1.64 1.64.94-.94L2.3 3.84l-.94.94zM0 0v8h8V0z'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right calc(0.375em + 0.1875rem) center;
+    background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+}
+</style>

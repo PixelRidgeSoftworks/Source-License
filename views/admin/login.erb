@@ -19,8 +19,8 @@
                         <% end %>
                         
                         <form method="post" action="/admin/login" id="loginForm">
-                            <!-- CSRF Protection -->
-                            <input type="hidden" name="csrf_token" value="<%= csrf_token %>">
+                            <!-- CSRF Protection - always included, validation bypassed in development -->
+                            <%= csrf_input %>
                             
                             <div class="form-floating mb-3">
                                 <input type="email" 

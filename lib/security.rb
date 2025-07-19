@@ -8,30 +8,8 @@ require 'securerandom'
 require 'rack/protection'
 
 module SecurityHelpers
-  # CSRF Protection
-  def csrf_token
-    session[:csrf_token] ||= SecureRandom.hex(32)
-  end
-
-  def verify_csrf_token
-    return true if request.get? || request.head? || request.options?
-
-    submitted_token = params[:csrf_token] || request.env['HTTP_X_CSRF_TOKEN']
-    return false unless submitted_token
-
-    # Use secure comparison to prevent timing attacks
-    Rack::Utils.secure_compare(submitted_token, csrf_token)
-  end
-
-  def require_csrf_protection
-    return if verify_csrf_token
-
-    if request.xhr? || content_type == 'application/json'
-      halt 403, { error: 'CSRF token validation failed' }.to_json
-    else
-      halt 403, 'CSRF token validation failed'
-    end
-  end
+  # NOTE: CSRF protection methods are now handled in TemplateHelpers module
+  # This avoids conflicts and ensures consistent implementation
 
   # Input Validation & Sanitization
   def validate_email(email)

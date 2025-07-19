@@ -6,7 +6,7 @@ A comprehensive Ruby/Sinatra-based software licensing management system with int
 
 ## Overview
 
-Source License is a complete solution for software vendors who need to sell, manage, and validate software licenses. Built with Ruby and Sinatra, it provides a robust platform for handling everything from product sales to license validation APIs that can be integrated into your software products.
+Source License is a complete solution for independent software vendors who need to sell, manage, and validate software licenses. Built with Ruby and Sinatra, it provides a robust platform for handling everything from product sales to license validation APIs that can be integrated into your software products.
 
 ## 🌟 Key Features
 

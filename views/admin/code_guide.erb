@@ -552,131 +552,36 @@
     </div>
 </div>
 
-<!-- Custom Styles to Fix Text Contrast Issues -->
+<!-- Minimal Contrast Fixes - Maintain Admin Theme -->
 <style>
-/* Fix white-on-white text issues in code guide tabs */
-.tab-content {
-    background-color: transparent;
-    color: #212529;
+/* Only fix specific white-on-white text issues without changing overall styling */
+#guideTabContent .tab-pane h6,
+#guideTabContent .tab-pane p,
+#guideTabContent .tab-pane li {
+    color: var(--bs-body-color, #212529);
 }
 
-.tab-pane {
-    background-color: transparent;
-    color: #212529;
+#guideTabContent .tab-pane .table th,
+#guideTabContent .tab-pane .table td {
+    color: var(--bs-body-color, #212529);
 }
 
-.tab-pane h6 {
-    color: #212529 !important;
-    font-weight: 600;
+#guideTabContent .tab-pane .accordion-body {
+    color: var(--bs-body-color, #212529);
 }
 
-.tab-pane p {
-    color: #212529 !important;
+#guideTabContent .tab-pane .list-group-item {
+    color: var(--bs-body-color, #212529);
 }
 
-.tab-pane .small {
-    color: #6c757d !important;
+/* Match code blocks to admin theme */
+#guideTabContent .tab-pane pre.bg-light {
+    background-color: var(--bs-gray-800, #343a40) !important;
+    color: var(--bs-gray-100, #f8f9fa);
+    border: 1px solid var(--bs-gray-700, #495057);
 }
 
-.tab-pane code {
-    color: #d63384 !important;
-    background-color: #f8f9fa !important;
-}
-
-.tab-pane pre {
-    background-color: #f8f9fa !important;
-    color: #212529 !important;
-    border: 1px solid #dee2e6;
-}
-
-.tab-pane pre code {
-    color: #212529 !important;
-    background-color: transparent !important;
-}
-
-.table th,
-.table td {
-    color: #212529 !important;
-}
-
-.table thead th {
-    background-color: #f8f9fa;
-    color: #212529 !important;
-    border-bottom: 2px solid #dee2e6;
-}
-
-.list-group-item {
-    background-color: #ffffff;
-    color: #212529 !important;
-    border: 1px solid #dee2e6;
-}
-
-.list-group-item strong {
-    color: #212529 !important;
-}
-
-.accordion-button {
-    background-color: #ffffff;
-    color: #212529 !important;
-}
-
-.accordion-button:not(.collapsed) {
-    background-color: #e7f1ff;
-    color: #0c63e4 !important;
-}
-
-.accordion-body {
-    background-color: #ffffff;
-    color: #212529 !important;
-}
-
-.accordion-body ul li {
-    color: #212529 !important;
-}
-
-.bg-light {
-    background-color: #f8f9fa !important;
-}
-
-.text-muted {
-    color: #6c757d !important;
-}
-
-.text-uppercase {
-    color: #6c757d !important;
-}
-
-/* Ensure all text in admin cards is visible */
-.admin-card-body h6,
-.admin-card-body p,
-.admin-card-body li,
-.admin-card-body div,
-.admin-card-body span {
-    color: #212529 !important;
-}
-
-.admin-card-body .small {
-    color: #6c757d !important;
-}
-
-/* Fix specific tab content areas */
-#structure .admin-card-body,
-#customization .admin-card-body,
-#examples .admin-card-body {
-    background-color: #ffffff;
-    color: #212529 !important;
-}
-
-/* Ensure proper contrast for all nested elements */
-.tab-pane * {
-    color: inherit;
-}
-
-/* Fix any remaining white text issues */
-.tab-pane .row,
-.tab-pane .col-12,
-.tab-pane .col-md-6,
-.tab-pane .col-lg-6 {
-    background-color: transparent;
+#guideTabContent .tab-pane pre.bg-light code {
+    color: var(--bs-gray-100, #f8f9fa);
 }
 </style>

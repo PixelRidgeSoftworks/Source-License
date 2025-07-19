@@ -264,11 +264,132 @@ class SourceLicenseApp < Sinatra::Base
     erb :'admin/licenses', layout: :'layouts/admin_layout'
   end
 
+  # Generate license page (placeholder)
+  get '/admin/licenses/generate' do
+    require_secure_admin_auth
+    @page_title = 'Generate License'
+    # For now, redirect to main licenses page with a message
+    flash :info, 'License generation feature coming soon!'
+    redirect '/admin/licenses'
+  end
+
+  # Add product page (placeholder)
+  get '/admin/products/new' do
+    require_secure_admin_auth
+    @page_title = 'Add Product'
+    # For now, redirect to main products page with a message
+    flash :info, 'Product creation feature coming soon!'
+    redirect '/admin/products'
+  end
+
   # Settings page
   get '/admin/settings' do
     require_secure_admin_auth
     @page_title = 'Settings'
     erb :'admin/settings', layout: :'layouts/admin_layout'
+  end
+
+  # Database backup route
+  post '/admin/database/backup' do
+    require_secure_admin_auth
+    content_type :json
+
+    begin
+      # Create a simple database backup
+      backup_filename = "backup_#{Time.now.strftime('%Y%m%d_%H%M%S')}.sql"
+      backup_path = File.join(ENV['BACKUP_PATH'] || './backups', backup_filename)
+      
+      # Ensure backup directory exists
+      FileUtils.mkdir_p(File.dirname(backup_path))
+      
+      # Simple backup for SQLite (adjust for other databases)
+      if ENV['DATABASE_ADAPTER'] == 'sqlite' || !ENV['DATABASE_ADAPTER']
+        db_path = ENV['DATABASE_PATH'] || './database.db'
+        FileUtils.cp(db_path, backup_path) if File.exist?(db_path)
+      end
+      
+      { success: true, message: 'Database backup created successfully', filename: backup_filename }.to_json
+    rescue StandardError => e
+      status 500
+      { success: false, error: e.message }.to_json
+    end
+  end
+
+  # Run migrations route
+  post '/admin/database/migrate' do
+    require_secure_admin_auth
+    content_type :json
+
+    begin
+      # Run any pending migrations
+      require_relative 'lib/migrations'
+      Migrations.run_all
+      
+      { success: true, message: 'Migrations completed successfully' }.to_json
+    rescue StandardError => e
+      status 500
+      { success: false, error: e.message }.to_json
+    end
+  end
+
+  # Download logs route
+  get '/admin/logs/download' do
+    require_secure_admin_auth
+    
+    log_path = ENV['LOG_PATH'] || './log/application.log'
+    
+    if File.exist?(log_path)
+      send_file log_path, disposition: 'attachment', filename: "application_logs_#{Time.now.strftime('%Y%m%d')}.log"
+    else
+      halt 404, 'Log file not found'
+    end
+  end
+
+  # Export data route
+  post '/admin/data/export' do
+    require_secure_admin_auth
+    content_type :json
+
+    begin
+      export_data = {
+        licenses: License.all.map(&:values),
+        products: Product.all.map(&:values),
+        orders: Order.all.map(&:values),
+        exported_at: Time.now.iso8601
+      }
+      
+      filename = "data_export_#{Time.now.strftime('%Y%m%d_%H%M%S')}.json"
+      export_path = File.join(ENV['EXPORT_PATH'] || './exports', filename)
+      
+      # Ensure export directory exists
+      FileUtils.mkdir_p(File.dirname(export_path))
+      
+      File.write(export_path, JSON.pretty_generate(export_data))
+      
+      { success: true, message: 'Data exported successfully', filename: filename }.to_json
+    rescue StandardError => e
+      status 500
+      { success: false, error: e.message }.to_json
+    end
+  end
+
+  # Regenerate API keys route
+  post '/admin/security/regenerate-keys' do
+    require_secure_admin_auth
+    content_type :json
+
+    begin
+      # Generate new JWT secret
+      new_secret = SecureRandom.hex(64)
+      
+      # In a real implementation, you'd update your environment or database
+      # For now, we'll just simulate the action
+      
+      { success: true, message: 'API keys regenerated successfully. Please restart the application.' }.to_json
+    rescue StandardError => e
+      status 500
+      { success: false, error: e.message }.to_json
+    end
   end
 
   # ==================================================

@@ -1,6 +1,7 @@
 <div align="center">
   <img src="logo.svg" alt="Source License Logo" width="400">
 </div>
+
 [![CodeQL Security Analysis](https://github.com/PixelRidge-Softworks/Source-License/actions/workflows/codeql.yml/badge.svg)](https://github.com/PixelRidge-Softworks/Source-License/actions/workflows/codeql.yml)
 
 # Source License - Professional Software Licensing Platform

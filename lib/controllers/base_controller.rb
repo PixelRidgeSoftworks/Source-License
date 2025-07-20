@@ -12,7 +12,7 @@ module BaseController
       # Set security headers and rate limiting for all requests
       before do
         # Skip security features in test environment
-        next if ENV['APP_ENV'] == 'test' || ENV['RACK_ENV'] == 'test'
+        next if ENV['APP_ENV'] == 'test' || ENV['RACK_ENV'] == 'test' || ENV['APP_ENV'] == 'development'
 
         set_security_headers
 

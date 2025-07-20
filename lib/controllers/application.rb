@@ -13,7 +13,15 @@ require_relative 'api_controller'
 
 class SourceLicenseApp < Sinatra::Base
   # Security middleware
-  use SecurityMiddleware unless ENV['APP_ENV'] == 'test' || ENV['RACK_ENV'] == 'test'
+  use SecurityMiddleware unless ENV['APP_ENV'] == 'test' || ENV['RACK_ENV'] == 'test' || ENV['APP_ENV'] == 'development' || ENV['RENDER_SERVICE_ID'] || ENV['RENDER'] == 'true'
+
+  # Enable Rack::Protection for security features
+  use Rack::Protection if ENV['APP_ENV'] == 'production'
+
+  # Set up security headers
+  before do
+    set_security_headers
+  end
   
   # Configure Rack::Protection based on environment
   configure do

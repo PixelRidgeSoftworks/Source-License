@@ -299,17 +299,123 @@ class SourceLicenseLauncher
 
   def load_environment
     env_file = File.join(@script_dir, '.env')
-    return unless File.exist?(env_file)
-
-    File.readlines(env_file).each do |line|
-      line = line.strip
-      next if line.empty? || line.start_with?('#')
-
-      key, value = line.split('=', 2)
-      next unless key && value
-
-      ENV[key] = value
+    env_example = File.join(@script_dir, '.env.example')
+    
+    puts '🔧 Loading environment configuration...'
+    
+    # Get all environment variables from .env.example
+    required_env_vars = []
+    if File.exist?(env_example)
+      File.readlines(env_example).each do |line|
+        line = line.strip
+        next if line.empty? || line.start_with?('#')
+        
+        key, _value = line.split('=', 2)
+        next unless key
+        
+        # Skip commented out variables
+        next if key.start_with?('#')
+        
+        required_env_vars << key
+      end
+    else
+      # Fallback to essential variables if .env.example doesn't exist
+      required_env_vars = %w[
+        APP_ENV APP_SECRET APP_HOST APP_PORT JWT_SECRET
+        DATABASE_ADAPTER DATABASE_HOST DATABASE_PORT DATABASE_NAME DATABASE_USER DATABASE_PASSWORD
+        ADMIN_EMAIL ADMIN_PASSWORD
+        STRIPE_PUBLISHABLE_KEY STRIPE_SECRET_KEY STRIPE_WEBHOOK_SECRET
+        PAYPAL_CLIENT_ID PAYPAL_CLIENT_SECRET PAYPAL_ENVIRONMENT
+        SMTP_HOST SMTP_PORT SMTP_USERNAME SMTP_PASSWORD SMTP_TLS
+      ]
     end
+    
+    # Check which variables are already set in the environment
+    existing_vars = required_env_vars.select { |var| ENV[var] }
+    missing_vars = required_env_vars - existing_vars
+    
+    puts "📋 Found #{required_env_vars.length} possible environment variables"
+    puts "✅ Already set: #{existing_vars.length} variables"
+    puts "⚠️  Missing: #{missing_vars.length} variables"
+    
+    if existing_vars.any?
+      puts
+      puts "Existing environment variables:"
+      existing_vars.first(5).each do |var|
+        # Show value for non-sensitive variables, hide for sensitive ones
+        if var.include?('SECRET') || var.include?('PASSWORD') || var.include?('KEY')
+          puts "   #{var}: [HIDDEN]"
+        else
+          puts "   #{var}: #{ENV[var]}"
+        end
+      end
+      
+      if existing_vars.length > 5
+        puts "   ... and #{existing_vars.length - 5} more"
+      end
+    end
+    
+    # Load .env file only for missing variables
+    if File.exist?(env_file) && missing_vars.any?
+      puts
+      puts "📁 Loading missing variables from .env file..."
+      
+      loaded_count = 0
+      File.readlines(env_file).each do |line|
+        line = line.strip
+        next if line.empty? || line.start_with?('#')
+
+        key, value = line.split('=', 2)
+        next unless key && value
+
+        # Only set if not already in environment
+        unless ENV[key]
+          ENV[key] = value
+          loaded_count += 1 if missing_vars.include?(key)
+        end
+      end
+      
+      puts "   Loaded #{loaded_count} missing variables from .env"
+    elsif !File.exist?(env_file) && missing_vars.any?
+      puts
+      puts '⚠️  No .env file found and missing environment variables'
+      puts '💡 You can either:'
+      puts '   1. Create a .env file (will copy from .env.example)'
+      puts '   2. Set environment variables directly:'
+      puts '      DATABASE_ADAPTER=sqlite APP_SECRET=dev_secret JWT_SECRET=jwt_secret ruby launch.rb'
+      puts
+      puts 'Missing variables:'
+      missing_vars.first(10).each do |var|
+        puts "   - #{var}"
+      end
+      if missing_vars.length > 10
+        puts "   ... and #{missing_vars.length - 10} more"
+      end
+      puts
+    elsif missing_vars.empty?
+      puts "✅ All environment variables are set!"
+    end
+    
+    # Show essential configuration
+    puts
+    puts 'Essential Configuration:'
+    puts '------------------------'
+    puts "DATABASE_ADAPTER: #{ENV['DATABASE_ADAPTER'] || 'NOT SET'}"
+    puts "APP_ENV: #{ENV['APP_ENV'] || 'development'}"
+    puts "APP_HOST: #{ENV['APP_HOST'] || 'localhost'}"
+    puts "APP_PORT: #{ENV['APP_PORT'] || '4567'}"
+    puts "ADMIN_EMAIL: #{ENV['ADMIN_EMAIL'] || 'NOT SET'}"
+    
+    # Show payment configuration status
+    stripe_configured = ENV['STRIPE_SECRET_KEY'] && !ENV['STRIPE_SECRET_KEY'].empty?
+    paypal_configured = ENV['PAYPAL_CLIENT_ID'] && !ENV['PAYPAL_CLIENT_ID'].empty?
+    puts "STRIPE: #{stripe_configured ? '✅ Configured' : '❌ Not configured'}"
+    puts "PAYPAL: #{paypal_configured ? '✅ Configured' : '❌ Not configured'}"
+    
+    # Show email configuration status
+    email_configured = ENV['SMTP_HOST'] && !ENV['SMTP_HOST'].empty?
+    puts "EMAIL: #{email_configured ? '✅ Configured' : '❌ Not configured'}"
+    puts
   end
 
   def powershell_version

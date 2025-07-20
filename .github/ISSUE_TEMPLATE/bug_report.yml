@@ -1,0 +1,157 @@
+name: 🐛 Bug Report
+description: Report a bug or unexpected behavior in Source License
+title: "[BUG]: "
+labels: ["bug", "needs-triage"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for taking the time to report a bug! Please fill out the information below to help us diagnose and fix the issue.
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Pre-submission Checklist
+      description: Please check the following before submitting your bug report
+      options:
+        - label: I have searched existing issues to ensure this bug hasn't been reported
+          required: true
+        - label: I have read the documentation and installation guide
+          required: true
+        - label: I am using a supported Ruby version (3.4.4 or higher)
+          required: true
+
+  - type: textarea
+    id: bug-description
+    attributes:
+      label: 🐛 Bug Description
+      description: A clear and concise description of what the bug is
+      placeholder: Describe what happened...
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps-to-reproduce
+    attributes:
+      label: 📝 Steps to Reproduce
+      description: Detailed steps to reproduce the behavior
+      placeholder: |
+        1. Go to '...'
+        2. Click on '...'
+        3. Scroll down to '...'
+        4. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: ✅ Expected Behavior
+      description: A clear description of what you expected to happen
+      placeholder: What should have happened?
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual-behavior
+    attributes:
+      label: ❌ Actual Behavior
+      description: What actually happened
+      placeholder: What actually happened instead?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: environment
+    attributes:
+      label: 🖥️ Environment
+      description: What operating system are you running Source License on?
+      options:
+        - Windows 10/11
+        - macOS (Intel)
+        - macOS (Apple Silicon/M1/M2)
+        - Ubuntu/Debian Linux
+        - CentOS/RHEL/Fedora Linux
+        - Other Linux distribution
+        - Other (please specify in additional context)
+    validations:
+      required: true
+
+  - type: input
+    id: ruby-version
+    attributes:
+      label: 🔗 Ruby Version
+      description: Output of `ruby --version`
+      placeholder: "ruby 3.4.4p123 (2024-12-25 revision abc123) [x86_64-linux]"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: database
+    attributes:
+      label: 🗄️ Database
+      description: Which database are you using?
+      options:
+        - SQLite (development)
+        - MySQL
+        - PostgreSQL
+        - Not applicable
+    validations:
+      required: true
+
+  - type: input
+    id: app-version
+    attributes:
+      label: 📦 Source License Version
+      description: The latest commit hash from your local repository
+      placeholder: "commit hash"
+    validations:
+      required: false
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: 📋 Logs and Error Messages
+      description: Please include any relevant log output or error messages
+      placeholder: |
+        Paste logs here (please remove sensitive information like API keys)
+      render: shell
+    validations:
+      required: false
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: 📸 Screenshots
+      description: If applicable, add screenshots to help explain your problem
+      placeholder: Drag and drop screenshots here
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: 📝 Additional Context
+      description: Add any other context about the problem here
+      placeholder: |
+        - Browser name and version (if web-related)
+        - Network configuration
+        - Recent changes to system
+        - Anything else that might be relevant
+    validations:
+      required: false
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: 🚨 Severity
+      description: How severe is this bug?
+      options:
+        - Low (Minor issue, workaround available)
+        - Medium (Significant issue, affects functionality)
+        - High (Major issue, breaks important functionality)
+        - Critical (System unusable, security issue)
+    validations:
+      required: true

@@ -1,0 +1,194 @@
+name: 🚀 Feature Request
+description: Suggest a new feature or enhancement for Source License
+title: "[FEATURE]: "
+labels: ["enhancement", "needs-triage"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for suggesting a new feature! We appreciate your input in making Source License better.
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Pre-submission Checklist
+      description: Please check the following before submitting your feature request
+      options:
+        - label: I have searched existing issues and discussions to ensure this hasn't been suggested
+          required: true
+        - label: I have checked the project roadmap and upcoming features
+          required: true
+        - label: This feature aligns with Source License's goals as a licensing management system
+          required: true
+
+  - type: textarea
+    id: problem-summary
+    attributes:
+      label: 🎯 Problem Summary
+      description: What problem does this feature solve? What use case does it address?
+      placeholder: |
+        Example: "As a software vendor, I need to..."
+        "Currently, users cannot..."
+        "The system lacks the ability to..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed-solution
+    attributes:
+      label: 💡 Proposed Solution
+      description: Describe your ideal solution to the problem
+      placeholder: |
+        Describe what you'd like to see implemented:
+        - How would it work?
+        - What would the user interface look like?
+        - How would it integrate with existing features?
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: 🔄 Alternatives Considered
+      description: What alternative solutions or workarounds have you considered?
+      placeholder: |
+        - Alternative approach 1: ...
+        - Current workaround: ...
+        - Why these alternatives don't work: ...
+    validations:
+      required: false
+
+  - type: dropdown
+    id: feature-area
+    attributes:
+      label: 📂 Feature Area
+      description: Which part of Source License would this feature affect?
+      options:
+        - License Management
+        - Payment Processing
+        - API Endpoints
+        - Admin Dashboard
+        - User Interface
+        - Database/Storage
+        - Security/Authentication
+        - Reporting/Analytics
+        - Email/Notifications
+        - Configuration/Settings
+        - Documentation
+        - Other (specify in additional context)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: user-type
+    attributes:
+      label: 👤 Primary User Type
+      description: Who would primarily benefit from this feature?
+      options:
+        - Software Vendors/Admins
+        - End Customers/License Holders
+        - API Consumers/Developers
+        - System Administrators
+        - All Users
+    validations:
+      required: true
+
+  - type: textarea
+    id: user-stories
+    attributes:
+      label: 📖 User Stories
+      description: Write user stories that describe how this feature would be used
+      placeholder: |
+        - As a [user type], I want [feature] so that [benefit]
+        - As a [user type], I need [capability] in order to [goal]
+        
+        Example:
+        - As a software vendor, I want bulk license operations so that I can efficiently manage enterprise customers
+        - As an end user, I need license transfer capabilities so that I can move my license to a new machine
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: ✅ Acceptance Criteria
+      description: What specific criteria must be met for this feature to be considered complete?
+      placeholder: |
+        - [ ] Criterion 1
+        - [ ] Criterion 2
+        - [ ] Criterion 3
+        
+        Example:
+        - [ ] Admin can select multiple licenses in the dashboard
+        - [ ] Bulk operations include suspend, activate, extend, delete
+        - [ ] Changes are logged in the audit trail
+        - [ ] Operations can be undone within 24 hours
+    validations:
+      required: false
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: 📊 Priority Level
+      description: How important is this feature to your use case?
+      options:
+        - Low (Nice to have)
+        - Medium (Would improve workflow)
+        - High (Important for business needs)
+        - Critical (Blocking current operations)
+    validations:
+      required: true
+
+  - type: textarea
+    id: technical-considerations
+    attributes:
+      label: 🔧 Technical Considerations
+      description: Any technical details, constraints, or implementation thoughts?
+      placeholder: |
+        - Database schema changes needed
+        - API compatibility considerations
+        - Security implications
+        - Performance requirements
+        - Third-party integrations required
+    validations:
+      required: false
+
+  - type: textarea
+    id: mockups-examples
+    attributes:
+      label: 🎨 Mockups or Examples
+      description: Include mockups, sketches, or examples from other systems
+      placeholder: |
+        - Attach images, wireframes, or sketches
+        - Link to similar features in other software
+        - Describe the visual/interaction design
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: 📝 Additional Context
+      description: Any other information that might be helpful
+      placeholder: |
+        - Related features or dependencies
+        - Timeline requirements
+        - Business impact if not implemented
+        - Links to relevant documentation or discussions
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: implementation
+    attributes:
+      label: 🛠️ Implementation Interest
+      description: Are you interested in helping implement this feature?
+      options:
+        - label: I'm interested in working on this feature myself
+          required: false
+        - label: I can provide testing and feedback during development
+          required: false
+        - label: I can help with documentation
+          required: false

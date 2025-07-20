@@ -1,0 +1,81 @@
+version: 2
+updates:
+  # Ruby dependencies
+  - package-ecosystem: "bundler"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "America/Edmonton"
+    open-pull-requests-limit: 5
+    target-branch: "develop"
+    reviewers:
+      - "PixelRidge-Softworks"
+    assignees:
+      - "PixelRidge-Softworks"
+    commit-message:
+      prefix: "deps"
+      prefix-development: "deps-dev"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "ruby"
+    allow:
+      - dependency-type: "direct"
+      - dependency-type: "indirect"
+    ignore:
+      # Ignore major version updates for critical dependencies during alpha
+      - dependency-name: "sinatra"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "sequel"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "rack"
+        update-types: ["version-update:semver-major"]
+    groups:
+      # Group security-related updates
+      security-updates:
+        patterns:
+          - "*"
+        update-types:
+          - "security"
+      # Group development dependencies
+      development-dependencies:
+        dependency-type: "development"
+        patterns:
+          - "rubocop*"
+          - "minitest*"
+          - "simplecov*"
+      # Group production dependencies
+      production-dependencies:
+        dependency-type: "production"
+        exclude-patterns:
+          - "rubocop*"
+          - "minitest*"
+          - "simplecov*"
+
+  # GitHub Actions dependencies
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "10:00"
+      timezone: "America/Edmonton"
+    open-pull-requests-limit: 3
+    target-branch: "develop"
+    reviewers:
+      - "PixelRidge-Softworks"
+    assignees:
+      - "PixelRidge-Softworks"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "github-actions"
+      - "ci"
+    groups:
+      github-actions:
+        patterns:
+          - "*"

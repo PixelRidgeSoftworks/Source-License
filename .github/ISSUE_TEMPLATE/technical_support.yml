@@ -1,0 +1,253 @@
+name: 🆘 Technical Support
+description: Get help with installation, configuration, or usage of Source License
+title: "[SUPPORT]: "
+labels: ["support", "question", "needs-triage"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for using Source License! We're here to help you get up and running.
+        
+        **Before submitting**, please check our [Support Guide](https://github.com/PixelRidge-Softworks/Source-License/blob/main/.github/SUPPORT.md) and [README](https://github.com/PixelRidge-Softworks/Source-License/blob/main/README.md) for common solutions.
+
+  - type: checkboxes
+    id: pre-checks
+    attributes:
+      label: Pre-Support Checklist
+      description: Please confirm you've done the following before requesting support
+      options:
+        - label: I have read the documentation and README
+          required: true
+        - label: I have searched existing issues and discussions
+          required: true
+        - label: I have checked the Support Guide for common solutions
+          required: true
+        - label: This is not a bug report (use Bug Report template for bugs)
+          required: true
+
+  - type: dropdown
+    id: support-category
+    attributes:
+      label: 🔧 Support Category
+      description: What do you need help with?
+      options:
+        - Installation & Setup
+        - Database Configuration
+        - Payment Gateway Setup (Stripe/PayPal)
+        - Email Configuration
+        - SSL/HTTPS Setup
+        - License Management
+        - API Integration
+        - Admin Dashboard Usage
+        - Performance Optimization
+        - Deployment & Production
+        - Customization & Theming
+        - User Management
+        - Troubleshooting Errors
+        - General Usage Questions
+        - Other (specify below)
+    validations:
+      required: true
+
+  - type: textarea
+    id: question-summary
+    attributes:
+      label: ❓ Question Summary
+      description: Briefly describe what you need help with
+      placeholder: |
+        Example: "I need help configuring MySQL database connection"
+        "How do I set up Stripe payments in production?"
+        "License validation API returns authentication errors"
+    validations:
+      required: true
+
+  - type: textarea
+    id: detailed-question
+    attributes:
+      label: 📝 Detailed Question
+      description: Provide a detailed description of what you're trying to accomplish and what issues you're facing
+      placeholder: |
+        Please include:
+        - What you're trying to achieve
+        - What you've tried so far
+        - Where you're getting stuck
+        - Any specific error messages
+        - What outcome you're expecting
+    validations:
+      required: true
+
+  - type: textarea
+    id: current-setup
+    attributes:
+      label: 🖥️ Current Setup
+      description: Tell us about your current Source License setup
+      placeholder: |
+        - Operating System: (e.g., Ubuntu 22.04, Windows 11, macOS 13)
+        - Ruby Version: (output of `ruby --version`)
+        - Database: (MySQL/PostgreSQL/SQLite + version)
+        - Deployment Method: (Development/Production, Docker, VPS, etc.)
+        - Web Server: (Built-in, nginx, Apache, etc.)
+        - Source License Version: (git commit hash or version)
+    validations:
+      required: true
+
+  - type: textarea
+    id: configuration-details
+    attributes:
+      label: ⚙️ Configuration Details
+      description: Share relevant configuration (remove sensitive information like passwords/API keys)
+      placeholder: |
+        Please include relevant parts of your .env file or configuration:
+        (Remove all sensitive information like passwords, API keys, etc.)
+        
+        Example:
+        DATABASE_ADAPTER=mysql
+        DATABASE_HOST=localhost
+        DATABASE_PORT=3306
+        APP_ENV=production
+        
+        Or describe your configuration setup if you prefer not to share files.
+      render: shell
+    validations:
+      required: false
+
+  - type: textarea
+    id: error-messages
+    attributes:
+      label: 🚨 Error Messages or Logs
+      description: Include any error messages, log output, or unexpected behavior
+      placeholder: |
+        Paste error messages, log entries, or describe unexpected behavior:
+        
+        Please remove or redact any sensitive information like:
+        - API keys or passwords
+        - Personal information
+        - Internal IP addresses or domains
+      render: shell
+    validations:
+      required: false
+
+  - type: textarea
+    id: steps-tried
+    attributes:
+      label: 🔍 What Have You Tried?
+      description: List the troubleshooting steps you've already attempted
+      placeholder: |
+        - Checked the documentation
+        - Tried restarting the application
+        - Verified database connection
+        - Checked file permissions
+        - Updated dependencies
+        - etc.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: urgency
+    attributes:
+      label: ⏰ Urgency Level
+      description: How urgent is this support request?
+      options:
+        - Low (When you have time)
+        - Medium (Would like help within a week)
+        - High (Need help within 2-3 days)
+        - Critical (Blocking production deployment)
+    validations:
+      required: true
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: 📸 Screenshots or Screen Recording
+      description: If applicable, add screenshots or describe visual issues
+      placeholder: |
+        Drag and drop screenshots here, or describe what you're seeing:
+        - Admin dashboard behavior
+        - Error pages
+        - Configuration screens
+        - API responses
+    validations:
+      required: false
+
+  - type: textarea
+    id: expected-outcome
+    attributes:
+      label: 🎯 Expected Outcome
+      description: What would a successful resolution look like?
+      placeholder: |
+        Describe what you want to achieve:
+        - Application starts successfully
+        - Payments process correctly
+        - Licenses validate properly
+        - API returns expected responses
+        - etc.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: environment-type
+    attributes:
+      label: 🌍 Environment Type
+      description: Where are you running Source License?
+      options:
+        - Development (Local machine)
+        - Staging/Testing
+        - Production
+        - Docker Container
+        - VPS/Cloud Server
+        - Shared Hosting
+        - Other (specify in additional context)
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: 📋 Additional Context
+      description: Any other information that might be helpful
+      placeholder: |
+        - Timeline requirements
+        - Business context
+        - Integration requirements
+        - Custom modifications made
+        - Related external services
+        - Network configuration details
+        - Security requirements
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: help-contribution
+    attributes:
+      label: 🤝 Help & Contribution
+      description: How would you like to contribute back?
+      options:
+        - label: I'm willing to test solutions and provide feedback
+          required: false
+        - label: I can help improve documentation based on the solution
+          required: false
+        - label: I'm interested in helping other users with similar issues
+          required: false
+        - label: I'd like to contribute code improvements if possible
+          required: false
+
+  - type: markdown
+    attributes:
+      value: |
+        ---
+        
+        **💡 Pro Tips for Faster Support:**
+        
+        - **Be Specific**: The more details you provide, the faster we can help
+        - **Include Context**: Help us understand your use case and goals
+        - **Share Configurations**: Redacted configuration files help diagnose issues
+        - **Test in Isolation**: Try to isolate the issue to specific components
+        - **Check Logs**: Application and web server logs often contain helpful clues
+        
+        **🔒 Security Note:** Never share sensitive information like passwords, API keys, or personal data in public issues.
+        
+        **⏱️ Response Time:** We typically respond to support requests within 1 week. Critical production issues may receive faster attention.
+        
+        Thank you for using Source License! 🙏

@@ -1,0 +1,74 @@
+# Global Ownership
+# Default owners for everything in the repository
+* @PixelRidge-Softworks
+
+# Core Application Files
+/app.rb @PixelRidge-Softworks
+/config.ru @PixelRidge-Softworks
+/launch.rb @PixelRidge-Softworks
+/Gemfile @PixelRidge-Softworks
+/Gemfile.lock @PixelRidge-Softworks
+
+# Library and Core Logic
+/lib/ @PixelRidge-Softworks
+/lib/models.rb @PixelRidge-Softworks
+/lib/database.rb @PixelRidge-Softworks
+/lib/migrations.rb @PixelRidge-Softworks
+/lib/security.rb @PixelRidge-Softworks
+/lib/auth.rb @PixelRidge-Softworks
+/lib/enhanced_auth.rb @PixelRidge-Softworks
+/lib/user_auth.rb @PixelRidge-Softworks
+
+# Payment Processing (Critical)
+/lib/payment_processor.rb @PixelRidge-Softworks
+
+# License Management (Critical)
+/lib/license_generator.rb @PixelRidge-Softworks
+
+# Controllers
+/lib/controllers/ @PixelRidge-Softworks
+/lib/controllers/api_controller.rb @PixelRidge-Softworks
+/lib/controllers/admin_controller.rb @PixelRidge-Softworks
+
+# Configuration Files
+/.env.example @PixelRidge-Softworks
+/.rubocop.yml @PixelRidge-Softworks
+/Rakefile @PixelRidge-Softworks
+
+# Deployment Scripts
+/deploy.sh @PixelRidge-Softworks
+/deploy.ps1 @PixelRidge-Softworks
+/install.sh @PixelRidge-Softworks
+/install.ps1 @PixelRidge-Softworks
+/service_manager.ps1 @PixelRidge-Softworks
+
+# Test Suite
+/test/ @PixelRidge-Softworks
+/run_tests.rb @PixelRidge-Softworks
+/test_health_endpoints.rb @PixelRidge-Softworks
+
+# Views and Templates
+/views/ @PixelRidge-Softworks
+/views/admin/ @PixelRidge-Softworks
+/views/layouts/ @PixelRidge-Softworks
+
+# GitHub Configuration
+/.github/ @PixelRidge-Softworks
+/.github/workflows/ @PixelRidge-Softworks
+/.github/ISSUE_TEMPLATE/ @PixelRidge-Softworks
+
+# Documentation
+/README.md @PixelRidge-Softworks
+/CONTRIBUTING.md @PixelRidge-Softworks
+/SECURITY.md @PixelRidge-Softworks
+/.github/SUPPORT.md @PixelRidge-Softworks
+/.github/CODE_OF_CONDUCT.md @PixelRidge-Softworks
+
+# License and Legal
+/LICENSE @PixelRidge-Softworks
+
+# Asset Files
+/logo.svg @PixelRidge-Softworks
+
+# Git Configuration
+/.gitignore @PixelRidge-Softworks

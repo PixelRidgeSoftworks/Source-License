@@ -17,6 +17,65 @@ YELLOW='\033[1;33m'
 CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
+# Logging setup
+DEPLOYMENT_LOG_DIR="./deployment-logs"
+DEPLOYMENT_LOG_FILE="$DEPLOYMENT_LOG_DIR/deploy-$(date +%Y%m%d-%H%M%S).log"
+
+# Ensure log directory exists
+mkdir -p "$DEPLOYMENT_LOG_DIR"
+
+# Initialize log file with session header
+{
+    echo "=========================================="
+    echo "Source-License Deployment Script Log"
+    echo "=========================================="
+    echo "Started: $(date)"
+    echo "Action: $ACTION"
+    echo "Environment: $ENVIRONMENT"
+    echo "Port: $PORT"
+    echo "User: $(whoami)"
+    echo "Working Directory: $(pwd)"
+    echo "System: $(uname -a)"
+    echo "=========================================="
+    echo ""
+} > "$DEPLOYMENT_LOG_FILE"
+
+# Enhanced logging function
+log_message() {
+    local level="$1"
+    local message="$2"
+    local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+    echo "[$timestamp] [$level] $message" >> "$DEPLOYMENT_LOG_FILE"
+}
+
+# Log function calls
+log_function_call() {
+    local function_name="$1"
+    local status="${2:-START}"
+    log_message "FUNCTION" "$function_name - $status"
+}
+
+# Log command execution
+log_command() {
+    local command="$1"
+    local status="${2:-EXECUTE}"
+    log_message "COMMAND" "$command - $status"
+}
+
+# Log errors with stack trace
+log_error() {
+    local error_message="$1"
+    local line_number="${2:-unknown}"
+    log_message "ERROR" "$error_message (Line: $line_number)"
+    # Also log current function stack if available
+    if command -v caller >/dev/null 2>&1; then
+        local i=0
+        while caller $i >> "$DEPLOYMENT_LOG_FILE" 2>/dev/null; do
+            ((i++))
+        done
+    fi
+}
+
 # Print functions
 print_success() { echo -e "${GREEN}✓ $1${NC}"; }
 print_error() { echo -e "${RED}✗ $1${NC}"; }
@@ -65,9 +124,13 @@ EOF
 
 # Parse command line arguments
 parse_args() {
+    log_function_call "parse_args" "START"
+    log_message "INFO" "Parsing command line arguments: $*"
+    
     # First argument is the action if it doesn't start with -
     if [[ $# -gt 0 ]] && [[ ! "$1" =~ ^- ]]; then
         ACTION="$1"
+        log_message "INFO" "Action set to: $ACTION"
         shift
     fi
     
@@ -75,27 +138,34 @@ parse_args() {
         case $1 in
             -e|--environment)
                 ENVIRONMENT="$2"
+                log_message "INFO" "Environment set to: $ENVIRONMENT"
                 shift 2
                 ;;
             -p|--port)
                 PORT="$2"
+                log_message "INFO" "Port set to: $PORT"
                 shift 2
                 ;;
             -b|--backup)
                 BACKUP_FIRST=true
+                log_message "INFO" "Backup flag enabled"
                 shift
                 ;;
             -h|--help)
+                log_message "INFO" "Help requested, showing help and exiting"
                 show_help
                 exit 0
                 ;;
             *)
+                log_error "Unknown option: $1"
                 print_error "Unknown option: $1"
                 show_help
                 exit 1
                 ;;
         esac
     done
+    
+    log_function_call "parse_args" "COMPLETE"
 }
 
 # Check if command exists
@@ -312,14 +382,21 @@ health_check() {
 
 # Start application
 start_app() {
+    log_function_call "start_app" "START"
+    log_message "INFO" "Starting Source-License application with environment=$ENVIRONMENT, port=$PORT"
+    
     print_info "Starting Source-License application..."
     
     if port_in_use "$PORT"; then
+        log_message "WARNING" "Port $PORT is already in use"
         print_warning "Port $PORT is already in use"
         if health_check "$PORT"; then
+            log_message "INFO" "Health check passed - application appears to be already running"
             print_success "Application appears to be already running"
+            log_function_call "start_app" "COMPLETE - ALREADY_RUNNING"
             return 0
         else
+            log_message "WARNING" "Port is in use but health check failed"
             print_warning "Port is in use but health check failed"
         fi
     fi
@@ -328,8 +405,10 @@ start_app() {
     export RACK_ENV="$ENVIRONMENT"
     export APP_ENV="$ENVIRONMENT"
     export PORT="$PORT"
+    log_message "INFO" "Environment variables set: RACK_ENV=$ENVIRONMENT, APP_ENV=$ENVIRONMENT, PORT=$PORT"
     
     # Create logs directory if it doesn't exist
+    log_command "mkdir -p logs"
     mkdir -p logs
     
     print_info "Environment: $ENVIRONMENT"
@@ -337,65 +416,94 @@ start_app() {
     
     # For production, try systemd first, then fallback
     if [[ "$ENVIRONMENT" == "production" ]]; then
+        log_message "INFO" "Production mode - attempting systemd start first"
         if start_with_systemd; then
+            log_function_call "start_app" "COMPLETE - SYSTEMD"
             return 0
         fi
         
+        log_message "INFO" "Systemd not available, using manual start"
         print_info "Systemd not available, using manual start..."
         print_info "Starting in production mode (background)..."
+        
+        log_command "nohup ruby launch.rb > logs/app.log 2>&1 &"
         nohup ruby launch.rb > logs/app.log 2>&1 &
         
         # Give it a moment to start
+        log_message "INFO" "Waiting 3 seconds for application startup"
         sleep 3
         
         if health_check "$PORT"; then
+            local pid=$(get_app_process)
+            log_message "SUCCESS" "Application started successfully with PID: $pid"
             print_success "Application started successfully"
-            print_info "PID: $(get_app_process)"
+            print_info "PID: $pid"
             print_info "Access: http://localhost:$PORT"
             print_info "Admin: http://localhost:$PORT/admin"
             print_info "Logs: tail -f logs/app.log"
+            log_function_call "start_app" "COMPLETE - MANUAL"
         else
+            log_error "Application failed to start - health check failed"
             print_error "Application failed to start"
             print_info "Check logs: tail logs/app.log"
+            log_function_call "start_app" "FAILED"
             return 1
         fi
     else
         # Development mode always runs in foreground
+        log_message "INFO" "Development mode - starting in foreground"
         print_info "Starting in development mode (foreground)..."
+        log_command "exec ruby launch.rb"
         exec ruby launch.rb
     fi
 }
 
 # Stop application
 stop_app() {
+    log_function_call "stop_app" "START"
+    log_message "INFO" "Stopping Source-License application"
+    
     print_info "Stopping Source-License application..."
     
     # Try systemd first, then fallback
+    log_message "INFO" "Attempting to stop via systemd first"
     if stop_with_systemd; then
+        log_function_call "stop_app" "COMPLETE - SYSTEMD"
         return 0
     fi
     
     # Manual stop
+    log_message "INFO" "Systemd stop failed or unavailable, attempting manual stop"
     local pid=$(get_app_process)
     if [[ -n "$pid" ]]; then
+        log_message "INFO" "Found application process with PID: $pid"
+        log_command "kill $pid"
         kill "$pid"
         
         # Wait for graceful shutdown
+        log_message "INFO" "Waiting for graceful shutdown (up to 10 seconds)"
         local count=0
         while [[ $count -lt 10 ]] && kill -0 "$pid" 2>/dev/null; do
             sleep 1
             ((count++))
+            log_message "DEBUG" "Waiting for shutdown... attempt $count/10"
         done
         
         # Force kill if still running
         if kill -0 "$pid" 2>/dev/null; then
+            log_message "WARNING" "Process still running after 10 seconds, forcing shutdown"
             print_warning "Forcing shutdown..."
+            log_command "kill -9 $pid"
             kill -9 "$pid"
         fi
         
+        log_message "SUCCESS" "Application stopped successfully"
         print_success "Application stopped"
+        log_function_call "stop_app" "COMPLETE - MANUAL"
     else
+        log_message "WARNING" "No running application found"
         print_warning "No running application found"
+        log_function_call "stop_app" "COMPLETE - NOT_RUNNING"
     fi
 }
 
@@ -491,51 +599,96 @@ show_status() {
 
 # Update application
 update_app() {
+    log_function_call "update_app" "START"
+    log_message "INFO" "Starting application update process"
+    
     print_info "Updating Source-License application..."
     
     # Create backup if requested
     if [[ "$BACKUP_FIRST" == true ]]; then
         local backup_dir="backups/$(date +%Y%m%d-%H%M%S)"
+        log_message "INFO" "Backup requested - creating backup at $backup_dir"
         print_info "Creating backup at $backup_dir..."
+        
+        log_command "mkdir -p $backup_dir"
         mkdir -p "$backup_dir"
         
         # Backup important files
         local files=(".env" "Gemfile.lock")
         for file in "${files[@]}"; do
             if [[ -f "$file" ]]; then
+                log_message "INFO" "Backing up file: $file"
+                log_command "cp $file $backup_dir/"
                 cp "$file" "$backup_dir/"
+            else
+                log_message "WARNING" "File not found for backup: $file"
             fi
         done
         
         # Backup database if SQLite
         if [[ -f "database.db" ]]; then
+            log_message "INFO" "Backing up database: database.db"
+            log_command "cp database.db $backup_dir/"
             cp "database.db" "$backup_dir/"
+        else
+            log_message "INFO" "No SQLite database found to backup"
         fi
         
+        log_message "SUCCESS" "Backup created successfully at $backup_dir"
         print_success "Backup created"
+    else
+        log_message "INFO" "No backup requested, skipping backup step"
     fi
     
     # Stop application
+    log_message "INFO" "Stopping application before update"
     stop_app
     
     # Pull latest changes
     if command_exists git && [[ -d ".git" ]]; then
+        log_message "INFO" "Git repository detected, pulling latest changes"
         print_info "Pulling latest changes..."
-        git pull origin main || print_warning "Git pull failed, continuing anyway"
+        log_command "git pull origin main"
+        if git pull origin main; then
+            log_message "SUCCESS" "Git pull completed successfully"
+        else
+            log_message "WARNING" "Git pull failed, continuing anyway"
+            print_warning "Git pull failed, continuing anyway"
+        fi
+    else
+        log_message "INFO" "No git repository found, skipping git pull"
     fi
     
     # Update dependencies
+    log_message "INFO" "Updating Ruby dependencies"
     print_info "Updating dependencies..."
-    bundle install
+    log_command "bundle install"
+    if bundle install; then
+        log_message "SUCCESS" "Dependencies updated successfully"
+    else
+        log_error "Failed to update dependencies"
+        log_function_call "update_app" "FAILED - DEPENDENCIES"
+        return 1
+    fi
     
     # Run migrations
+    log_message "INFO" "Running database migrations"
     print_info "Running database migrations..."
-    ruby lib/migrations.rb || print_warning "Database migration failed, continuing anyway"
+    log_command "ruby lib/migrations.rb"
+    if ruby lib/migrations.rb; then
+        log_message "SUCCESS" "Database migrations completed successfully"
+    else
+        log_message "WARNING" "Database migration failed, continuing anyway"
+        print_warning "Database migration failed, continuing anyway"
+    fi
     
     # Start application
+    log_message "INFO" "Starting application after update"
     start_app
     
+    log_message "SUCCESS" "Application update completed successfully"
     print_success "Update completed"
+    log_function_call "update_app" "COMPLETE"
 }
 
 # Run database migrations
@@ -579,6 +732,9 @@ preflight_checks() {
 
 # Main function
 main() {
+    log_function_call "main" "START"
+    log_message "INFO" "Starting deployment script execution"
+    
     echo -e "${CYAN}"
     cat << "EOF"
 ╔══════════════════════════════════════════════════════════════════════════════╗
@@ -589,12 +745,15 @@ EOF
     echo -e "${NC}"
     
     # Parse arguments
+    log_message "INFO" "Parsing command line arguments"
     parse_args "$@"
     
     # Run preflight checks
+    log_message "INFO" "Running preflight checks"
     preflight_checks
     
     # Execute action
+    log_message "INFO" "Executing action: $ACTION"
     case "$ACTION" in
         run|start)
             start_app
@@ -603,33 +762,58 @@ EOF
             stop_app
             ;;
         restart)
+            log_function_call "restart_app" "START"
             restart_app
+            log_function_call "restart_app" "COMPLETE"
             ;;
         status)
+            log_function_call "show_status" "START"
             show_status
+            log_function_call "show_status" "COMPLETE"
             ;;
         update)
             update_app
             ;;
         migrate)
+            log_function_call "run_migrations" "START"
             run_migrations
+            log_function_call "run_migrations" "COMPLETE"
             ;;
         install-service)
+            log_function_call "create_systemd_service" "START"
             create_systemd_service
+            log_function_call "create_systemd_service" "COMPLETE"
             ;;
         remove-service)
+            log_function_call "remove_systemd_service" "START"
             remove_systemd_service
+            log_function_call "remove_systemd_service" "COMPLETE"
             ;;
         help)
+            log_message "INFO" "Showing help and exiting"
             show_help
             exit 0
             ;;
         *)
+            log_error "Unknown action: $ACTION"
             print_error "Unknown action: $ACTION"
             show_help
             exit 1
             ;;
     esac
+    
+    log_message "INFO" "Deployment script execution completed"
+    log_function_call "main" "COMPLETE"
+    
+    # Log session end
+    {
+        echo ""
+        echo "=========================================="
+        echo "Session completed: $(date)"
+        echo "Final action: $ACTION"
+        echo "Exit status: $?"
+        echo "=========================================="
+    } >> "$DEPLOYMENT_LOG_FILE"
 }
 
 # Handle Ctrl+C gracefully

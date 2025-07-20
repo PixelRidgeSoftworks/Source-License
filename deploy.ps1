@@ -10,6 +10,69 @@ param(
     [switch]$Help
 )
 
+# Logging setup
+$DEPLOYMENT_LOG_DIR = "./deployment-logs"
+$DEPLOYMENT_LOG_FILE = "$DEPLOYMENT_LOG_DIR/deploy-$(Get-Date -Format 'yyyyMMdd-HHmmss').log"
+
+# Ensure log directory exists
+if (-not (Test-Path $DEPLOYMENT_LOG_DIR)) {
+    New-Item -ItemType Directory -Path $DEPLOYMENT_LOG_DIR -Force | Out-Null
+}
+
+# Initialize log file with session header
+@"
+Source-License Deployment Script Log
+Started: $(Get-Date)
+Action: $Action
+Environment: $Environment
+Port: $Port
+User: $env:USERNAME
+Working Directory: $(Get-Location)
+System: $($PSVersionTable.PSVersion) on $($PSVersionTable.OS)
+
+"@ | Out-File -FilePath $DEPLOYMENT_LOG_FILE -Encoding UTF8
+
+# Enhanced logging function
+function Write-Log {
+    param(
+        [string]$Level,
+        [string]$Message
+    )
+    $timestamp = Get-Date -Format 'yyyy-MM-dd HH:mm:ss'
+    "[$timestamp] [$Level] $Message" | Out-File -FilePath $DEPLOYMENT_LOG_FILE -Append -Encoding UTF8
+}
+
+# Log function calls
+function Write-FunctionCall {
+    param(
+        [string]$FunctionName,
+        [string]$Status = "START"
+    )
+    Write-Log "FUNCTION" "$FunctionName - $Status"
+}
+
+# Log command execution
+function Write-CommandLog {
+    param(
+        [string]$Command,
+        [string]$Status = "EXECUTE"
+    )
+    Write-Log "COMMAND" "$Command - $Status"
+}
+
+# Log errors with details
+function Write-ErrorLog {
+    param(
+        [string]$ErrorMessage,
+        [string]$LineNumber = "unknown"
+    )
+    Write-Log "ERROR" "$ErrorMessage (Line: $LineNumber)"
+    # Log error details if available
+    if ($Error.Count -gt 0) {
+        Write-Log "ERROR_DETAIL" $Error[0].ToString()
+    }
+}
+
 if ($Help) {
     Write-Host @"
 Source-License Deploy Script for Windows
@@ -95,14 +158,21 @@ function Test-Health {
 
 # Start application
 function Start-Application {
+    Write-FunctionCall "Start-Application" "START"
+    Write-Log "INFO" "Starting Source-License application with environment=$Environment, port=$Port"
+    
     Write-Info "Starting Source-License application..."
     
     if (Test-Port $Port) {
+        Write-Log "WARNING" "Port $Port is already in use"
         Write-Warning "Port $Port is already in use"
         if (Test-Health $Port) {
+            Write-Log "INFO" "Health check passed - application appears to be already running"
             Write-Success "Application appears to be already running"
+            Write-FunctionCall "Start-Application" "COMPLETE - ALREADY_RUNNING"
             return $true
         } else {
+            Write-Log "WARNING" "Port is in use but health check failed"
             Write-Warning "Port is in use but health check failed"
         }
     }
@@ -111,9 +181,11 @@ function Start-Application {
     $env:RACK_ENV = $Environment
     $env:APP_ENV = $Environment
     $env:PORT = $Port
+    Write-Log "INFO" "Environment variables set: RACK_ENV=$Environment, APP_ENV=$Environment, PORT=$Port"
     
     # Create logs directory if it doesn't exist
     if (-not (Test-Path "logs")) {
+        Write-CommandLog "New-Item -ItemType Directory -Path logs"
         New-Item -ItemType Directory -Path "logs" -Force | Out-Null
     }
     
@@ -122,10 +194,15 @@ function Start-Application {
     
     try {
         if ($Environment -eq "development") {
+            Write-Log "INFO" "Development mode - starting in foreground"
             Write-Info "Starting in development mode (foreground)..."
+            Write-CommandLog "ruby launch.rb"
             & ruby launch.rb
         } else {
+            Write-Log "INFO" "Production mode - starting in background"
             Write-Info "Starting in production mode (background)..."
+            
+            Write-CommandLog "Start-Job with ruby launch.rb"
             $job = Start-Job -ScriptBlock {
                 param($WorkingDir, $Env, $Port)
                 Set-Location $WorkingDir
@@ -136,11 +213,14 @@ function Start-Application {
             } -ArgumentList (Get-Location), $Environment, $Port
             
             # Give it a moment to start
+            Write-Log "INFO" "Waiting 3 seconds for application startup"
             Start-Sleep 3
             
             if (Test-Health $Port) {
-                Write-Success "Application started successfully"
                 $process = Get-AppProcess
+                $processId = if ($process) { $process.Id } else { "unknown" }
+                Write-Log "SUCCESS" "Application started successfully with PID: $processId, Job ID: $($job.Id)"
+                Write-Success "Application started successfully"
                 if ($process) {
                     Write-Info "PID: $($process.Id)"
                 }
@@ -148,16 +228,21 @@ function Start-Application {
                 Write-Info "Access: http://localhost:$Port"
                 Write-Info "Admin: http://localhost:$Port/admin"
                 Write-Info "Logs: Get-Content logs\app.log -Tail 20 -Wait"
+                Write-FunctionCall "Start-Application" "COMPLETE - BACKGROUND"
                 return $true
             } else {
+                Write-ErrorLog "Application failed to start - health check failed"
                 Write-Error "Application failed to start"
                 Write-Info "Check logs: Get-Content logs\app.log"
                 $job | Stop-Job -PassThru | Remove-Job
+                Write-FunctionCall "Start-Application" "FAILED"
                 return $false
             }
         }
     } catch {
+        Write-ErrorLog "Failed to start application: $_"
         Write-Error "Failed to start application: $_"
+        Write-FunctionCall "Start-Application" "FAILED - EXCEPTION"
         return $false
     }
 }
@@ -356,6 +441,9 @@ function Test-Prerequisites {
 
 # Main function
 function Main {
+    Write-FunctionCall "Main" "START"
+    Write-Log "INFO" "Starting deployment script execution"
+    
     Write-Host @"
 ╔══════════════════════════════════════════════════════════════════════════════╗
 ║                    Source-License Deploy Script                              ║
@@ -364,29 +452,40 @@ function Main {
 "@ -ForegroundColor Cyan
 
     # Run preflight checks
+    Write-Log "INFO" "Running preflight checks"
     Test-Prerequisites
     
     # Execute action
+    Write-Log "INFO" "Executing action: $Action"
     switch ($Action.ToLower()) {
         { $_ -in @("run", "start") } {
             Start-Application | Out-Null
         }
         "stop" {
+            Write-FunctionCall "Stop-Application" "START"
             Stop-Application | Out-Null
+            Write-FunctionCall "Stop-Application" "COMPLETE"
         }
         "restart" {
+            Write-FunctionCall "Restart-Application" "START"
             Restart-Application | Out-Null
+            Write-FunctionCall "Restart-Application" "COMPLETE"
         }
         "status" {
+            Write-FunctionCall "Show-Status" "START"
             Show-Status
+            Write-FunctionCall "Show-Status" "COMPLETE"
         }
         "update" {
             Update-Application | Out-Null
         }
         "migrate" {
+            Write-FunctionCall "Invoke-Migration" "START"
             Invoke-Migration | Out-Null
+            Write-FunctionCall "Invoke-Migration" "COMPLETE"
         }
         "help" {
+            Write-Log "INFO" "Showing help and exiting"
             Write-Host @"
 Source-License Deploy Script for Windows
 
@@ -416,11 +515,23 @@ EXAMPLES:
             exit 0
         }
         default {
+            Write-ErrorLog "Unknown action: $Action"
             Write-Error "Unknown action: $Action"
             Write-Info "Use -Help to see available actions"
             exit 1
         }
     }
+    
+    Write-Log "INFO" "Deployment script execution completed"
+    Write-FunctionCall "Main" "COMPLETE"
+    
+    # Log session end
+    @"
+
+Session completed: $(Get-Date)
+Final action: $Action
+Exit status: $LASTEXITCODE
+"@ | Out-File -FilePath $DEPLOYMENT_LOG_FILE -Append -Encoding UTF8
 }
 
 # Handle Ctrl+C gracefully

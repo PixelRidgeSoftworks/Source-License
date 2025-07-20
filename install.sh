@@ -16,6 +16,65 @@ YELLOW='\033[1;33m'
 CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
+# Logging setup
+INSTALLER_LOG_DIR="./installer-logs"
+INSTALLER_LOG_FILE="$INSTALLER_LOG_DIR/install-$(date +%Y%m%d-%H%M%S).log"
+
+# Ensure log directory exists
+mkdir -p "$INSTALLER_LOG_DIR"
+
+# Initialize log file with session header
+{
+    echo "=========================================="
+    echo "Source-License Installer Script Log"
+    echo "=========================================="
+    echo "Started: $(date)"
+    echo "Ruby Min Version: $RUBY_MIN_VERSION"
+    echo "Skip Ruby Check: $SKIP_RUBY_CHECK"
+    echo "Skip Bundler Check: $SKIP_BUNDLER_CHECK"
+    echo "User: $(whoami)"
+    echo "Working Directory: $(pwd)"
+    echo "System: $(uname -a)"
+    echo "=========================================="
+    echo ""
+} > "$INSTALLER_LOG_FILE"
+
+# Enhanced logging function
+log_message() {
+    local level="$1"
+    local message="$2"
+    local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+    echo "[$timestamp] [$level] $message" >> "$INSTALLER_LOG_FILE"
+}
+
+# Log function calls
+log_function_call() {
+    local function_name="$1"
+    local status="${2:-START}"
+    log_message "FUNCTION" "$function_name - $status"
+}
+
+# Log command execution
+log_command() {
+    local command="$1"
+    local status="${2:-EXECUTE}"
+    log_message "COMMAND" "$command - $status"
+}
+
+# Log errors with stack trace
+log_error() {
+    local error_message="$1"
+    local line_number="${2:-unknown}"
+    log_message "ERROR" "$error_message (Line: $line_number)"
+    # Also log current function stack if available
+    if command -v caller >/dev/null 2>&1; then
+        local i=0
+        while caller $i >> "$INSTALLER_LOG_FILE" 2>/dev/null; do
+            ((i++))
+        done
+    fi
+}
+
 # Print functions
 print_success() { echo -e "${GREEN}✓ $1${NC}"; }
 print_error() { echo -e "${RED}✗ $1${NC}"; }
@@ -43,27 +102,36 @@ EOF
 
 # Parse command line arguments
 parse_args() {
+    log_function_call "parse_args" "START"
+    log_message "INFO" "Parsing command line arguments: $*"
+    
     while [[ $# -gt 0 ]]; do
         case $1 in
             --skip-ruby)
                 SKIP_RUBY_CHECK=true
+                log_message "INFO" "Skip Ruby check enabled"
                 shift
                 ;;
             --skip-bundler)
                 SKIP_BUNDLER_CHECK=true
+                log_message "INFO" "Skip Bundler check enabled"
                 shift
                 ;;
             -h|--help)
+                log_message "INFO" "Help requested, showing help and exiting"
                 show_help
                 exit 0
                 ;;
             *)
+                log_error "Unknown option: $1"
                 print_error "Unknown option: $1"
                 show_help
                 exit 1
                 ;;
         esac
     done
+    
+    log_function_call "parse_args" "COMPLETE"
 }
 
 # Check if command exists
@@ -73,32 +141,46 @@ command_exists() {
 
 # Check Ruby version
 check_ruby_version() {
+    log_function_call "check_ruby_version" "START"
+    
     if [[ "$SKIP_RUBY_CHECK" == true ]]; then
+        log_message "WARNING" "Skipping Ruby version check as requested"
         print_warning "Skipping Ruby version check"
+        log_function_call "check_ruby_version" "COMPLETE - SKIPPED"
         return 0
     fi
 
+    log_message "INFO" "Checking Ruby version against minimum: $RUBY_MIN_VERSION"
     print_info "Checking Ruby version..."
     
+    log_command "command -v ruby"
     if ! command_exists ruby; then
+        log_error "Ruby is not installed"
         print_error "Ruby is not installed"
         print_info "Please install Ruby $RUBY_MIN_VERSION or higher:"
         print_info "  - Ubuntu/Debian: sudo apt install ruby-full"
         print_info "  - CentOS/RHEL: sudo yum install ruby"
         print_info "  - macOS: brew install ruby"
         print_info "  - Or use rbenv/rvm for version management"
+        log_function_call "check_ruby_version" "FAILED - NOT_INSTALLED"
         return 1
     fi
 
+    log_command "ruby -v"
     local ruby_version=$(ruby -v | grep -o '[0-9]\+\.[0-9]\+\.[0-9]\+' | head -1)
+    log_message "INFO" "Found Ruby version: $ruby_version"
     
     if [[ "$(printf '%s\n' "$RUBY_MIN_VERSION" "$ruby_version" | sort -V | head -n1)" != "$RUBY_MIN_VERSION" ]]; then
+        log_error "Ruby version check failed: $ruby_version < $RUBY_MIN_VERSION"
         print_error "Ruby $RUBY_MIN_VERSION or higher required (found: $ruby_version)"
         print_info "Please upgrade Ruby or use --skip-ruby to bypass this check"
+        log_function_call "check_ruby_version" "FAILED - VERSION_TOO_OLD"
         return 1
     fi
 
+    log_message "SUCCESS" "Ruby version check passed: $ruby_version >= $RUBY_MIN_VERSION"
     print_success "Ruby version check passed ($ruby_version)"
+    log_function_call "check_ruby_version" "COMPLETE"
     return 0
 }
 

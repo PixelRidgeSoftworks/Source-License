@@ -12,8 +12,8 @@ require_relative 'admin/features_controller'
 require_relative 'api_controller'
 
 class SourceLicenseApp < Sinatra::Base
-  # Security middleware
-  use SecurityMiddleware unless ENV['APP_ENV'] == 'test' || ENV['RACK_ENV'] == 'test' || ENV['APP_ENV'] == 'development'
+  # Security middleware (only in production)
+  use SecurityMiddleware unless ENV['APP_ENV'] == 'test' || ENV['RACK_ENV'] == 'test' || ENV['APP_ENV'] == 'development' || ENV['RACK_ENV'] == 'development'
   
   # Configure mail delivery
   def self.configure_mail
@@ -31,16 +31,10 @@ class SourceLicenseApp < Sinatra::Base
 
   # Configure Sinatra
   configure do
-    # Configure Rack::Protection based on environment
-    if ENV['APP_ENV'] == 'production'
-      # In production, use our custom SecurityMiddleware for host validation
-      set :protection, except: [:host_authorization]
-    else
-      # In development and test, disable host authorization completely
-      set :protection, except: [:host_authorization]
-    end
+    # Always disable Rack::Protection's HostAuthorization since we handle it in SecurityMiddleware
+    set :protection, except: [:host_authorization]
     
-    set :root, File.dirname('C:/Users/conno/Documents/Source-License/lib/controllers/application.rb/../..')
+    set :root, File.dirname(__FILE__ + '/../..')
     set :views, File.join(root, 'views')
     set :public_folder, File.join(root, 'public')
     set :show_exceptions, false

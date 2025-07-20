@@ -33,6 +33,26 @@ class SourceLicenseApp < Sinatra::Base
   configure do
     # Always disable Rack::Protection's HostAuthorization since we handle it in SecurityMiddleware
     set :protection, except: [:host_authorization]
+  end
+
+  # Configure host authorization per environment
+  configure :development do
+    # Disable host authorization completely in development
+    set :host_authorization, { permitted_hosts: [] }
+  end
+
+  configure :production do
+    # Enable host authorization in production with allowed hosts
+    if ENV['ALLOWED_HOSTS']
+      permitted_hosts = ENV['ALLOWED_HOSTS'].split(',').map(&:strip)
+      set :host_authorization, { permitted_hosts: permitted_hosts }
+    else
+      # If no ALLOWED_HOSTS set, disable it for backward compatibility
+      set :host_authorization, { permitted_hosts: [] }
+    end
+  end
+
+  configure do
     
     set :root, File.dirname(__FILE__ + '/../..')
     set :views, File.join(root, 'views')

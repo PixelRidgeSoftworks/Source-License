@@ -252,8 +252,15 @@ class SourceLicenseLauncher
       end
 
       puts
-      puts '⚠️  Database connection failed - continuing without database (some features may not work)'
-      puts '   You can fix the database configuration later and restart the application'
+      puts 'Would you like to continue anyway? (y/N)'
+      response = $stdin.gets.chomp.downcase
+
+      unless %w[y yes].include?(response)
+        puts 'Exiting due to database connection failure.'
+        exit 1
+      end
+
+      puts '⚠️  Continuing without database - some features may not work'
     end
   end
 
@@ -475,75 +482,45 @@ class SourceLicenseLauncher
 
       Set-Location "#{@script_dir}"
 
-      $env:PUMA_WORKER_TIMEOUT = "5"
-      $env:PUMA_SHUTDOWN_TIMEOUT = "2"
-
-      # Start the Ruby process in background and automatically handle batch job prompts
-      $job = Start-Job -ScriptBlock {
-          param($workingDir)
-          Set-Location $workingDir
-          & bundle exec rackup config.ru -o 0.0.0.0 -p 4567
-      } -ArgumentList "#{@script_dir}"
-      
-      # Monitor for Ctrl+C and automatically answer batch job prompts
       try {
-          while ($job.State -eq "Running") {
-              # Check for output from the job
-              $output = Receive-Job $job -ErrorAction SilentlyContinue
-              if ($output) {
-                  Write-Host $output
-              }
-              Start-Sleep -Milliseconds 100
-          }
-          
-          # Get any remaining output
-          $finalOutput = Receive-Job $job -ErrorAction SilentlyContinue
-          if ($finalOutput) {
-              Write-Host $finalOutput
-          }
-      }
-      catch [System.Management.Automation.PipelineStoppedException] {
-          # Ctrl+C was pressed - handle shutdown automatically
-          Write-Host "`nShutting down gracefully..." -ForegroundColor Yellow
-          
-          # Stop the job cleanly
-          Stop-Job $job -ErrorAction SilentlyContinue
-          Remove-Job $job -ErrorAction SilentlyContinue
-          
-          # Send automatic "y" responses to any remaining batch job prompts
-          Start-Sleep -Milliseconds 500
-          $attempts = 0
-          while ($attempts -lt 5) {
-              try {
-                  # Send "y" followed by Enter to any waiting prompts
-                  [System.Windows.Forms.SendKeys]::SendWait("y{ENTER}")
-                  Start-Sleep -Milliseconds 200
-                  $attempts++
-              }
-              catch {
-                  break
-              }
-          }
+          bundle exec rackup config.ru -o 0.0.0.0 -p 4567
       }
       catch {
           Write-Host "Error starting application: $_" -ForegroundColor Red
           Write-Host "Please check your configuration and try again." -ForegroundColor Red
-          Start-Sleep -Seconds 2
+          Read-Host "Press Enter to exit"
+          exit 1
       }
-      finally {
-          # Ensure job cleanup
-          if ($job) {
-              Stop-Job $job -ErrorAction SilentlyContinue
-              Remove-Job $job -ErrorAction SilentlyContinue
-          }
-          
-          # Kill any remaining Ruby processes
-          Get-Process -Name "ruby" -ErrorAction SilentlyContinue | Where-Object { 
-              $_.CommandLine -like "*rackup*" 
-          } | Stop-Process -Force -ErrorAction SilentlyContinue
-          
-          Write-Host "Server stopped." -ForegroundColor Green
-      exit /b 0
+    POWERSHELL
+
+    File.write(script_path, script_content)
+    script_path
+  end
+
+  def create_batch_script
+    script_path = File.join(@script_dir, 'launch.bat')
+
+    script_content = <<~BATCH
+      @echo off
+      REM Source-License Batch Launcher
+
+      echo Starting Source-License Application...
+      echo Application will be available at: http://localhost:4567
+      echo Admin panel will be available at: http://localhost:4567/admin
+      echo.
+      echo Press Ctrl+C to stop the server
+      echo.
+
+      cd /d "#{@script_dir}"
+
+      bundle exec rackup config.ru -o 0.0.0.0 -p 4567
+
+      if errorlevel 1 (
+          echo Error starting application
+          echo Please check your configuration and try again.
+          pause
+          exit /b 1
+      )
     BATCH
 
     File.write(script_path, script_content)
@@ -556,9 +533,6 @@ class SourceLicenseLauncher
     script_content = <<~BASH
       #!/bin/bash
       # Source-License Bash Launcher
-
-      # Setup signal handling for graceful shutdown
-      trap 'echo -e "\\nShutting down gracefully..."; exit 0' INT TERM
 
       echo "Starting Source-License Application..."
       echo "Application will be available at: http://localhost:4567"
@@ -574,7 +548,7 @@ class SourceLicenseLauncher
       else
           echo "Error starting application"
           echo "Please check your configuration and try again."
-          sleep 2
+          read -p "Press Enter to exit"
           exit 1
       fi
     BASH

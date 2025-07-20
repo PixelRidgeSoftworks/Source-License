@@ -1,0 +1,54 @@
+<svg width="300" height="100" viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background gradient -->
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="iconGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffd89b;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#19547b;stop-opacity:1" />
+    </linearGradient>
+    <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="2" dy="2" stdDeviation="3" flood-color="#000" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+  
+  <!-- Main background -->
+  <rect width="300" height="100" rx="10" fill="url(#bgGradient)" filter="url(#shadow)"/>
+  
+  <!-- Icon: Key with code brackets -->
+  <g transform="translate(15, 30)">
+    <!-- Key body -->
+    <rect x="8" y="18" width="20" height="6" rx="3" fill="url(#iconGradient)"/>
+    <!-- Key head (circle) -->
+    <circle cx="32" cy="21" r="10" fill="url(#iconGradient)" stroke="#fff" stroke-width="1.5"/>
+    <!-- Key teeth -->
+    <rect x="8" y="24" width="3" height="4" fill="url(#iconGradient)"/>
+    <rect x="12" y="24" width="3" height="3" fill="url(#iconGradient)"/>
+    <rect x="16" y="24" width="3" height="5" fill="url(#iconGradient)"/>
+    
+    <!-- Code brackets around key -->
+    <text x="0" y="28" fill="#fff" font-family="monospace" font-size="16" font-weight="bold">{</text>
+    <text x="44" y="28" fill="#fff" font-family="monospace" font-size="16" font-weight="bold">}</text>
+  </g>
+  
+  <!-- Company text -->
+  <text x="75" y="38" fill="#fff" font-family="Arial, sans-serif" font-size="22" font-weight="bold">SOURCE</text>
+  <text x="75" y="62" fill="#fff" font-family="Arial, sans-serif" font-size="22" font-weight="bold">LICENSE</text>
+  
+  <!-- Tagline -->
+  <text x="75" y="78" fill="#fff" font-family="Arial, sans-serif" font-size="14" opacity="0.9">Open Source Licensing Platform</text>
+  
+  <!-- Decorative elements -->
+  <circle cx="240" cy="25" r="2" fill="#fff" opacity="0.4"/>
+  <circle cx="250" cy="35" r="1.5" fill="#fff" opacity="0.3"/>
+  <circle cx="245" cy="45" r="2" fill="#fff" opacity="0.5"/>
+  
+  <!-- Security shield accent -->
+  <g transform="translate(200, 25)">
+    <path d="M8 0 L16 3 L16 18 L8 25 L0 18 L0 3 Z" fill="#fff" opacity="0.2"/>
+    <path d="M8 3 L13 5 L13 15 L8 20 L3 15 L3 5 Z" fill="#fff" opacity="0.3"/>
+    <text x="8" y="13" text-anchor="middle" fill="#667eea" font-family="monospace" font-size="7" font-weight="bold">✓</text>
+  </g>
+</svg>

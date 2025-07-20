@@ -6,7 +6,7 @@
 
 > **IMPORTANT NOTE:** Source License is still in ***Alpha***. There **WILL** be issues, missing functionality, missing documentation, etc. Please let us know of any and all issues via a Issue!
 
-[## View a Live Demo Here!](https://source-license.onrender.com/)
+## [View a Live Demo Here!](https://source-license.onrender.com/)
 
 A comprehensive Ruby/Sinatra-based software licensing management system with integrated payment processing, secure API endpoints, and enterprise-grade features for software vendors.
 

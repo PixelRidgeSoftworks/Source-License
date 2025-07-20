@@ -54,7 +54,7 @@ class SourceLicenseApp < Sinatra::Base
 
   configure do
     
-    set :root, File.dirname(__FILE__ + '/../..')
+    set :root, File.expand_path('../../..', __FILE__)
     set :views, File.join(root, 'views')
     set :public_folder, File.join(root, 'public')
     set :show_exceptions, false

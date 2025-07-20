@@ -260,9 +260,12 @@ class SecurityMiddleware
 
   def call(env)
     # Skip all security checks in test environment
-    return @app.call(env) if ENV['APP_ENV'] == 'test' || ENV['RACK_ENV'] == 'test'
+    return @app.call(env) if ENV['APP_ENV'] == 'test' || ENV['RACK_ENV'] == 'test' || ENV['APP_ENV'] == 'development'
 
     request = Rack::Request.new(env)
+
+    # Block requests with invalid hosts
+    return [403, { 'Content-Type' => 'text/plain' }, ['Forbidden: Invalid Host']] unless valid_host?(request)
 
     # Block requests with suspicious patterns
     return [403, { 'Content-Type' => 'text/plain' }, ['Forbidden']] if suspicious_request?(request)
@@ -276,6 +279,25 @@ class SecurityMiddleware
   end
 
   private
+
+  def valid_host?(request)
+    # Skip host validation in test and development environments
+    return true if ENV['APP_ENV'] == 'test' || ENV['RACK_ENV'] == 'test' || ENV['APP_ENV'] == 'development'
+
+    # Get the host from the request
+    host = request.host
+    return true unless host # Allow requests without host header in development
+
+    # If no ALLOWED_HOSTS is configured, allow all hosts (backwards compatibility)
+    allowed_hosts_env = ENV['ALLOWED_HOSTS']
+    return true unless allowed_hosts_env && !allowed_hosts_env.empty?
+
+    # Parse allowed hosts from environment variable
+    allowed_hosts = allowed_hosts_env.split(',').map(&:strip).map(&:downcase)
+    
+    # Check if the request host is in the allowed hosts list
+    allowed_hosts.include?(host.downcase)
+  end
 
   def suspicious_request?(request)
     # Skip security checks in test environment

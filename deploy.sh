@@ -234,6 +234,10 @@ Type=simple
 User=$service_user
 WorkingDirectory=$current_dir
 ExecStart=/usr/bin/env ruby $current_dir/launch.rb
+ExecStop=/bin/kill -TERM \$MAINPID
+TimeoutStopSec=30
+KillMode=mixed
+KillSignal=SIGTERM
 Restart=always
 RestartSec=5
 Environment=RACK_ENV=$ENVIRONMENT
@@ -818,6 +822,17 @@ EOF
 
 # Handle Ctrl+C gracefully
 trap 'echo -e "\n${YELLOW}Shutting down gracefully...${NC}"; stop_app; exit 0' INT TERM
+
+# Handle process termination
+shutdown_handler() {
+    log_message "INFO" "Shutdown signal received"
+    echo -e "\n${YELLOW}Shutting down gracefully...${NC}"
+    stop_app
+    exit 0
+}
+
+# Set up signal handlers
+trap shutdown_handler SIGINT SIGTERM SIGHUP
 
 # Run main function with all arguments
 main "$@"

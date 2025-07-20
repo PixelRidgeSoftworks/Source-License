@@ -540,5 +540,31 @@ $null = Register-EngineEvent PowerShell.Exiting -Action {
     Stop-Application | Out-Null
 }
 
+# Additional signal handling for better shutdown behavior
+try {
+    # Register for console control events
+    Add-Type -TypeDefinition @"
+        using System;
+        using System.Runtime.InteropServices;
+        public static class ConsoleHelper {
+            public delegate bool ConsoleCtrlDelegate(int dwCtrlType);
+            [DllImport("kernel32.dll")]
+            public static extern bool SetConsoleCtrlHandler(ConsoleCtrlDelegate HandlerRoutine, bool Add);
+        }
+"@
+    
+    $shutdownHandler = {
+        param($ctrlType)
+        Write-Host "`nReceived shutdown signal. Shutting down gracefully..." -ForegroundColor Yellow
+        Stop-Application | Out-Null
+        return $false
+    }
+    
+    [ConsoleHelper]::SetConsoleCtrlHandler($shutdownHandler, $true)
+} catch {
+    # Fallback if advanced signal handling fails
+    Write-Warning "Advanced signal handling not available, using basic handler"
+}
+
 # Run main function
 Main

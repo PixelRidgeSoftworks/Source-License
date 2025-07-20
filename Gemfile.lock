@@ -41,6 +41,8 @@ GEM
     faker (3.5.2)
       i18n (>= 1.8.11, < 2)
     ffi (1.17.2-x64-mingw-ucrt)
+    ffi (1.17.2-x86_64-darwin)
+    ffi (1.17.2-x86_64-linux-gnu)
     fiddle (1.1.8)
     hashdiff (1.2.0)
     i18n (1.14.7)
@@ -197,6 +199,8 @@ GEM
 
 PLATFORMS
   x64-mingw-ucrt
+  x86_64-darwin
+  x86_64-linux
 
 DEPENDENCIES
   bcrypt (~> 3.1)

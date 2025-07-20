@@ -13,15 +13,79 @@ env:
   RUBY_VERSION: 3.4.4
 
 jobs:
-  codeql-ruby:
-    name: CodeQL Ruby Analysis
+  analyze:
+    name: CodeQL Analysis (${{ matrix.language }})
     runs-on: ubuntu-latest
     timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ 'ruby', 'javascript' ]
+
     permissions:
       actions: read
       contents: read
       security-events: write
       packages: read
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Ruby
+      if: matrix.language == 'ruby'
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: ${{ env.RUBY_VERSION }}
+        bundler-cache: true
+
+    - name: Install Ruby system dependencies
+      if: matrix.language == 'ruby'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libmysqlclient-dev libpq-dev libsqlite3-dev
+        echo "DATABASE_ADAPTER=sqlite" >> $GITHUB_ENV
+        echo "DATABASE_NAME=codeql_analysis.db" >> $GITHUB_ENV
+        echo "APP_ENV=test" >> $GITHUB_ENV
+        echo "APP_SECRET=codeql_test_secret_key" >> $GITHUB_ENV
+        echo "JWT_SECRET=codeql_test_jwt_secret" >> $GITHUB_ENV
+        bundle install
+
+    - name: Set up Node.js
+      if: matrix.language == 'javascript'
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v3
+      with:
+        languages: ${{ matrix.language }}
+        queries: security-extended
+
+    - name: Setup test DB for Ruby analysis
+      if: matrix.language == 'ruby'
+      run: |
+        bundle exec ruby -e "
+          require './lib/database'
+          begin
+            SourceLicense::Database.setup
+            puts 'Database setup complete'
+          rescue => e
+            puts 'Database setup failed: #{e.message}'
+          end
+        " || echo "Continuing without database setup"
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v3
+      with:
+        category: "/language:${{ matrix.language }}"
+
+  security-review:
+    name: Security Review
+    runs-on: ubuntu-latest
+    needs: analyze
+    if: always()
 
     steps:
     - name: Checkout repository
@@ -33,82 +97,65 @@ jobs:
         ruby-version: ${{ env.RUBY_VERSION }}
         bundler-cache: true
 
-    - name: Install system dependencies for Ruby
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y libmysqlclient-dev libpq-dev libsqlite3-dev
+    - name: Install Security Tools
+      run: gem install bundler-audit brakeman
 
-    - name: Set up Ruby environment variables
+    - name: Run Bundler Audit
       run: |
-        echo "DATABASE_ADAPTER=sqlite" >> $GITHUB_ENV
-        echo "DATABASE_NAME=codeql_analysis.db" >> $GITHUB_ENV
-        echo "APP_ENV=test" >> $GITHUB_ENV
-        echo "APP_SECRET=codeql_test_secret_key" >> $GITHUB_ENV
-        echo "JWT_SECRET=codeql_test_jwt_secret" >> $GITHUB_ENV
-        bundle install
+        bundle audit --update
 
-    - name: Initialize CodeQL for Ruby
-      uses: github/codeql-action/init@v3
+    - name: Run Brakeman Static Analysis
+      run: |
+        brakeman --no-pager --format json --output brakeman-results.json
+        brakeman --no-pager --format plain
+
+    - name: Upload Brakeman Results
+      uses: actions/upload-artifact@v4
       with:
-        languages: ruby
-        queries: security-extended
+        name: brakeman-security-results
+        path: brakeman-results.json
+        retention-days: 30
 
-    - name: Setup test database for CodeQL
+    - name: Write Security Summary
       run: |
-        bundle exec ruby -e "
-          require './lib/database'
-          begin
-            SourceLicense::Database.setup
-            puts 'Database setup completed'
-          rescue => e
-            puts 'Database setup failed: #{e.message}'
-          end
-        " || echo "Proceeding without DB setup"
+        echo "## 🔒 Security Review Summary" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Bundler Audit Complete" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Brakeman Static Analysis Complete" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ CodeQL Analysis Complete" >> $GITHUB_STEP_SUMMARY
 
-    - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v3
-      with:
-        category: "/language:ruby"
-
-  codeql-js:
-    name: CodeQL JavaScript Analysis
+  notify-critical:
+    name: Critical Security Notification
     runs-on: ubuntu-latest
-    timeout-minutes: 120
-    permissions:
-      actions: read
-      contents: read
-      security-events: write
-      packages: read
+    needs: [analyze, security-review]
+    if: failure() && (github.event_name == 'push' || github.event_name == 'pull_request')
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-
-    - name: Set up Node.js
-      uses: actions/setup-node@v4
+    - name: Notify on Critical Security Findings
+      uses: actions/github-script@v7
       with:
-        node-version: '18'
+        script: |
+          const { owner, repo } = context.repo;
+          const body = `
+          ## ⚠️ Critical Security Analysis Failed
 
-    - name: Initialize CodeQL for JavaScript
-      uses: github/codeql-action/init@v3
-      with:
-        languages: javascript
-        queries: security-extended
+          **Check these areas:**
+          - CodeQL Security Findings
+          - Brakeman Static Analysis
+          - Bundler Audit
 
-    - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v3
-      with:
-        category: "/language:javascript"
-
-  security-review:
-    name: Security Code Review
-    runs-on: ubuntu-latest
-    needs: [codeql-ruby, codeql-js]
-    if: always()
-
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-
-    - name: Set up Ruby
-      uses:
+          **Workflow Run:** https://github.com/${owner}/${repo}/actions/runs/${context.runId}
+          `;
+          if (context.eventName === 'pull_request') {
+            await github.rest.issues.createComment({
+              owner, repo,
+              issue_number: context.issue.number,
+              body
+            });
+          } else {
+            await github.rest.issues.create({
+              owner, repo,
+              title: '🚨 Critical Security Analysis Failed',
+              body,
+              labels: ['security', 'critical']
+            });
+          }

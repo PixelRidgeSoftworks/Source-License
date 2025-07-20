@@ -16,7 +16,7 @@ class SourceLicenseApp < Sinatra::Base
   use SecurityMiddleware unless ENV['APP_ENV'] == 'test' || ENV['RACK_ENV'] == 'test'
   
   # Configure Rack::Protection based on environment
-  if ENV['APP_ENV'] == 'development' || ENV['RENDER'] == 'true'
+  if ENV['APP_ENV'] == 'development' || ENV['RENDER_SERVICE_ID'] || ENV['RENDER'] == 'true'
     # Disable host authorization in development and on Render for easier testing
     use Rack::Protection, except: [:json_csrf, :host_authorization]
   else

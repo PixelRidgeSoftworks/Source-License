@@ -300,22 +300,22 @@ class SourceLicenseLauncher
   def load_environment
     env_file = File.join(@script_dir, '.env')
     env_example = File.join(@script_dir, '.env.example')
-    
+
     puts '🔧 Loading environment configuration...'
-    
+
     # Get all environment variables from .env.example
     required_env_vars = []
     if File.exist?(env_example)
       File.readlines(env_example).each do |line|
         line = line.strip
         next if line.empty? || line.start_with?('#')
-        
+
         key, _value = line.split('=', 2)
         next unless key
-        
+
         # Skip commented out variables
         next if key.start_with?('#')
-        
+
         required_env_vars << key
       end
     else
@@ -329,37 +329,35 @@ class SourceLicenseLauncher
         SMTP_HOST SMTP_PORT SMTP_USERNAME SMTP_PASSWORD SMTP_TLS
       ]
     end
-    
+
     # Check which variables are already set in the environment
-    existing_vars = required_env_vars.select { |var| ENV[var] }
+    existing_vars = required_env_vars.select { |var| ENV.fetch(var, nil) }
     missing_vars = required_env_vars - existing_vars
-    
+
     puts "📋 Found #{required_env_vars.length} possible environment variables"
     puts "✅ Already set: #{existing_vars.length} variables"
     puts "⚠️  Missing: #{missing_vars.length} variables"
-    
+
     if existing_vars.any?
       puts
-      puts "Existing environment variables:"
+      puts 'Existing environment variables:'
       existing_vars.first(5).each do |var|
         # Show value for non-sensitive variables, hide for sensitive ones
         if var.include?('SECRET') || var.include?('PASSWORD') || var.include?('KEY')
           puts "   #{var}: [HIDDEN]"
         else
-          puts "   #{var}: #{ENV[var]}"
+          puts "   #{var}: #{ENV.fetch(var, nil)}"
         end
       end
-      
-      if existing_vars.length > 5
-        puts "   ... and #{existing_vars.length - 5} more"
-      end
+
+      puts "   ... and #{existing_vars.length - 5} more" if existing_vars.length > 5
     end
-    
+
     # Load .env file only for missing variables
     if File.exist?(env_file) && missing_vars.any?
       puts
-      puts "📁 Loading missing variables from .env file..."
-      
+      puts '📁 Loading missing variables from .env file...'
+
       loaded_count = 0
       File.readlines(env_file).each do |line|
         line = line.strip
@@ -374,7 +372,7 @@ class SourceLicenseLauncher
           loaded_count += 1 if missing_vars.include?(key)
         end
       end
-      
+
       puts "   Loaded #{loaded_count} missing variables from .env"
     elsif !File.exist?(env_file) && missing_vars.any?
       puts
@@ -388,14 +386,12 @@ class SourceLicenseLauncher
       missing_vars.first(10).each do |var|
         puts "   - #{var}"
       end
-      if missing_vars.length > 10
-        puts "   ... and #{missing_vars.length - 10} more"
-      end
+      puts "   ... and #{missing_vars.length - 10} more" if missing_vars.length > 10
       puts
     elsif missing_vars.empty?
-      puts "✅ All environment variables are set!"
+      puts '✅ All environment variables are set!'
     end
-    
+
     # Show essential configuration
     puts
     puts 'Essential Configuration:'
@@ -405,15 +401,15 @@ class SourceLicenseLauncher
     puts "APP_HOST: #{ENV['APP_HOST'] || 'localhost'}"
     puts "APP_PORT: #{ENV['APP_PORT'] || '4567'}"
     puts "ADMIN_EMAIL: #{ENV['ADMIN_EMAIL'] || 'NOT SET'}"
-    
+
     # Show payment configuration status
-    stripe_configured = ENV['STRIPE_SECRET_KEY'] && !ENV['STRIPE_SECRET_KEY'].empty?
-    paypal_configured = ENV['PAYPAL_CLIENT_ID'] && !ENV['PAYPAL_CLIENT_ID'].empty?
+    stripe_configured = ENV.fetch('STRIPE_SECRET_KEY', nil) && !ENV['STRIPE_SECRET_KEY'].empty?
+    paypal_configured = ENV.fetch('PAYPAL_CLIENT_ID', nil) && !ENV['PAYPAL_CLIENT_ID'].empty?
     puts "STRIPE: #{stripe_configured ? '✅ Configured' : '❌ Not configured'}"
     puts "PAYPAL: #{paypal_configured ? '✅ Configured' : '❌ Not configured'}"
-    
+
     # Show email configuration status
-    email_configured = ENV['SMTP_HOST'] && !ENV['SMTP_HOST'].empty?
+    email_configured = ENV.fetch('SMTP_HOST', nil) && !ENV['SMTP_HOST'].empty?
     puts "EMAIL: #{email_configured ? '✅ Configured' : '❌ Not configured'}"
     puts
   end

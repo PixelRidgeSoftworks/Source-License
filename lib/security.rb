@@ -258,10 +258,41 @@ class SecurityMiddleware
     @app = app
   end
 
-  def call(env)
-    # Skip all security checks in test environment
-    return @app.call(env) if ENV['APP_ENV'] == 'test' || ENV['RACK_ENV'] == 'test' || ENV['APP_ENV'] == 'development'
+  # Security event logging for middleware
+  def log_security_event(event_type, details = {})
+    security_log = {
+      timestamp: Time.now.iso8601,
+      event_type: event_type,
+      details: details,
+    }
 
+    # Log to stdout/stderr for production logging systems to capture
+    puts "SECURITY_EVENT: #{security_log.to_json}"
+
+    # Send to security webhook if configured
+    send_security_alert(security_log) if ENV['SECURITY_WEBHOOK_URL']
+  end
+
+  def send_security_alert(event_data)
+    Thread.new do
+      require 'net/http'
+      require 'uri'
+
+      uri = URI(ENV.fetch('SECURITY_WEBHOOK_URL', nil))
+      http = Net::HTTP.new(uri.host, uri.port)
+      http.use_ssl = uri.scheme == 'https'
+
+      request = Net::HTTP::Post.new(uri)
+      request['Content-Type'] = 'application/json'
+      request.body = event_data.to_json
+
+      http.request(request)
+    rescue StandardError => e
+      puts "Failed to send security alert: #{e.message}"
+    end
+  end
+
+  def call(env)
     request = Rack::Request.new(env)
 
     # Block requests with invalid hosts
@@ -281,28 +312,46 @@ class SecurityMiddleware
   private
 
   def valid_host?(request)
-    # Skip host validation in test and development environments
-    return true if ENV['APP_ENV'] == 'test' || ENV['RACK_ENV'] == 'test' || ENV['APP_ENV'] == 'development'
-
     # Get the host from the request
     host = request.host
-    return true unless host # Allow requests without host header in development
+
+    # In production, require a host header for security
+    unless host
+      if respond_to?(:log_security_event)
+        log_security_event('missing_host_header', {
+          ip: request.ip,
+          user_agent: request.user_agent,
+          path: request.path,
+        })
+      end
+      return false
+    end
 
     # If no ALLOWED_HOSTS is configured, allow all hosts (backwards compatibility)
-    allowed_hosts_env = ENV['ALLOWED_HOSTS']
+    allowed_hosts_env = ENV.fetch('ALLOWED_HOSTS', nil)
     return true unless allowed_hosts_env && !allowed_hosts_env.empty?
 
     # Parse allowed hosts from environment variable
     allowed_hosts = allowed_hosts_env.split(',').map(&:strip).map(&:downcase)
-    
+
     # Check if the request host is in the allowed hosts list
-    allowed_hosts.include?(host.downcase)
+    unless allowed_hosts.include?(host.downcase)
+      if respond_to?(:log_security_event)
+        log_security_event('invalid_host_header', {
+          host: host,
+          allowed_hosts: allowed_hosts,
+          ip: request.ip,
+          user_agent: request.user_agent,
+          path: request.path,
+        })
+      end
+      return false
+    end
+
+    true
   end
 
   def suspicious_request?(request)
-    # Skip security checks in test environment
-    return false if ENV['APP_ENV'] == 'test' || ENV['RACK_ENV'] == 'test'
-
     # Block requests with SQL injection patterns
     sql_injection_patterns = [
       /(%27)|(')|(--)|(%23)|(#)/i,

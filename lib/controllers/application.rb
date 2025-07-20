@@ -12,9 +12,6 @@ require_relative 'admin/features_controller'
 require_relative 'api_controller'
 
 class SourceLicenseApp < Sinatra::Base
-  # Security middleware (only in production)
-  use SecurityMiddleware unless ENV['APP_ENV'] == 'test' || ENV['RACK_ENV'] == 'test' || ENV['APP_ENV'] == 'development' || ENV['RACK_ENV'] == 'development'
-  
   # Configure mail delivery
   def self.configure_mail
     Mail.defaults do
@@ -39,9 +36,19 @@ class SourceLicenseApp < Sinatra::Base
   configure :development do
     # Disable host authorization completely in development
     set :host_authorization, { permitted_hosts: [] }
+    # No SecurityMiddleware in development
+  end
+
+  configure :test do
+    # Disable host authorization in test environment
+    set :host_authorization, { permitted_hosts: [] }
+    # No SecurityMiddleware in test
   end
 
   configure :production do
+    # Enable SecurityMiddleware for production security
+    use SecurityMiddleware
+
     # Enable host authorization in production with allowed hosts
     if ENV['ALLOWED_HOSTS']
       permitted_hosts = ENV['ALLOWED_HOSTS'].split(',').map(&:strip)
@@ -53,8 +60,7 @@ class SourceLicenseApp < Sinatra::Base
   end
 
   configure do
-    
-    set :root, File.expand_path('../../..', __FILE__)
+    set :root, File.expand_path('../..', __dir__)
     set :views, File.join(root, 'views')
     set :public_folder, File.join(root, 'public')
     set :show_exceptions, false

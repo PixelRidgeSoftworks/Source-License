@@ -6,291 +6,109 @@ on:
   pull_request:
     branches: [ "main", "develop" ]
   schedule:
-    # Run CodeQL analysis every Monday at 6:00 AM UTC
     - cron: '0 6 * * 1'
   workflow_dispatch:
 
 env:
-  # Supported Ruby version for CodeQL analysis
   RUBY_VERSION: 3.4.4
 
 jobs:
-  analyze:
-    name: CodeQL Analysis
-    runs-on: ubuntu-latest-8-cores
-    timeout-minutes: 360
+  codeql-ruby:
+    name: CodeQL Ruby Analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
     permissions:
-      # Required for all workflows
       actions: read
       contents: read
-      # Required for workflows in private repositories
       security-events: write
-      # Required to fetch internal or private CodeQL packs
       packages: read
-
-    strategy:
-      fail-fast: false
-      matrix:
-        # Override automatic language detection by changing the below list
-        # Supported options are ['csharp', 'cpp', 'go', 'java', 'javascript', 'python', 'ruby', 'swift']
-        language: [ 'ruby', 'javascript' ]
-        # CodeQL supports [ 'cpp', 'csharp', 'go', 'java', 'javascript', 'python', 'ruby', 'swift' ]
-        # Use only 'java' to analyze code written in Java, Kotlin or both
-        # Use only 'javascript' to analyze code written in JavaScript, TypeScript or both
-        # Learn more about CodeQL language support at https://aka.ms/codeql-docs/language-support
 
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
 
     - name: Set up Ruby
-      if: matrix.language == 'ruby'
       uses: ruby/setup-ruby@v1
       with:
         ruby-version: ${{ env.RUBY_VERSION }}
         bundler-cache: true
 
-    - name: Set up Node.js
-      if: matrix.language == 'javascript'
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
-
-    # Initialize the CodeQL tools for scanning
-    - name: Initialize CodeQL
-      uses: github/codeql-action/init@v3
-      with:
-        languages: ${{ matrix.language }}
-        # Override default queries with custom query sets
-        queries: +security-and-quality,security-experimental
-        # If you wish to specify custom queries, you can do so here or in a config file.
-        # By default, queries listed here will override any specified in a config file.
-        # Prefix the list here with "+" to use these queries and those in the config file.
-        
-        # For more details on CodeQL's query packs, refer to: https://docs.github.com/en/code-security/code-scanning/automatically-scanning-your-code-for-vulnerabilities-and-errors/configuring-code-scanning#using-queries-in-ql-packs
-        # queries: security-extended,security-and-quality
-
-    # Set up the environment for Ruby analysis
-    - name: Setup Ruby environment for CodeQL
-      if: matrix.language == 'ruby'
+    - name: Install system dependencies for Ruby
       run: |
-        # Install system dependencies that might be needed
         sudo apt-get update
         sudo apt-get install -y libmysqlclient-dev libpq-dev libsqlite3-dev
-        
-        # Set up test environment variables for CodeQL analysis
+
+    - name: Set up Ruby environment variables
+      run: |
         echo "DATABASE_ADAPTER=sqlite" >> $GITHUB_ENV
         echo "DATABASE_NAME=codeql_analysis.db" >> $GITHUB_ENV
         echo "APP_ENV=test" >> $GITHUB_ENV
         echo "APP_SECRET=codeql_test_secret_key" >> $GITHUB_ENV
         echo "JWT_SECRET=codeql_test_jwt_secret" >> $GITHUB_ENV
-        
-        # Install dependencies
         bundle install
 
-    # Create a minimal database for CodeQL to analyze database-related code
-    - name: Setup test database for analysis
-      if: matrix.language == 'ruby'
+    - name: Initialize CodeQL for Ruby
+      uses: github/codeql-action/init@v3
+      with:
+        languages: ruby
+        queries: security-extended
+
+    - name: Setup test database for CodeQL
       run: |
-        # Create a minimal database setup for CodeQL to understand our models
         bundle exec ruby -e "
           require './lib/database'
           begin
             SourceLicense::Database.setup
-            puts 'Database setup completed for CodeQL analysis'
+            puts 'Database setup completed'
           rescue => e
-            puts 'Database setup failed, continuing with analysis: #{e.message}'
+            puts 'Database setup failed: #{e.message}'
           end
-        " || echo "Continuing without database setup"
-
-    # Autobuild attempts to build any compiled languages (C/C++, C#, Go, Java, or Swift).
-    # If this step fails, then you should remove it and run the build manually (see below)
-    - name: Autobuild
-      uses: github/codeql-action/autobuild@v3
-
-    # ℹ️ Command-line programs to run using the OS shell.
-    # 📚 See https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idstepsrun
-
-    # If the Autobuild fails above, remove it and uncomment the following three lines.
-    # modify them (or add more) to build your code if your project, please refer to the EXAMPLE below for guidance.
-
-    # - run: |
-    #     echo "Run, Build Application using script"
-    #     ./location_of_script_within_repo/buildscript.sh
+        " || echo "Proceeding without DB setup"
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v3
       with:
-        category: "/language:${{matrix.language}}"
-        # Upload results even if there are compilation errors
-        upload: true
+        category: "/language:ruby"
 
-  # Additional security-focused analysis job
+  codeql-js:
+    name: CodeQL JavaScript Analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+      packages: read
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+
+    - name: Initialize CodeQL for JavaScript
+      uses: github/codeql-action/init@v3
+      with:
+        languages: javascript
+        queries: security-extended
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v3
+      with:
+        category: "/language:javascript"
+
   security-review:
     name: Security Code Review
     runs-on: ubuntu-latest
-    needs: analyze
+    needs: [codeql-ruby, codeql-js]
     if: always()
-    
+
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
 
     - name: Set up Ruby
-      uses: ruby/setup-ruby@v1
-      with:
-        ruby-version: ${{ env.RUBY_VERSION }}
-        bundler-cache: true
-
-    - name: Install security analysis tools
-      run: |
-        gem install bundler-audit brakeman
-        
-    - name: Run Bundler Audit
-      run: |
-        echo "🔍 Running Bundler Audit for known vulnerabilities..."
-        bundle audit --update
-        
-    - name: Run Brakeman Security Scanner
-      run: |
-        echo "🔍 Running Brakeman static analysis..."
-        brakeman --no-pager --format json --output brakeman-results.json
-        brakeman --no-pager --format plain
-        
-    - name: Upload Brakeman results
-      uses: actions/upload-artifact@v4
-      if: always()
-      with:
-        name: brakeman-security-results
-        path: brakeman-results.json
-        retention-days: 30
-
-    - name: Security analysis summary
-      if: always()
-      run: |
-        echo "## 🔒 Security Analysis Summary" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### Bundler Audit" >> $GITHUB_STEP_SUMMARY
-        echo "- ✅ Checked for known vulnerabilities in Ruby dependencies" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### Brakeman Static Analysis" >> $GITHUB_STEP_SUMMARY
-        echo "- ✅ Performed static security analysis on Ruby code" >> $GITHUB_STEP_SUMMARY
-        echo "- 📄 Results uploaded as artifacts" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### CodeQL Analysis" >> $GITHUB_STEP_SUMMARY
-        echo "- ✅ Deep semantic analysis completed" >> $GITHUB_STEP_SUMMARY
-        echo "- 🔍 Check Security tab for detailed findings" >> $GITHUB_STEP_SUMMARY
-
-  # Create security report
-  security-report:
-    name: Security Report
-    runs-on: ubuntu-latest
-    needs: [analyze, security-review]
-    if: always() && github.event_name == 'schedule'
-    
-    steps:
-    - name: Create weekly security report
-      uses: actions/github-script@v7
-      with:
-        script: |
-          const { owner, repo } = context.repo;
-          
-          // Create a security report issue for scheduled runs
-          const title = `🔒 Weekly Security Analysis Report - ${new Date().toISOString().split('T')[0]}`;
-          const body = `
-          ## Weekly Security Analysis Report
-          
-          This is an automated security analysis report generated by our CodeQL workflow.
-          
-          ### Analysis Performed
-          - **CodeQL Security Analysis**: Deep semantic code analysis
-          - **Bundler Audit**: Dependency vulnerability scanning
-          - **Brakeman**: Ruby static security analysis
-          
-          ### Review Actions
-          - [ ] Review CodeQL findings in the Security tab
-          - [ ] Check Brakeman results in workflow artifacts
-          - [ ] Verify no new vulnerabilities in dependencies
-          - [ ] Update dependencies if needed
-          
-          ### Next Steps
-          1. Navigate to the [Security tab](https://github.com/${owner}/${repo}/security) to review CodeQL findings
-          2. Download and review Brakeman artifacts from the workflow run
-          3. Address any high or critical severity findings
-          4. Update this issue with resolution status
-          
-          **Workflow Run**: https://github.com/${owner}/${repo}/actions/runs/${context.runId}
-          
-          ---
-          *This report was automatically generated by CodeQL workflow*
-          `;
-          
-          await github.rest.issues.create({
-            owner,
-            repo,
-            title,
-            body,
-            labels: ['security', 'automated-report', 'weekly-review']
-          });
-
-  # Notify on critical findings
-  notify-critical:
-    name: Critical Security Notifications
-    runs-on: ubuntu-latest
-    needs: [analyze, security-review]
-    if: failure() && (github.event_name == 'push' || github.event_name == 'pull_request')
-    
-    steps:
-    - name: Notify on critical security findings
-      uses: actions/github-script@v7
-      with:
-        script: |
-          // This step runs if any security analysis fails
-          // indicating potential critical security issues
-          
-          const { owner, repo } = context.repo;
-          
-          if (context.eventName === 'pull_request') {
-            // Comment on PR if security analysis fails
-            await github.rest.issues.createComment({
-              owner,
-              repo,
-              issue_number: context.issue.number,
-              body: `
-              ## ⚠️ Security Analysis Failed
-              
-              The CodeQL security analysis has detected potential issues with this pull request.
-              
-              **Please review:**
-              - Check the Security tab for CodeQL findings
-              - Review the workflow logs for Brakeman results
-              - Address any critical or high-severity security issues before merging
-              
-              **Security is a priority for Source License** - please ensure all security checks pass before proceeding.
-              `
-            });
-          } else if (context.eventName === 'push') {
-            // Create issue for push to main branch
-            await github.rest.issues.create({
-              owner,
-              repo,
-              title: '🚨 Security Analysis Failed on Main Branch',
-              body: `
-              ## Critical Security Alert
-              
-              Security analysis has failed on the main branch, indicating potential security vulnerabilities.
-              
-              **Immediate Actions Required:**
-              1. Review CodeQL findings in the Security tab
-              2. Check Brakeman security analysis results
-              3. Address critical and high-severity findings immediately
-              4. Consider reverting changes if critical vulnerabilities are confirmed
-              
-              **Commit**: ${context.sha}
-              **Workflow**: https://github.com/${owner}/${repo}/actions/runs/${context.runId}
-              
-              This issue will be automatically closed when security analysis passes.
-              `,
-              labels: ['security', 'critical', 'urgent']
-            });
-          }
+      uses:

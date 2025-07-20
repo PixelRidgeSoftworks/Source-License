@@ -1,3 +1,7 @@
+<div align="center">
+  <img src="logo.svg" alt="Source License Logo" width="400">
+</div>
+
 # Source License - Professional Software Licensing Platform
 
 > **IMPORTANT NOTE:** Source License is still in ***Alpha***. There **WILL** be issues, missing functionality, missing documentation, etc. Please let us know of any and all issues via a Issue!

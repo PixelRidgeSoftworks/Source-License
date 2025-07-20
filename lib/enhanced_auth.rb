@@ -356,7 +356,13 @@ module EnhancedAuthHelpers
     current_ip = request.ip
     session_ip = session_data[:ip_address]
 
-    # For now, just check IP consistency
+    # Skip IP checking on Render or when behind load balancers/proxies
+    # as IP addresses can change legitimately
+    return false if ENV['RENDER'] == 'true'
+    return false if ENV['APP_ENV'] == 'development'
+    return false if ENV['BEHIND_LOAD_BALANCER'] == 'true'
+    
+    # For now, just check IP consistency in traditional hosting
     # In production, you might want more sophisticated checks
     current_ip != session_ip
   end

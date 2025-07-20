@@ -1,118 +1,139 @@
-<div class="min-vh-100 d-flex align-items-center justify-content-center bg-light">
-    <div class="container">
+<!-- Admin Login Page -->
+<div class="login-container">
+    <div class="login-wrapper">
         <div class="row justify-content-center">
-            <div class="col-md-6 col-lg-4">
+            <div class="col-12 col-sm-10 col-md-8 col-lg-7 col-xl-6">
                 <!-- Login Card -->
-                <div class="card shadow-lg border-0">
-                    <div class="card-header bg-primary text-white text-center py-4">
-                        <i class="fas fa-shield-alt fa-3x mb-3"></i>
-                        <h4 class="mb-0">Admin Login</h4>
-                        <p class="mb-0 opacity-75">Source License Management</p>
+                <div class="login-card">
+                    <!-- Header -->
+                    <div class="login-header text-center">
+                        <div class="login-icon mb-3">
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
+                        <h2 class="login-title mb-2"><%= ENV['APP_NAME'] || 'Source License' %></h2>
+                        <p class="login-subtitle">Administrator Login</p>
                     </div>
                     
-                    <div class="card-body p-4">
-                        <% if @error %>
-                        <div class="alert alert-danger">
-                            <i class="fas fa-exclamation-triangle me-2"></i>
-                            <%= h(@error) %>
-                        </div>
-                        <% end %>
+                    <!-- Error Alert -->
+                    <% if @error %>
+                    <div class="alert alert-danger alert-dismissible fade show">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <%= h(@error) %>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    <% end %>
+                    
+                    <!-- Login Form -->
+                    <form method="post" action="/admin/login" class="login-form">
+                        <input type="hidden" name="_token" value="<%= csrf_token %>">
                         
-                        <form method="post" action="/admin/login" id="loginForm">
-                            <!-- CSRF Protection - always included, validation bypassed in development -->
-                            <%= csrf_input %>
-                            
-                            <div class="form-floating mb-3">
-                                <input type="email" 
-                                       class="form-control" 
-                                       id="email" 
-                                       name="email" 
-                                       placeholder="admin@example.com"
-                                       value="<%= h(params[:email] || '') %>"
-                                       autocomplete="email"
-                                       maxlength="254"
-                                       required>
-                                <label for="email">
-                                    <i class="fas fa-envelope me-2"></i>Email Address
-                                </label>
-                            </div>
-                            
-                            <div class="form-floating mb-3">
+                        <div class="form-group mb-3">
+                            <label for="email" class="form-label">
+                                <i class="fas fa-envelope me-2"></i>Email Address
+                            </label>
+                            <input type="email" 
+                                   class="form-control" 
+                                   id="email" 
+                                   name="email" 
+                                   placeholder="Enter your admin email"
+                                   value="<%= h(params[:email] || '') %>"
+                                   autocomplete="email"
+                                   maxlength="254"
+                                   required>
+                        </div>
+                        
+                        <div class="form-group mb-4">
+                            <label for="password" class="form-label">
+                                <i class="fas fa-lock me-2"></i>Password
+                            </label>
+                            <div class="input-group">
                                 <input type="password" 
                                        class="form-control" 
                                        id="password" 
                                        name="password" 
-                                       placeholder="Password"
+                                       placeholder="Enter your password"
                                        autocomplete="current-password"
                                        minlength="8"
                                        maxlength="128"
                                        required>
-                                <label for="password">
-                                    <i class="fas fa-lock me-2"></i>Password
-                                </label>
-                            </div>
-                            
-                            <!-- Security Info -->
-                            <div class="mb-4">
-                                <small class="text-muted">
-                                    <i class="fas fa-info-circle me-1"></i>
-                                    Your login attempts are monitored for security.
-                                </small>
-                            </div>
-                            
-                            <div class="d-grid gap-2">
-                                <button type="submit" class="btn btn-primary btn-lg" id="loginButton">
-                                    <i class="fas fa-sign-in-alt me-2"></i>
-                                    Sign In
+                                <button type="button" class="btn btn-outline-secondary" 
+                                        onclick="togglePassword()" id="toggleBtn">
+                                    <i class="fas fa-eye" id="toggleIcon"></i>
                                 </button>
                             </div>
-                            
-                            <!-- Password Requirements -->
-                            <div class="mt-3">
-                                <small class="text-muted">
-                                    <strong>Security Requirements:</strong><br>
-                                    • Password must be at least 8 characters<br>
-                                    • Account locks after 5 failed attempts<br>
-                                    • Sessions timeout after 8 hours of inactivity
-                                </small>
+                        </div>
+                        
+                        <!-- Security Notice -->
+                        <div class="security-notice mb-4">
+                            <div class="d-flex align-items-start">
+                                <i class="fas fa-shield-check text-success me-2 mt-1"></i>
+                                <div>
+                                    <small class="text-muted">
+                                        <strong>Secure Login</strong><br>
+                                        Your login attempts are monitored and logged for security purposes.
+                                    </small>
+                                </div>
                             </div>
-                        </form>
-                    </div>
+                        </div>
+                        
+                        <!-- Login Button -->
+                        <button type="submit" class="btn btn-primary btn-lg w-100 mb-3" id="loginButton">
+                            <i class="fas fa-sign-in-alt me-2"></i>
+                            Sign In to Admin Panel
+                        </button>
+                        
+                        <!-- Back Link -->
+                        <div class="text-center">
+                            <a href="/" class="btn btn-outline-secondary btn-sm">
+                                <i class="fas fa-arrow-left me-2"></i>Back to Main Site
+                            </a>
+                        </div>
+                    </form>
                     
-                    <div class="card-footer bg-light text-center py-3">
-                        <small class="text-muted">
-                            <i class="fas fa-shield-alt me-1"></i>
-                            Secure Admin Access
-                        </small>
+                    <!-- Footer Info -->
+                    <div class="login-footer">
+                        <div class="row text-center">
+                            <div class="col-4">
+                                <i class="fas fa-lock text-success"></i>
+                                <small class="d-block text-muted">Encrypted</small>
+                            </div>
+                            <div class="col-4">
+                                <i class="fas fa-shield-alt text-info"></i>
+                                <small class="d-block text-muted">Protected</small>
+                            </div>
+                            <div class="col-4">
+                                <i class="fas fa-clock text-warning"></i>
+                                <small class="d-block text-muted">8hr Session</small>
+                            </div>
+                        </div>
                     </div>
-                </div>
-                
-                <!-- Back to Site Link -->
-                <div class="text-center mt-4">
-                    <a href="/" class="text-decoration-none">
-                        <i class="fas fa-arrow-left me-2"></i>
-                        Back to Main Site
-                    </a>
                 </div>
                 
                 <!-- Development Helper -->
                 <% if development? %>
-                <div class="mt-4">
-                    <div class="card border-warning">
-                        <div class="card-header bg-warning text-dark">
-                            <i class="fas fa-exclamation-triangle me-2"></i>
-                            Development Mode
+                <div class="dev-helper mt-4">
+                    <div class="alert alert-warning">
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="fas fa-code me-2"></i>
+                            <strong>Development Mode</strong>
                         </div>
-                        <div class="card-body">
-                            <p class="mb-2"><strong>Default Admin Credentials:</strong></p>
-                            <p class="mb-1"><strong>Email:</strong> <%= ENV['ADMIN_EMAIL'] || 'admin@example.com' %></p>
-                            <p class="mb-0"><strong>Password:</strong> <%= ENV['ADMIN_PASSWORD'] || 'admin123' %></p>
-                            <hr>
-                            <small class="text-muted">
-                                These credentials are configured in your .env file. 
-                                Change them before deploying to production!
-                            </small>
+                        <hr>
+                        <p class="mb-2"><strong>Default Credentials:</strong></p>
+                        <div class="row">
+                            <div class="col-sm-6">
+                                <small><strong>Email:</strong></small><br>
+                                <code><%= ENV['INITIAL_ADMIN_EMAIL'] || 'admin@example.com' %></code>
+                            </div>
+                            <div class="col-sm-6">
+                                <small><strong>Password:</strong></small><br>
+                                <code><%= ENV['INITIAL_ADMIN_PASSWORD'] || 'admin123' %></code>
+                            </div>
                         </div>
+                        <hr>
+                        <small class="text-muted">
+                            <i class="fas fa-exclamation-triangle me-1"></i>
+                            Remove INITIAL_ADMIN_* from .env before production deployment!
+                        </small>
                     </div>
                 </div>
                 <% end %>
@@ -123,37 +144,279 @@
 
 <!-- Custom Login Styles -->
 <style>
-    body {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+:root {
+    /* Dark Theme Colors - Match Admin Dashboard */
+    --bs-body-bg: #0d1117;
+    --bs-body-color: #e6edf3;
+    --bs-primary: #238636;
+    --bs-secondary: #21262d;
+    --bs-success: #2ea043;
+    --bs-info: #0969da;
+    --bs-warning: #fb8500;
+    --bs-danger: #da3633;
+    
+    /* Custom Variables */
+    --surface-primary: #161b22;
+    --surface-secondary: #21262d;
+    --surface-tertiary: #30363d;
+    --border-default: #30363d;
+    --border-muted: #21262d;
+    --accent-primary: #238636;
+    --text-primary: #e6edf3;
+    --text-secondary: #7d8590;
+    --text-muted: #656d76;
+    
+    /* Shadows */
+    --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.4), 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+    
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, #238636 0%, #2ea043 100%);
+}
+
+body {
+    background: linear-gradient(135deg, #0d1117 0%, #161b22 100%);
+    color: var(--text-primary);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    min-height: 100vh;
+}
+
+.login-container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1rem;
+}
+
+.login-wrapper {
+    width: 90%;
+    max-width: 80vw;
+    min-width: 320px;
+}
+
+.login-card {
+    background: var(--surface-secondary);
+    border: 1px solid var(--border-default);
+    border-radius: 16px;
+    padding: 3rem;
+    box-shadow: var(--shadow-lg);
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+}
+
+.login-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: var(--gradient-primary);
+}
+
+.login-header {
+    margin-bottom: 2rem;
+}
+
+.login-icon {
+    width: 80px;
+    height: 80px;
+    background: var(--gradient-primary);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+    font-size: 2rem;
+    color: white;
+    box-shadow: var(--shadow);
+}
+
+.login-title {
+    color: var(--text-primary);
+    font-weight: 600;
+    font-size: 1.5rem;
+}
+
+.login-subtitle {
+    color: var(--text-secondary);
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+.form-label {
+    color: var(--text-primary);
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+.form-control {
+    background: var(--surface-tertiary);
+    border: 1px solid var(--border-default);
+    color: var(--text-primary);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus {
+    background: var(--surface-primary);
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 0.2rem rgba(35, 134, 54, 0.25);
+    color: var(--text-primary);
+}
+
+.form-control::placeholder {
+    color: var(--text-muted);
+}
+
+.input-group .btn {
+    border-left: none;
+    background: var(--surface-tertiary);
+    border: 1px solid var(--border-default);
+    color: var(--text-secondary);
+}
+
+.input-group .form-control:focus + .btn {
+    border-color: var(--accent-primary);
+}
+
+.btn-primary {
+    background: var(--gradient-primary);
+    border: none;
+    color: white;
+    font-weight: 600;
+    padding: 0.875rem 1.5rem;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+    box-shadow: var(--shadow);
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #2ea043 0%, #238636 100%);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+    color: white;
+}
+
+.btn-outline-secondary {
+    border-color: var(--border-default);
+    color: var(--text-secondary);
+    background: transparent;
+}
+
+.btn-outline-secondary:hover {
+    background: var(--surface-tertiary);
+    border-color: var(--accent-primary);
+    color: var(--text-primary);
+}
+
+.security-notice {
+    background: var(--surface-tertiary);
+    border: 1px solid var(--border-default);
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+.login-footer {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border-default);
+}
+
+.login-footer i {
+    font-size: 1.2rem;
+    margin-bottom: 0.5rem;
+}
+
+.alert {
+    border-radius: 8px;
+    border: none;
+}
+
+.alert-danger {
+    background: rgba(218, 54, 51, 0.15);
+    color: #da3633;
+    border-left: 4px solid #da3633;
+}
+
+.alert-warning {
+    background: rgba(251, 133, 0, 0.15);
+    color: #fb8500;
+    border-left: 4px solid #fb8500;
+}
+
+.dev-helper .alert {
+    background: var(--surface-tertiary);
+    border: 1px solid var(--border-default);
+}
+
+.dev-helper code {
+    background: var(--surface-primary);
+    color: var(--accent-primary);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.85rem;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 576px) {
+    .login-container {
+        padding: 1rem;
     }
     
-    .card {
-        border-radius: 15px;
-        overflow: hidden;
+    .login-card {
+        padding: 1.5rem;
     }
     
-    .form-floating > .form-control:focus {
-        border-color: #007bff;
-        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    .login-icon {
+        width: 60px;
+        height: 60px;
+        font-size: 1.5rem;
     }
     
-    .btn-primary {
-        background: linear-gradient(45deg, #007bff, #0056b3);
-        border: none;
-        border-radius: 10px;
-        transition: all 0.3s ease;
+    .login-title {
+        font-size: 1.25rem;
     }
-    
-    .btn-primary:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(0, 123, 255, 0.4);
+}
+
+/* Animation */
+.login-card {
+    animation: fadeInUp 0.6s ease-out;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
     }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
 </style>
 
-<!-- Auto-focus on email field -->
+<!-- Login JavaScript -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('email').focus();
+    
+    // Password visibility toggle
+    window.togglePassword = function() {
+        const passwordInput = document.getElementById('password');
+        const toggleIcon = document.getElementById('toggleIcon');
+        
+        if (passwordInput.type === 'password') {
+            passwordInput.type = 'text';
+            toggleIcon.className = 'fas fa-eye-slash';
+        } else {
+            passwordInput.type = 'password';
+            toggleIcon.className = 'fas fa-eye';
+        }
+    };
     
     // Add form validation feedback
     const form = document.querySelector('form');

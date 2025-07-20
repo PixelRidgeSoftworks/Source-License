@@ -261,18 +261,111 @@ create_logs_directory() {
     print_success "Logs directory created"
 }
 
-# Run tests
-run_tests() {
-    print_info "Running basic tests..."
+# Interactive configuration setup
+configure_application() {
+    print_info "Setting up application configuration..."
     
-    if ruby run_tests.rb; then
-        print_success "Tests passed"
-        return 0
-    else
-        print_warning "Some tests failed - this may not be critical"
-        print_info "The application should still work for basic usage"
-        return 0
+    if [[ ! -f ".env" ]]; then
+        print_error "No .env file found. Please run setup_environment first."
+        return 1
     fi
+    
+    echo
+    print_info "Let's configure your Source-License application:"
+    echo
+    
+    # Ask for application name
+    read -p "Enter your application name (default: Source-License): " app_name
+    app_name=${app_name:-"Source-License"}
+    
+    # Ask for organization details
+    read -p "Enter your organization name: " org_name
+    read -p "Enter your organization website URL (optional): " org_url
+    
+    # Ask for support email
+    while true; do
+        read -p "Enter support email address: " support_email
+        if [[ $support_email =~ ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$ ]]; then
+            break
+        else
+            print_error "Please enter a valid email address"
+        fi
+    done
+    
+    # Ask for admin email
+    while true; do
+        read -p "Enter initial admin email address: " admin_email
+        if [[ $admin_email =~ ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$ ]]; then
+            break
+        else
+            print_error "Please enter a valid email address"
+        fi
+    done
+    
+    # Ask for admin password
+    while true; do
+        read -s -p "Enter initial admin password (min 12 characters): " admin_password
+        echo
+        if [[ ${#admin_password} -ge 12 ]]; then
+            read -s -p "Confirm admin password: " admin_password_confirm
+            echo
+            if [[ "$admin_password" == "$admin_password_confirm" ]]; then
+                break
+            else
+                print_error "Passwords do not match. Please try again."
+            fi
+        else
+            print_error "Password must be at least 12 characters long"
+        fi
+    done
+    
+    # Ask for port
+    read -p "Enter port number (default: 4567): " port
+    port=${port:-4567}
+    
+    # Ask for environment
+    echo "Select environment:"
+    echo "1) Development"
+    echo "2) Production"
+    read -p "Choose (1-2, default: 1): " env_choice
+    case $env_choice in
+        2) environment="production" ;;
+        *) environment="development" ;;
+    esac
+    
+    # Update .env file
+    print_info "Updating configuration..."
+    
+    # Create a backup
+    cp .env .env.backup
+    
+    # Update values in .env
+    sed -i.bak "s/^APP_NAME=.*/APP_NAME=$app_name/" .env
+    sed -i.bak "s/^PORT=.*/PORT=$port/" .env
+    sed -i.bak "s/^APP_ENV=.*/APP_ENV=$environment/" .env
+    
+    # Update organization details
+    if [[ -n "$org_name" ]]; then
+        sed -i.bak "s/^ORGANIZATION_NAME=.*/ORGANIZATION_NAME=$org_name/" .env
+    fi
+    if [[ -n "$org_url" ]]; then
+        sed -i.bak "s|^ORGANIZATION_URL=.*|ORGANIZATION_URL=$org_url|" .env
+    fi
+    sed -i.bak "s/^SUPPORT_EMAIL=.*/SUPPORT_EMAIL=$support_email/" .env
+    
+    # Update initial admin credentials
+    sed -i.bak "s/^INITIAL_ADMIN_EMAIL=.*/INITIAL_ADMIN_EMAIL=$admin_email/" .env
+    sed -i.bak "s/^INITIAL_ADMIN_PASSWORD=.*/INITIAL_ADMIN_PASSWORD=$admin_password/" .env
+    
+    print_success "Configuration completed!"
+    echo
+    print_info "Your settings:"
+    print_info "  Application: $app_name"
+    print_info "  Admin Email: $admin_email"
+    print_info "  Port: $port"
+    print_info "  Environment: $environment"
+    echo
+    print_warning "Remember to remove INITIAL_ADMIN_* from .env after first login!"
 }
 
 # Main installation function
@@ -307,25 +400,24 @@ EOF
     [[ "$success" == true ]] && setup_environment
     [[ "$success" == true ]] && setup_database
     [[ "$success" == true ]] && create_logs_directory
-    [[ "$success" == true ]] && run_tests
+    [[ "$success" == true ]] && configure_application
     
     echo
     echo -e "${CYAN}$(printf '=%.0s' {1..80})${NC}"
     
     if [[ "$success" == true ]]; then
-        print_success "Installation completed successfully!"
+        print_success "Installation and setup completed successfully!"
         echo
-        echo -e "${GREEN}🎉 Source-License is now installed!${NC}"
+        echo -e "${GREEN}🎉 Source-License is ready to use!${NC}"
         echo
-        echo "Next steps:"
-        echo "  1. Edit .env file with your configuration"
-        echo "  2. Configure database settings if needed"
-        echo "  3. Run the application:"
-        echo "     Development: ruby launch.rb"
-        echo "     Production:  ./deploy"
+        echo "To start the application:"
+        echo "  Development: ruby launch.rb"
+        echo "  Production:  ./deploy.sh"
         echo
-        echo "The application will be available at: http://localhost:4567"
-        echo "Admin panel will be at: http://localhost:4567/admin"
+        echo "The application will be available at: http://localhost:$port"
+        echo "Admin panel will be at: http://localhost:$port/admin"
+        echo
+        print_info "Use the admin credentials you configured to log in."
     else
         print_error "Installation failed!"
         print_info "Please check the errors above and try again"

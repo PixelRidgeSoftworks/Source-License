@@ -1,0 +1,449 @@
+<!-- Tax Management Header -->
+<div class="mb-5">
+    <div class="row align-items-center">
+        <div class="col">
+            <h1 class="display-6 fw-bold text-gradient mb-2">Tax Management</h1>
+            <p class="lead text-muted mb-0">Configure and manage custom taxes for your orders</p>
+        </div>
+        <div class="col-auto">
+            <div class="btn-group" role="group">
+                <a href="/admin/taxes/new" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>Create Tax
+                </a>
+                <button class="btn btn-outline-info" onclick="showTaxCalculator()" data-bs-toggle="tooltip" title="Tax Calculator">
+                    <i class="fas fa-calculator"></i>
+                </button>
+                <a href="/admin/settings#tax" class="btn btn-outline-secondary" data-bs-toggle="tooltip" title="Tax Settings">
+                    <i class="fas fa-cog"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tax Settings Overview -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="d-flex align-items-center">
+                            <div class="feature-icon bg-success bg-opacity-10 text-success me-3">
+                                <i class="fas fa-toggle-<%= SettingsManager.get('tax.enable_taxes') ? 'on' : 'off' %>"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-0">Tax System</h6>
+                                <small class="text-muted"><%= SettingsManager.get('tax.enable_taxes') ? 'Enabled' : 'Disabled' %></small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="d-flex align-items-center">
+                            <div class="feature-icon bg-info bg-opacity-10 text-info me-3">
+                                <i class="fas fa-magic"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-0">Auto Apply</h6>
+                                <small class="text-muted"><%= SettingsManager.get('tax.auto_apply_taxes') ? 'Yes' : 'No' %></small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="d-flex align-items-center">
+                            <div class="feature-icon bg-warning bg-opacity-10 text-warning me-3">
+                                <i class="fas fa-eye"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-0">Show Breakdown</h6>
+                                <small class="text-muted"><%= SettingsManager.get('tax.display_tax_breakdown') ? 'Yes' : 'No' %></small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="d-flex align-items-center">
+                            <div class="feature-icon bg-secondary bg-opacity-10 text-secondary me-3">
+                                <i class="fas fa-percent"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-0">Tax Inclusive</h6>
+                                <small class="text-muted"><%= SettingsManager.get('tax.include_tax_in_price') ? 'Yes' : 'No' %></small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Taxes Table -->
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white border-0 pb-0">
+        <div class="row align-items-center">
+            <div class="col">
+                <h5 class="mb-0">Tax Configurations</h5>
+                <small class="text-muted">Manage your custom tax rates and settings</small>
+            </div>
+            <div class="col-auto">
+                <div class="input-group input-group-sm">
+                    <input type="text" class="form-control" placeholder="Search taxes..." id="taxSearch">
+                    <span class="input-group-text">
+                        <i class="fas fa-search"></i>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="card-body">
+        <% if @taxes.empty? %>
+            <div class="text-center py-5">
+                <div class="mb-4">
+                    <i class="fas fa-receipt fa-4x text-muted opacity-25"></i>
+                </div>
+                <h4 class="text-muted mb-3">No Taxes Configured</h4>
+                <p class="text-muted mb-4">Get started by creating your first tax configuration.</p>
+                <a href="/admin/taxes/new" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>Create First Tax
+                </a>
+            </div>
+        <% else %>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle" id="taxesTable">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Name</th>
+                            <th>Rate</th>
+                            <th>Description</th>
+                            <th>Status</th>
+                            <th>Created</th>
+                            <th width="140">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% @taxes.each do |tax| %>
+                            <tr data-tax-id="<%= tax.id %>">
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="tax-icon me-3">
+                                            <i class="fas fa-receipt text-primary"></i>
+                                        </div>
+                                        <div>
+                                            <div class="fw-semibold"><%= h tax.name %></div>
+                                            <small class="text-muted">ID: <%= tax.id %></small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-primary bg-opacity-10 text-primary fs-6">
+                                        <%= tax.formatted_rate %>
+                                    </span>
+                                </td>
+                                <td>
+                                    <% if tax.description && !tax.description.empty? %>
+                                        <span class="text-muted"><%= h tax.description %></span>
+                                    <% else %>
+                                        <span class="text-muted fst-italic">No description</span>
+                                    <% end %>
+                                </td>
+                                <td>
+                                    <% if tax.active? %>
+                                        <span class="badge bg-success">Active</span>
+                                    <% else %>
+                                        <span class="badge bg-secondary">Inactive</span>
+                                    <% end %>
+                                </td>
+                                <td>
+                                    <small class="text-muted">
+                                        <%= tax.created_at.strftime('%b %d, %Y') %><br>
+                                        <span class="text-muted small"><%= time_ago_in_words(tax.created_at) %> ago</span>
+                                    </small>
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <a href="/admin/taxes/<%= tax.id %>" class="btn btn-outline-primary" data-bs-toggle="tooltip" title="View Details">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="/admin/taxes/<%= tax.id %>/edit" class="btn btn-outline-secondary" data-bs-toggle="tooltip" title="Edit">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <% if tax.active? %>
+                                            <button type="button" class="btn btn-outline-warning" onclick="toggleTaxStatus(<%= tax.id %>, false)" data-bs-toggle="tooltip" title="Deactivate">
+                                                <i class="fas fa-pause"></i>
+                                            </button>
+                                        <% else %>
+                                            <button type="button" class="btn btn-outline-success" onclick="toggleTaxStatus(<%= tax.id %>, true)" data-bs-toggle="tooltip" title="Activate">
+                                                <i class="fas fa-play"></i>
+                                            </button>
+                                        <% end %>
+                                        <button type="button" class="btn btn-outline-danger" onclick="deleteTax(<%= tax.id %>, '<%= h tax.name %>')" data-bs-toggle="tooltip" title="Delete">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        <% end %>
+                    </tbody>
+                </table>
+            </div>
+        <% end %>
+    </div>
+</div>
+
+<!-- Tax Calculator Modal -->
+<div class="modal fade" id="taxCalculatorModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-calculator me-2"></i>Tax Calculator
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="calculatorSubtotal" class="form-label">Subtotal Amount</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" class="form-control" id="calculatorSubtotal" step="0.01" min="0" placeholder="0.00">
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Active Taxes</label>
+                            <div id="activeTaxesList" class="border rounded p-3 bg-light">
+                                <div class="text-center text-muted">
+                                    <i class="fas fa-spinner fa-spin me-2"></i>Loading taxes...
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <button type="button" class="btn btn-primary" onclick="calculateTaxes()">
+                            <i class="fas fa-calculator me-2"></i>Calculate
+                        </button>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0">Calculation Results</h6>
+                            </div>
+                            <div class="card-body" id="calculationResults">
+                                <div class="text-center text-muted py-4">
+                                    <i class="fas fa-info-circle me-2"></i>Enter a subtotal amount and click Calculate
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.text-gradient {
+    background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.feature-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+}
+
+.tax-icon {
+    width: 40px;
+    height: 40px;
+    background: var(--bs-primary-bg-subtle);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#taxesTable tbody tr:hover {
+    background-color: var(--bs-light);
+}
+
+.table th {
+    font-weight: 600;
+    color: var(--bs-gray-700);
+    border-bottom: 2px solid var(--bs-border-color);
+}
+</style>
+
+<script>
+// Search functionality
+document.getElementById('taxSearch')?.addEventListener('input', function(e) {
+    const searchTerm = e.target.value.toLowerCase();
+    const rows = document.querySelectorAll('#taxesTable tbody tr');
+    
+    rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(searchTerm) ? '' : 'none';
+    });
+});
+
+// Toggle tax status
+async function toggleTaxStatus(taxId, activate) {
+    const action = activate ? 'activate' : 'deactivate';
+    
+    try {
+        const response = await fetch(`/admin/taxes/${taxId}/${action}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            }
+        });
+        
+        if (response.ok) {
+            location.reload();
+        } else {
+            AdminUtils.showNotification('Failed to update tax status', 'danger');
+        }
+    } catch (error) {
+        AdminUtils.showNotification('Error updating tax status', 'danger');
+    }
+}
+
+// Delete tax
+function deleteTax(taxId, taxName) {
+    if (!AdminUtils.confirmAction(`Delete tax "${taxName}"? This action cannot be undone.`)) {
+        return;
+    }
+    
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = `/admin/taxes/${taxId}`;
+    
+    const methodInput = document.createElement('input');
+    methodInput.type = 'hidden';
+    methodInput.name = '_method';
+    methodInput.value = 'DELETE';
+    
+    form.appendChild(methodInput);
+    document.body.appendChild(form);
+    form.submit();
+}
+
+// Show tax calculator
+function showTaxCalculator() {
+    const modal = new bootstrap.Modal(document.getElementById('taxCalculatorModal'));
+    loadActiveTaxes();
+    modal.show();
+}
+
+// Load active taxes for calculator
+async function loadActiveTaxes() {
+    try {
+        const response = await fetch('/api/admin/taxes/active');
+        const data = await response.json();
+        
+        const container = document.getElementById('activeTaxesList');
+        
+        if (data.success && data.taxes.length > 0) {
+            container.innerHTML = data.taxes.map(tax => `
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" value="${tax.id}" id="tax_${tax.id}" checked>
+                    <label class="form-check-label" for="tax_${tax.id}">
+                        <strong>${tax.name}</strong> - ${tax.formatted_rate}
+                        ${tax.description ? `<br><small class="text-muted">${tax.description}</small>` : ''}
+                    </label>
+                </div>
+            `).join('');
+        } else {
+            container.innerHTML = '<div class="text-muted text-center">No active taxes found</div>';
+        }
+    } catch (error) {
+        document.getElementById('activeTaxesList').innerHTML = '<div class="text-danger text-center">Error loading taxes</div>';
+    }
+}
+
+// Calculate taxes
+async function calculateTaxes() {
+    const subtotal = parseFloat(document.getElementById('calculatorSubtotal').value);
+    const selectedTaxes = Array.from(document.querySelectorAll('#activeTaxesList input:checked')).map(cb => cb.value);
+    
+    if (!subtotal || subtotal <= 0) {
+        AdminUtils.showNotification('Please enter a valid subtotal amount', 'warning');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/admin/taxes/preview', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `subtotal=${subtotal}&tax_ids=${selectedTaxes.join(',')}`
+        });
+        
+        const data = await response.json();
+        const resultsContainer = document.getElementById('calculationResults');
+        
+        if (data.success) {
+            let html = `
+                <div class="row mb-3">
+                    <div class="col-6"><strong>Subtotal:</strong></div>
+                    <div class="col-6 text-end">${data.formatted_subtotal}</div>
+                </div>
+            `;
+            
+            if (data.tax_breakdown.length > 0) {
+                data.tax_breakdown.forEach(tax => {
+                    html += `
+                        <div class="row mb-2">
+                            <div class="col-6">${tax.name} (${tax.rate}%):</div>
+                            <div class="col-6 text-end">${tax.formatted_amount}</div>
+                        </div>
+                    `;
+                });
+                
+                html += `
+                    <hr>
+                    <div class="row mb-2">
+                        <div class="col-6"><strong>Tax Total:</strong></div>
+                        <div class="col-6 text-end"><strong>${data.formatted_tax_total}</strong></div>
+                    </div>
+                    <div class="row">
+                        <div class="col-6"><strong>Grand Total:</strong></div>
+                        <div class="col-6 text-end"><strong class="text-primary">${data.formatted_total}</strong></div>
+                    </div>
+                `;
+            } else {
+                html += `
+                    <div class="row">
+                        <div class="col-12 text-center text-muted">
+                            <i class="fas fa-info-circle me-2"></i>No taxes applied
+                        </div>
+                    </div>
+                `;
+            }
+            
+            resultsContainer.innerHTML = html;
+        } else {
+            resultsContainer.innerHTML = `<div class="text-danger text-center">${data.error}</div>`;
+        }
+    } catch (error) {
+        document.getElementById('calculationResults').innerHTML = '<div class="text-danger text-center">Error calculating taxes</div>';
+    }
+}
+
+// Initialize tooltips
+document.addEventListener('DOMContentLoaded', function() {
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
+</script>

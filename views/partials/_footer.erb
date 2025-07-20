@@ -1,204 +1,482 @@
 <!-- Footer -->
-<footer class="footer mt-auto" style="background: var(--surface-primary); border-top: 1px solid var(--border-default);">
-    <div class="container">
-        <div class="row">
+<footer class="footer mt-auto">
+    <div class="container py-5">
+        <div class="row g-4">
             <!-- Company Info -->
-            <div class="col-lg-4 col-md-6 mb-4">
-                <h5 class="mb-3 text-light">
-                    <i class="fas fa-shield-alt me-2"></i>
-                    <%= custom('branding.site_name', 'Source License') %>
-                </h5>
-                <p class="text-light mb-3">
-                    <%= custom('branding.footer_text', 'Professional software licensing management system. Secure, reliable, and easy to use for both vendors and customers.') %>
-                </p>
-                <div class="d-flex gap-3">
-                    <a href="#" class="text-light" title="GitHub">
-                        <i class="fab fa-github fa-lg"></i>
-                    </a>
-                    <a href="#" class="text-light" title="Twitter">
-                        <i class="fab fa-twitter fa-lg"></i>
-                    </a>
-                    <a href="#" class="text-light" title="LinkedIn">
-                        <i class="fab fa-linkedin fa-lg"></i>
-                    </a>
-                    <a href="mailto:<%= custom('branding.support_email', ENV['ADMIN_EMAIL'] || 'support@example.com') %>" class="text-light" title="Email">
-                        <i class="fas fa-envelope fa-lg"></i>
-                    </a>
+            <div class="col-lg-4 col-md-6">
+                <div class="footer-section">
+                    <div class="d-flex align-items-center mb-4">
+                        <div class="footer-logo me-3">
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
+                        <div>
+                            <h5 class="footer-brand mb-0"><%= SettingsManager.get('app.name') %></h5>
+                            <small class="footer-version">v<%= SettingsManager.get('app.version') %></small>
+                        </div>
+                    </div>
+                    <p class="footer-description mb-4">
+                        <%= SettingsManager.get('app.description') %>
+                    </p>
+                    <% if SettingsManager.get('social.enable_social_links') %>
+                    <div class="social-links">
+                        <% if SettingsManager.get('app.organization_url') && !SettingsManager.get('app.organization_url').empty? %>
+                        <a href="<%= SettingsManager.get('app.organization_url') %>" class="social-link" title="Website" target="_blank" rel="noopener">
+                            <i class="fas fa-globe"></i>
+                        </a>
+                        <% end %>
+                        <% if SettingsManager.get('app.support_email') && !SettingsManager.get('app.support_email').empty? %>
+                        <a href="mailto:<%= SettingsManager.get('app.support_email') %>" class="social-link" title="Email Support">
+                            <i class="fas fa-envelope"></i>
+                        </a>
+                        <% end %>
+                        <% if SettingsManager.get('social.enable_github') && SettingsManager.get('social.github_url') && !SettingsManager.get('social.github_url').empty? %>
+                        <a href="<%= SettingsManager.get('social.github_url') %>" class="social-link" title="GitHub" target="_blank" rel="noopener">
+                            <i class="fab fa-github"></i>
+                        </a>
+                        <% end %>
+                        <% if SettingsManager.get('social.enable_twitter') && SettingsManager.get('social.twitter_url') && !SettingsManager.get('social.twitter_url').empty? %>
+                        <a href="<%= SettingsManager.get('social.twitter_url') %>" class="social-link" title="Twitter/X" target="_blank" rel="noopener">
+                            <i class="fab fa-twitter"></i>
+                        </a>
+                        <% end %>
+                        <% if SettingsManager.get('social.enable_linkedin') && SettingsManager.get('social.linkedin_url') && !SettingsManager.get('social.linkedin_url').empty? %>
+                        <a href="<%= SettingsManager.get('social.linkedin_url') %>" class="social-link" title="LinkedIn" target="_blank" rel="noopener">
+                            <i class="fab fa-linkedin"></i>
+                        </a>
+                        <% end %>
+                        <% if SettingsManager.get('social.enable_facebook') && SettingsManager.get('social.facebook_url') && !SettingsManager.get('social.facebook_url').empty? %>
+                        <a href="<%= SettingsManager.get('social.facebook_url') %>" class="social-link" title="Facebook" target="_blank" rel="noopener">
+                            <i class="fab fa-facebook"></i>
+                        </a>
+                        <% end %>
+                        <% if SettingsManager.get('social.enable_youtube') && SettingsManager.get('social.youtube_url') && !SettingsManager.get('social.youtube_url').empty? %>
+                        <a href="<%= SettingsManager.get('social.youtube_url') %>" class="social-link" title="YouTube" target="_blank" rel="noopener">
+                            <i class="fab fa-youtube"></i>
+                        </a>
+                        <% end %>
+                        <% if SettingsManager.get('social.enable_discord') && SettingsManager.get('social.discord_url') && !SettingsManager.get('social.discord_url').empty? %>
+                        <a href="<%= SettingsManager.get('social.discord_url') %>" class="social-link" title="Discord" target="_blank" rel="noopener">
+                            <i class="fab fa-discord"></i>
+                        </a>
+                        <% end %>
+                    </div>
+                    <% end %>
                 </div>
             </div>
             
             <!-- Quick Links -->
-            <div class="col-lg-2 col-md-6 mb-4">
-                <h6 class="mb-3 text-light">Quick Links</h6>
-                <ul class="list-unstyled">
-                    <li class="mb-2">
-                        <a href="/" class="text-light text-decoration-none">
-                            <i class="fas fa-home me-1"></i> Home
-                        </a>
-                    </li>
-                    <li class="mb-2">
-                        <a href="/my-licenses" class="text-light text-decoration-none">
-                            <i class="fas fa-key me-1"></i> My Licenses
-                        </a>
-                    </li>
-                    <li class="mb-2">
-                        <a href="/cart" class="text-light text-decoration-none">
-                            <i class="fas fa-shopping-cart me-1"></i> Shopping Cart
-                        </a>
-                    </li>
-                    <li class="mb-2">
-                        <a href="#support" class="text-light text-decoration-none">
-                            <i class="fas fa-life-ring me-1"></i> Support
-                        </a>
-                    </li>
-                </ul>
+            <div class="col-lg-2 col-md-6">
+                <div class="footer-section">
+                    <h6 class="footer-title">Quick Links</h6>
+                    <ul class="footer-links">
+                        <li><a href="/"><i class="fas fa-home me-2"></i>Home</a></li>
+                        <li><a href="/licenses/validate"><i class="fas fa-check-circle me-2"></i>Validate License</a></li>
+                        <li><a href="/licenses/lookup"><i class="fas fa-search me-2"></i>License Lookup</a></li>
+                        <li><a href="/users/register"><i class="fas fa-user-plus me-2"></i>Register</a></li>
+                        <li><a href="/users/login"><i class="fas fa-sign-in-alt me-2"></i>Login</a></li>
+                    </ul>
+                </div>
             </div>
             
             <!-- Support -->
-            <div class="col-lg-3 col-md-6 mb-4">
-                <h6 class="mb-3 text-light">Support</h6>
-                <ul class="list-unstyled">
-                    <li class="mb-2">
-                        <a href="#" class="text-light text-decoration-none">
-                            <i class="fas fa-question-circle me-1"></i> FAQ
-                        </a>
-                    </li>
-                    <li class="mb-2">
-                        <a href="#" class="text-light text-decoration-none">
-                            <i class="fas fa-book me-1"></i> Documentation
-                        </a>
-                    </li>
-                    <li class="mb-2">
-                        <a href="mailto:<%= custom('branding.support_email', ENV['ADMIN_EMAIL'] || 'support@example.com') %>" class="text-light text-decoration-none">
-                            <i class="fas fa-comments me-1"></i> Contact Us
-                        </a>
-                    </li>
-                    <li class="mb-2">
-                        <a href="#" class="text-light text-decoration-none">
-                            <i class="fas fa-bug me-1"></i> Report Issue
-                        </a>
-                    </li>
-                </ul>
+            <div class="col-lg-3 col-md-6">
+                <div class="footer-section">
+                    <h6 class="footer-title">Support & Resources</h6>
+                    <ul class="footer-links">
+                        <li><a href="https://github.com/PixelRidge-Softworks/Source-License/wiki" target="_blank" rel="noopener"><i class="fas fa-book me-2"></i>Documentation</a></li>
+                        <li><a href="https://github.com/PixelRidge-Softworks/Source-License/issues" target="_blank" rel="noopener"><i class="fas fa-bug me-2"></i>Report Issue</a></li>
+                        <% if SettingsManager.get('app.support_email') && !SettingsManager.get('app.support_email').empty? %>
+                        <li><a href="mailto:<%= SettingsManager.get('app.support_email') %>"><i class="fas fa-envelope me-2"></i>Contact Support</a></li>
+                        <% end %>
+                        <li><a href="https://github.com/PixelRidge-Softworks/Source-License" target="_blank" rel="noopener"><i class="fas fa-download me-2"></i>Downloads</a></li>
+                    </ul>
+                </div>
             </div>
             
-            <!-- Contact Info -->
-            <div class="col-lg-3 col-md-6 mb-4">
-                <h6 class="mb-3 text-light">Contact Information</h6>
-                <div class="text-light">
-                    <div class="mb-2">
-                        <i class="fas fa-envelope me-2"></i>
-                        <a href="mailto:<%= custom('branding.support_email', ENV['ADMIN_EMAIL'] || 'support@example.com') %>" class="text-light text-decoration-none">
-                            <%= custom('branding.support_email', ENV['ADMIN_EMAIL'] || 'support@example.com') %>
-                        </a>
+            <!-- System Info -->
+            <div class="col-lg-3 col-md-6">
+                <div class="footer-section">
+                    <h6 class="footer-title">System Information</h6>
+                    <div class="system-info">
+                        <div class="info-item">
+                            <i class="fas fa-server me-2"></i>
+                            <span>Environment: <strong><%= SettingsManager.get('app.environment').capitalize %></strong></span>
+                        </div>
+                        <div class="info-item">
+                            <i class="fas fa-clock me-2"></i>
+                            <span>Timezone: <strong><%= SettingsManager.get('app.timezone') %></strong></span>
+                        </div>
+                        <% if SettingsManager.get('tax.enable_taxes') %>
+                        <div class="info-item">
+                            <i class="fas fa-receipt me-2"></i>
+                            <span>Tax System: <strong>Enabled</strong></span>
+                        </div>
+                        <% end %>
+                        
+                        <!-- System Status Indicators -->
+                        <div class="status-indicators mt-3">
+                            <div class="status-item">
+                                <span class="status-dot status-success"></span>
+                                <small>API Online</small>
+                            </div>
+                            <% if SettingsManager.get('security.force_ssl') %>
+                            <div class="status-item">
+                                <span class="status-dot status-success"></span>
+                                <small>SSL Secured</small>
+                            </div>
+                            <% end %>
+                            <% if SettingsManager.get('payment.stripe.secret_key') && !SettingsManager.get('payment.stripe.secret_key').empty? %>
+                            <div class="status-item">
+                                <span class="status-dot status-info"></span>
+                                <small>Stripe Ready</small>
+                            </div>
+                            <% end %>
+                            <% if SettingsManager.get('payment.paypal.client_id') && !SettingsManager.get('payment.paypal.client_id').empty? %>
+                            <div class="status-item">
+                                <span class="status-dot status-warning"></span>
+                                <small>PayPal Ready</small>
+                            </div>
+                            <% end %>
+                        </div>
                     </div>
-                    <div class="mb-2">
-                        <i class="fas fa-globe me-2"></i>
-                        <a href="/" class="text-light text-decoration-none">
-                            <%= ENV['APP_HOST'] || 'localhost:4567' %>
-                        </a>
-                    </div>
-                    <div class="mb-2">
-                        <i class="fas fa-clock me-2"></i>
-                        24/7 License Validation
-                    </div>
-                </div>
-                
-                <!-- API Status -->
-                <div class="mt-3">
-                    <small class="text-light d-flex align-items-center">
-                        <span class="me-2" style="width: 8px; height: 8px; border-radius: 50%; background-color: <%= custom_color('success', '#27ae60') %>"></span>
-                        API Status: Online
-                    </small>
                 </div>
             </div>
         </div>
         
-        <hr class="my-4" style="border-color: rgba(255,255,255,0.2);">
-        
-        <!-- Bottom Footer -->
+        <!-- Footer Bottom -->
+        <hr class="footer-divider">
         <div class="row align-items-center">
-            <div class="col-md-6">
-                <p class="mb-0 text-light">
-                    &copy; <%= Date.today.year %> <%= custom('branding.company_name', 'Your Company') %>. 
-                    Licensed under <a href="/LICENSE" class="text-light">GPL v2</a>.
-                </p>
-            </div>
-            <div class="col-md-6 text-md-end">
-                <div class="d-flex justify-content-md-end justify-content-start align-items-center gap-3">
-                    <!-- Security Badges -->
-                    <small class="text-light d-flex align-items-center">
-                        <i class="fas fa-shield-alt me-1" style="color: <%= custom_color('success', '#27ae60') %>"></i>
-                        SSL Secured
-                    </small>
-                    
-                    <!-- Payment Security -->
-                    <% if stripe_enabled? || paypal_enabled? %>
-                    <small class="text-light d-flex align-items-center">
-                        <i class="fas fa-lock me-1" style="color: <%= custom_color('success', '#27ae60') %>"></i>
-                        PCI Compliant
-                    </small>
-                    <% end %>
-                    
-                    <!-- Version Info (for development) -->
-                    <% if development? && feature_enabled?('show_version_info') %>
-                    <small class="text-muted">
-                        v1.0.0-dev
-                    </small>
-                    <% end %>
+            <div class="col-md-8">
+                <div class="footer-bottom-text">
+                    <p class="mb-1">
+                        &copy; <%= Date.today.year %> <%= SettingsManager.get('app.organization_name') %>. 
+                        Powered by <a href="https://github.com/PixelRidge-Softworks/Source-License" target="_blank" rel="noopener" class="footer-link">Source-License</a>.
+                    </p>
+                    <p class="mb-0 small">
+                        Source-License made by <a href="https://github.com/PixelRidge-Softworks/Source-License" target="_blank" rel="noopener" class="footer-link">PixelRidge Softworks & Contributors</a> - 
+                        Licensed under <a href="https://github.com/PixelRidge-Softworks/Source-License/blob/main/LICENSE" target="_blank" rel="noopener" class="footer-link">GPL v2</a>.
+                    </p>
                 </div>
             </div>
-        </div>
-    </div>
-</footer>
-
-<!-- Support Chat/Help Widget (customizable) -->
-<% unless request.path.start_with?('/admin') %>
-<% if feature_enabled?('show_help_widget') %>
-<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1000;">
-    <div class="toast" id="helpToast" role="alert" aria-live="assertive" aria-atomic="true">
-        <div class="toast-header text-white" style="background-color: <%= custom_color('primary', '#2c3e50') %>">
-            <i class="fas fa-question-circle me-2"></i>
-            <strong class="me-auto">Need Help?</strong>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
-        </div>
-        <div class="toast-body">
-            <p class="mb-2">Having trouble with your license?</p>
-            <div class="d-grid gap-2">
-                <a href="/my-licenses" class="btn btn-sm btn-outline-primary">
-                    <i class="fas fa-key me-1"></i> Check My Licenses
-                </a>
-                <a href="#support" class="btn btn-sm btn-outline-secondary">
-                    <i class="fas fa-life-ring me-1"></i> Get Support
-                </a>
+            <div class="col-md-4 text-md-end">
+                <div class="footer-badges">
+                    <% if SettingsManager.get('app.environment') == 'production' %>
+                    <span class="status-badge status-active">Production</span>
+                    <% else %>
+                    <span class="status-badge status-pending">Development</span>
+                    <% end %>
+                    <span class="status-badge" style="background: rgba(35, 134, 54, 0.2); color: var(--accent-primary); border: 1px solid rgba(35, 134, 54, 0.3);">Open Source</span>
+                </div>
             </div>
         </div>
     </div>
     
-    <!-- Help Button -->
-    <button class="btn rounded-circle shadow" 
-            onclick="toggleHelpToast()" 
-            style="width: 56px; height: 56px; background-color: <%= custom_color('primary', '#2c3e50') %>; border-color: <%= custom_color('primary', '#2c3e50') %>">
-        <i class="fas fa-question fa-lg text-white"></i>
+    <!-- Floating Back to Top Button -->
+    <button id="backToTop" class="btn-back-to-top" onclick="scrollToTop()" title="Back to top">
+        <i class="fas fa-chevron-up"></i>
     </button>
-</div>
+</footer>
 
-<script>
-// Help toast functionality
-function toggleHelpToast() {
-    const toastElement = document.getElementById('helpToast');
-    const toast = new bootstrap.Toast(toastElement);
-    toast.show();
+<style>
+/* Footer Styles - Consistent with App Theme */
+.footer {
+    background: var(--surface-primary);
+    border-top: 1px solid var(--border-default);
+    color: var(--text-primary);
+    margin-top: auto;
 }
 
-// Auto-show help toast on first visit (using localStorage)
-document.addEventListener('DOMContentLoaded', function() {
-    if (!localStorage.getItem('helpToastShown') && !window.location.pathname.startsWith('/admin')) {
-        setTimeout(() => {
-            toggleHelpToast();
-            localStorage.setItem('helpToastShown', 'true');
-        }, 5000); // Show after 5 seconds
+.footer-section {
+    height: 100%;
+}
+
+.footer-logo {
+    width: 48px;
+    height: 48px;
+    background: var(--gradient-primary);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.5rem;
+    box-shadow: var(--shadow-sm);
+}
+
+.footer-brand {
+    color: var(--text-primary);
+    font-weight: 700;
+    font-size: 1.25rem;
+}
+
+.footer-version {
+    color: var(--text-muted);
+    font-size: 0.875rem;
+}
+
+.footer-description {
+    color: var(--text-secondary);
+    line-height: 1.6;
+}
+
+.footer-title {
+    color: var(--text-primary);
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--accent-primary);
+    display: inline-block;
+    font-size: 1rem;
+}
+
+.footer-links {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.footer-links li {
+    margin-bottom: 0.75rem;
+}
+
+.footer-links a {
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.footer-links a:hover {
+    color: var(--accent-primary);
+    padding-left: 0.5rem;
+    transform: translateX(4px);
+}
+
+.footer-links a i {
+    width: 16px;
+    opacity: 0.7;
+    font-size: 0.875rem;
+}
+
+.social-links {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.social-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background: var(--surface-tertiary);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-default);
+    border-radius: 8px;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    font-size: 1.1rem;
+}
+
+.social-link:hover {
+    background: var(--accent-primary);
+    color: white;
+    border-color: var(--accent-primary);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow);
+}
+
+.system-info {
+    font-size: 0.875rem;
+}
+
+.info-item {
+    color: var(--text-secondary);
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    font-weight: 500;
+}
+
+.info-item i {
+    width: 18px;
+    opacity: 0.7;
+    color: var(--accent-primary);
+}
+
+.info-item strong {
+    color: var(--text-primary);
+}
+
+.status-indicators {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.status-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.status-success {
+    background: var(--bs-success);
+}
+
+.status-info {
+    background: var(--bs-info);
+}
+
+.status-warning {
+    background: var(--bs-warning);
+}
+
+.footer-divider {
+    border-color: var(--border-default);
+    margin: 2rem 0 1.5rem 0;
+    opacity: 1;
+}
+
+.footer-bottom-text {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    line-height: 1.5;
+}
+
+.footer-link {
+    color: var(--accent-secondary);
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.footer-link:hover {
+    color: var(--text-primary);
+    text-decoration: underline;
+}
+
+.footer-badges {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+}
+
+.btn-back-to-top {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    width: 48px;
+    height: 48px;
+    background: var(--gradient-primary);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    box-shadow: var(--shadow-lg);
+    transition: all 0.3s ease;
+    z-index: 1000;
+}
+
+.btn-back-to-top:hover {
+    background: var(--gradient-secondary);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-xl);
+}
+
+.btn-back-to-top.show {
+    display: flex;
+}
+
+@media (max-width: 768px) {
+    .footer {
+        padding-top: 2rem;
+    }
+    
+    .footer-badges {
+        justify-content: flex-start;
+        margin-top: 1rem;
+    }
+    
+    .status-indicators {
+        justify-content: flex-start;
+    }
+    
+    .social-links {
+        justify-content: flex-start;
+    }
+    
+    .footer-title {
+        font-size: 0.95rem;
+    }
+    
+    .btn-back-to-top {
+        bottom: 1rem;
+        right: 1rem;
+        width: 44px;
+        height: 44px;
+    }
+}
+
+@media (max-width: 576px) {
+    .footer-section {
+        margin-bottom: 2rem;
+    }
+    
+    .footer-logo {
+        width: 40px;
+        height: 40px;
+        font-size: 1.25rem;
+    }
+    
+    .footer-brand {
+        font-size: 1.1rem;
+    }
+}
+</style>
+
+<!-- Footer JavaScript -->
+<script>
+// Back to top functionality
+window.addEventListener('scroll', function() {
+    const backToTopButton = document.getElementById('backToTop');
+    if (window.pageYOffset > 300) {
+        backToTopButton.classList.add('show');
+    } else {
+        backToTopButton.classList.remove('show');
     }
 });
+
+function scrollToTop() {
+    window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+    });
+}
+
+// Initialize tooltips for footer elements
+document.addEventListener('DOMContentLoaded', function() {
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[title]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
 </script>
-<% end %>
-<% end %>

@@ -1,0 +1,395 @@
+<!-- Create Admin Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-1">Create New Admin</h1>
+        <p class="text-muted mb-0">Add a new administrator account with secure credentials</p>
+    </div>
+    <div>
+        <a href="/admin/admins" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Back to Admin Management
+        </a>
+    </div>
+</div>
+
+<!-- Error Alert -->
+<% if @error %>
+<div class="alert alert-danger alert-dismissible fade show">
+    <i class="fas fa-exclamation-triangle me-2"></i>
+    <%= @error %>
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+<% end %>
+
+<!-- Create Admin Form -->
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="data-table">
+            <h5 class="table-header">
+                <i class="fas fa-user-plus me-2"></i>
+                Administrator Information
+            </h5>
+            
+            <div class="p-4">
+                <form method="POST" action="/admin/admins" class="admin-form">
+                    <input type="hidden" name="_token" value="<%= session[:csrf_token] %>">
+                    
+                    <!-- Personal Information Section -->
+                    <div class="form-section mb-4">
+                        <h6 class="section-title">
+                            <i class="fas fa-user me-2"></i>Personal Information
+                        </h6>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="name" class="form-label">
+                                        Full Name <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="text" id="name" name="name" class="form-control" 
+                                           value="<%= h(params[:name]) %>" required 
+                                           placeholder="Enter the admin's full name">
+                                    <div class="form-text">The display name for this admin account</div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="email" class="form-label">
+                                        Email Address <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="email" id="email" name="email" class="form-control" 
+                                           value="<%= h(params[:email]) %>" required 
+                                           placeholder="admin@example.com">
+                                    <div class="form-text">This will be used as the login username</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Security Section -->
+                    <div class="form-section mb-4">
+                        <h6 class="section-title">
+                            <i class="fas fa-lock me-2"></i>Security Credentials
+                        </h6>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="password" class="form-label">
+                                        Password <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="input-group">
+                                        <input type="password" id="password" name="password" class="form-control" 
+                                               required placeholder="Enter a secure password">
+                                        <button type="button" class="btn btn-outline-secondary" 
+                                                onclick="togglePasswordVisibility('password')">
+                                            <i class="fas fa-eye" id="password-toggle-icon"></i>
+                                        </button>
+                                    </div>
+                                    <div class="form-text">Must meet all security requirements below</div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="confirm_password" class="form-label">
+                                        Confirm Password <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="input-group">
+                                        <input type="password" id="confirm_password" name="confirm_password" 
+                                               class="form-control" required placeholder="Re-enter the password">
+                                        <button type="button" class="btn btn-outline-secondary" 
+                                                onclick="togglePasswordVisibility('confirm_password')">
+                                            <i class="fas fa-eye" id="confirm_password-toggle-icon"></i>
+                                        </button>
+                                    </div>
+                                    <div class="form-text">Must match the password above</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Password Requirements -->
+                    <div class="password-requirements mb-4">
+                        <div class="card">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0">
+                                    <i class="fas fa-shield-alt me-2"></i>Password Security Requirements
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <ul class="requirements-list list-unstyled">
+                                            <li id="req-length" class="mb-2">
+                                                <i class="fas fa-times text-danger me-2"></i>
+                                                At least 12 characters long
+                                            </li>
+                                            <li id="req-upper" class="mb-2">
+                                                <i class="fas fa-times text-danger me-2"></i>
+                                                Contains uppercase letter (A-Z)
+                                            </li>
+                                            <li id="req-lower" class="mb-2">
+                                                <i class="fas fa-times text-danger me-2"></i>
+                                                Contains lowercase letter (a-z)
+                                            </li>
+                                        </ul>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <ul class="requirements-list list-unstyled">
+                                            <li id="req-number" class="mb-2">
+                                                <i class="fas fa-times text-danger me-2"></i>
+                                                Contains number (0-9)
+                                            </li>
+                                            <li id="req-special" class="mb-2">
+                                                <i class="fas fa-times text-danger me-2"></i>
+                                                Contains special character (!@#$%^&*)
+                                            </li>
+                                            <li id="req-match" class="mb-2">
+                                                <i class="fas fa-times text-danger me-2"></i>
+                                                Passwords match
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Form Actions -->
+                    <div class="d-flex gap-3 justify-content-end">
+                        <a href="/admin/admins" class="btn btn-secondary">
+                            <i class="fas fa-times me-2"></i>Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary" id="submit-btn" disabled>
+                            <i class="fas fa-user-plus me-2"></i>Create Admin Account
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Custom Styles -->
+<style>
+.form-section {
+    border-bottom: 1px solid var(--border-default);
+    padding-bottom: 1.5rem;
+}
+
+.form-section:last-of-type {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.section-title {
+    color: var(--text-primary);
+    font-weight: 600;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+}
+
+.password-requirements .card {
+    background: var(--surface-secondary);
+    border: 1px solid var(--border-default);
+}
+
+.password-requirements .card-header {
+    background: var(--surface-tertiary) !important;
+    border-bottom: 1px solid var(--border-default);
+}
+
+.requirements-list li {
+    font-size: 0.875rem;
+    display: flex;
+    align-items: center;
+}
+
+.requirements-list li.valid {
+    color: var(--success);
+}
+
+.requirements-list li.valid i {
+    color: var(--success);
+}
+
+.form-control:focus {
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 0.2rem rgba(35, 134, 54, 0.25);
+}
+
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.input-group .btn {
+    border-left: none;
+}
+
+.input-group .form-control:focus + .btn {
+    border-color: var(--accent-primary);
+}
+
+@media (max-width: 768px) {
+    .d-flex.gap-3 {
+        flex-direction: column;
+    }
+    
+    .d-flex.gap-3 .btn {
+        width: 100%;
+    }
+}
+</style>
+
+<!-- Admin Creation JavaScript -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const passwordInput = document.getElementById('password');
+    const confirmInput = document.getElementById('confirm_password');
+    const submitBtn = document.getElementById('submit-btn');
+    
+    const requirements = {
+        length: /^.{12,}$/,
+        upper: /[A-Z]/,
+        lower: /[a-z]/,
+        number: /\d/,
+        special: /[!@#$%^&*(),.?":{}|<>]/
+    };
+    
+    function checkRequirements() {
+        const password = passwordInput.value;
+        const confirm = confirmInput.value;
+        
+        // Check each requirement
+        Object.keys(requirements).forEach(req => {
+            const element = document.getElementById(`req-${req}`);
+            const isValid = requirements[req].test(password);
+            
+            element.classList.toggle('valid', isValid);
+            const icon = element.querySelector('i');
+            icon.className = isValid ? 'fas fa-check text-success me-2' : 'fas fa-times text-danger me-2';
+        });
+        
+        // Check password match
+        const matchElement = document.getElementById('req-match');
+        const passwordsMatch = password && confirm && password === confirm;
+        
+        matchElement.classList.toggle('valid', passwordsMatch);
+        const matchIcon = matchElement.querySelector('i');
+        matchIcon.className = passwordsMatch ? 'fas fa-check text-success me-2' : 'fas fa-times text-danger me-2';
+        
+        // Check if all requirements are met
+        const allValid = Object.keys(requirements).every(req => requirements[req].test(password)) && passwordsMatch && password.length > 0;
+        
+        submitBtn.disabled = !allValid;
+        
+        if (allValid) {
+            submitBtn.classList.remove('btn-secondary');
+            submitBtn.classList.add('btn-primary');
+        } else {
+            submitBtn.classList.remove('btn-primary');
+            submitBtn.classList.add('btn-secondary');
+        }
+    }
+    
+    // Password visibility toggle
+    window.togglePasswordVisibility = function(inputId) {
+        const input = document.getElementById(inputId);
+        const icon = document.getElementById(inputId + '-toggle-icon');
+        
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.className = 'fas fa-eye-slash';
+        } else {
+            input.type = 'password';
+            icon.className = 'fas fa-eye';
+        }
+    };
+    
+    // Event listeners
+    passwordInput.addEventListener('input', checkRequirements);
+    confirmInput.addEventListener('input', checkRequirements);
+    
+    // Form validation
+    document.querySelector('.admin-form').addEventListener('submit', function(e) {
+        const email = document.getElementById('email').value;
+        const name = document.getElementById('name').value;
+        
+        if (!name.trim()) {
+            e.preventDefault();
+            alert('Please enter the admin\'s full name.');
+            return;
+        }
+        
+        if (!email.trim()) {
+            e.preventDefault();
+            alert('Please enter a valid email address.');
+            return;
+        }
+        
+        if (submitBtn.disabled) {
+            e.preventDefault();
+            alert('Please ensure all password requirements are met.');
+            return;
+        }
+        
+        // Show loading state
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Creating Admin...';
+    });
+    
+    // Initial check
+    checkRequirements();
+    
+    // Auto-focus first field
+    document.getElementById('name').focus();
+});
+
+// Email validation
+document.getElementById('email').addEventListener('blur', function() {
+    const email = this.value;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    
+    if (email && !emailRegex.test(email)) {
+        this.classList.add('is-invalid');
+        let feedback = this.parentNode.querySelector('.invalid-feedback');
+        if (!feedback) {
+            feedback = document.createElement('div');
+            feedback.className = 'invalid-feedback';
+            this.parentNode.appendChild(feedback);
+        }
+        feedback.textContent = 'Please enter a valid email address.';
+    } else {
+        this.classList.remove('is-invalid');
+        const feedback = this.parentNode.querySelector('.invalid-feedback');
+        if (feedback) {
+            feedback.remove();
+        }
+    }
+});
+
+// Name validation
+document.getElementById('name').addEventListener('blur', function() {
+    const name = this.value.trim();
+    
+    if (name && name.length < 2) {
+        this.classList.add('is-invalid');
+        let feedback = this.parentNode.querySelector('.invalid-feedback');
+        if (!feedback) {
+            feedback = document.createElement('div');
+            feedback.className = 'invalid-feedback';
+            this.parentNode.appendChild(feedback);
+        }
+        feedback.textContent = 'Name must be at least 2 characters long.';
+    } else {
+        this.classList.remove('is-invalid');
+        const feedback = this.parentNode.querySelector('.invalid-feedback');
+        if (feedback) {
+            feedback.remove();
+        }
+    }
+});
+</script>

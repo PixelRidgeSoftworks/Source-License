@@ -1,0 +1,289 @@
+<!-- Edit Admin Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-1">Edit Administrator</h1>
+        <p class="text-muted mb-0">Modify administrator account details and permissions</p>
+    </div>
+    <div>
+        <a href="/admin/admins" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Back to Admin Management
+        </a>
+    </div>
+</div>
+
+<!-- Error Alert -->
+<% if @error %>
+<div class="alert alert-danger alert-dismissible fade show">
+    <i class="fas fa-exclamation-triangle me-2"></i>
+    <%= @error %>
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+<% end %>
+
+<!-- Edit Admin Form -->
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="data-table">
+            <h5 class="table-header">
+                <i class="fas fa-user-edit me-2"></i>
+                Administrator Information
+            </h5>
+            
+            <div class="p-4">
+                <form method="POST" action="/admin/admins/<%= @admin.id %>" class="admin-form">
+                    <input type="hidden" name="_method" value="PUT">
+                    <input type="hidden" name="_token" value="<%= csrf_token %>">
+                    
+                    <!-- Admin Info Section -->
+                    <div class="form-section mb-4">
+                        <h6 class="section-title">
+                            <i class="fas fa-user me-2"></i>Personal Information
+                        </h6>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="name" class="form-label">
+                                        Full Name <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="text" id="name" name="name" class="form-control" 
+                                           value="<%= h(@admin.name) %>" required 
+                                           placeholder="Enter the admin's full name">
+                                    <div class="form-text">The display name for this admin account</div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="email" class="form-label">
+                                        Email Address <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="email" id="email" name="email" class="form-control" 
+                                           value="<%= h(@admin.email) %>" required 
+                                           placeholder="admin@example.com">
+                                    <div class="form-text">Used for login and notifications</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Status Section -->
+                    <div class="form-section mb-4">
+                        <h6 class="section-title">
+                            <i class="fas fa-shield-alt me-2"></i>Account Status
+                        </h6>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="status" class="form-label">
+                                        Status <span class="text-danger">*</span>
+                                    </label>
+                                    <select id="status" name="status" class="form-select" required>
+                                        <option value="active" <%= 'selected' if @admin.status == 'active' %>>
+                                            Active - Can log in and perform admin functions
+                                        </option>
+                                        <option value="inactive" <%= 'selected' if @admin.status == 'inactive' %>>
+                                            Inactive - Cannot log in
+                                        </option>
+                                        <option value="locked" <%= 'selected' if @admin.status == 'locked' %>>
+                                            Locked - Temporarily suspended
+                                        </option>
+                                        <option value="suspended" <%= 'selected' if @admin.status == 'suspended' %>>
+                                            Suspended - Permanently suspended
+                                        </option>
+                                    </select>
+                                    <div class="form-text">Controls account access and permissions</div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Account Information</label>
+                                    <div class="info-box">
+                                        <div class="d-flex justify-content-between mb-2">
+                                            <span>Account ID:</span>
+                                            <code>#<%= @admin.id %></code>
+                                        </div>
+                                        <div class="d-flex justify-content-between mb-2">
+                                            <span>Created:</span>
+                                            <span><%= format_date(@admin.created_at, :datetime) %></span>
+                                        </div>
+                                        <div class="d-flex justify-content-between mb-2">
+                                            <span>Last Updated:</span>
+                                            <span><%= format_date(@admin.updated_at, :datetime) %></span>
+                                        </div>
+                                        <% if @admin.last_login_at %>
+                                        <div class="d-flex justify-content-between">
+                                            <span>Last Login:</span>
+                                            <span><%= format_date(@admin.last_login_at, :datetime) %></span>
+                                        </div>
+                                        <% end %>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Protection Notice -->
+                    <% if is_original_admin?(@admin) %>
+                    <div class="alert alert-warning">
+                        <i class="fas fa-shield-alt me-2"></i>
+                        <strong>Protected Account:</strong> This is the original admin account created during installation. 
+                        Some restrictions apply to protect system access.
+                    </div>
+                    <% end %>
+                    
+                    <!-- Form Actions -->
+                    <div class="d-flex gap-3 justify-content-between">
+                        <div>
+                            <a href="/admin/admins/<%= @admin.id %>/reset-password" class="btn btn-warning">
+                                <i class="fas fa-key me-2"></i>Reset Password
+                            </a>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <a href="/admin/admins" class="btn btn-secondary">
+                                <i class="fas fa-times me-2"></i>Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Save Changes
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Custom Styles -->
+<style>
+.form-section {
+    border-bottom: 1px solid var(--border-default);
+    padding-bottom: 1.5rem;
+}
+
+.form-section:last-of-type {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.section-title {
+    color: var(--text-primary);
+    font-weight: 600;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+}
+
+.info-box {
+    background: var(--surface-tertiary);
+    border: 1px solid var(--border-default);
+    border-radius: 8px;
+    padding: 1rem;
+    font-size: 0.875rem;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 0.2rem rgba(35, 134, 54, 0.25);
+}
+
+@media (max-width: 768px) {
+    .d-flex.gap-3 {
+        flex-direction: column;
+    }
+    
+    .d-flex.gap-3 .btn,
+    .d-flex.gap-2 .btn {
+        width: 100%;
+    }
+}
+</style>
+
+<!-- Admin Edit JavaScript -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-focus first field
+    document.getElementById('name').focus();
+    
+    // Form validation
+    document.querySelector('.admin-form').addEventListener('submit', function(e) {
+        const name = document.getElementById('name').value.trim();
+        const email = document.getElementById('email').value.trim();
+        const status = document.getElementById('status').value;
+        
+        if (!name) {
+            e.preventDefault();
+            alert('Please enter the admin\'s full name.');
+            document.getElementById('name').focus();
+            return;
+        }
+        
+        if (!email) {
+            e.preventDefault();
+            alert('Please enter a valid email address.');
+            document.getElementById('email').focus();
+            return;
+        }
+        
+        if (!status) {
+            e.preventDefault();
+            alert('Please select an account status.');
+            document.getElementById('status').focus();
+            return;
+        }
+        
+        // Show loading state
+        const submitBtn = document.querySelector('button[type="submit"]');
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Saving...';
+    });
+});
+
+// Email validation
+document.getElementById('email').addEventListener('blur', function() {
+    const email = this.value;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    
+    if (email && !emailRegex.test(email)) {
+        this.classList.add('is-invalid');
+        let feedback = this.parentNode.querySelector('.invalid-feedback');
+        if (!feedback) {
+            feedback = document.createElement('div');
+            feedback.className = 'invalid-feedback';
+            this.parentNode.appendChild(feedback);
+        }
+        feedback.textContent = 'Please enter a valid email address.';
+    } else {
+        this.classList.remove('is-invalid');
+        const feedback = this.parentNode.querySelector('.invalid-feedback');
+        if (feedback) {
+            feedback.remove();
+        }
+    }
+});
+
+// Name validation
+document.getElementById('name').addEventListener('blur', function() {
+    const name = this.value.trim();
+    
+    if (name && name.length < 2) {
+        this.classList.add('is-invalid');
+        let feedback = this.parentNode.querySelector('.invalid-feedback');
+        if (!feedback) {
+            feedback = document.createElement('div');
+            feedback.className = 'invalid-feedback';
+            this.parentNode.appendChild(feedback);
+        }
+        feedback.textContent = 'Name must be at least 2 characters long.';
+    } else {
+        this.classList.remove('is-invalid');
+        const feedback = this.parentNode.querySelector('.invalid-feedback');
+        if (feedback) {
+            feedback.remove();
+        }
+    }
+});
+</script>

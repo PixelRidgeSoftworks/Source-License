@@ -461,13 +461,16 @@ function renderSettingsNavigation() {
 // Get icon for category
 function getCategoryIcon(category) {
     const icons = {
+        admin: 'fas fa-user-shield',
         application: 'fas fa-cog',
-        payment: 'fas fa-credit-card',
+        database: 'fas fa-database',
         email: 'fas fa-envelope',
-        security: 'fas fa-shield-alt',
         license: 'fas fa-key',
         monitoring: 'fas fa-chart-line',
-        database: 'fas fa-database'
+        payment: 'fas fa-credit-card',
+        performance: 'fas fa-tachometer-alt',
+        security: 'fas fa-shield-alt',
+        storage: 'fas fa-folder-open'
     };
     return icons[category] || 'fas fa-cog';
 }

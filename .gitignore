@@ -58,3 +58,8 @@ source_license.db
 .github/release.yml
 .github/workflows/ci.yml
 .github/workflows/release.yml
+.env
+test.db
+installer-logs/*
+deployment-logs/*
+.env.backup

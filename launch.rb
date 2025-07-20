@@ -276,8 +276,8 @@ class SourceLicenseLauncher
     end
 
     # Get admin credentials from environment
-    admin_email = ENV['ADMIN_EMAIL'] || 'admin@yourdomain.com'
-    admin_password = ENV['ADMIN_PASSWORD'] || 'admin123'
+    admin_email = ENV['INITIAL_ADMIN_EMAIL'] || 'admin@yourdomain.com'
+    admin_password = ENV['INITIAL_ADMIN_PASSWORD'] || 'admin123'
 
     # Create the admin user using the secure method
     admin = Admin.create_secure_admin(admin_email, admin_password, ['admin'])
@@ -323,7 +323,7 @@ class SourceLicenseLauncher
       required_env_vars = %w[
         APP_ENV APP_SECRET APP_HOST APP_PORT JWT_SECRET
         DATABASE_ADAPTER DATABASE_HOST DATABASE_PORT DATABASE_NAME DATABASE_USER DATABASE_PASSWORD
-        ADMIN_EMAIL ADMIN_PASSWORD
+        INITIAL_ADMIN_EMAIL INITIAL_ADMIN_PASSWORD
         STRIPE_PUBLISHABLE_KEY STRIPE_SECRET_KEY STRIPE_WEBHOOK_SECRET
         PAYPAL_CLIENT_ID PAYPAL_CLIENT_SECRET PAYPAL_ENVIRONMENT
         SMTP_HOST SMTP_PORT SMTP_USERNAME SMTP_PASSWORD SMTP_TLS
@@ -400,7 +400,7 @@ class SourceLicenseLauncher
     puts "APP_ENV: #{ENV['APP_ENV'] || 'development'}"
     puts "APP_HOST: #{ENV['APP_HOST'] || 'localhost'}"
     puts "APP_PORT: #{ENV['APP_PORT'] || '4567'}"
-    puts "ADMIN_EMAIL: #{ENV['ADMIN_EMAIL'] || 'NOT SET'}"
+    puts "INITIAL_ADMIN_EMAIL: #{ENV['INITIAL_ADMIN_EMAIL'] || 'NOT SET'}"
 
     # Show payment configuration status
     stripe_configured = ENV.fetch('STRIPE_SECRET_KEY', nil) && !ENV['STRIPE_SECRET_KEY'].empty?

@@ -660,7 +660,7 @@ module AdminControllers::FeaturesController
   end
 
   # Generate licenses for completed order
-  def self.generate_licenses_for_order(order)
+  def generate_licenses_for_order(order)
     return unless order.completed?
 
     order.order_items.each do |item|
@@ -672,7 +672,7 @@ module AdminControllers::FeaturesController
   end
 
   # Calculate revenue statistics for date range
-  def self.calculate_revenue_stats(start_time, end_time)
+  def calculate_revenue_stats(start_time, end_time)
     completed_orders = Order.where(status: 'completed', created_at: start_time..end_time)
 
     total_revenue = completed_orders.sum(:amount) || 0
@@ -697,7 +697,7 @@ module AdminControllers::FeaturesController
   end
 
   # Calculate license statistics for date range
-  def self.calculate_license_stats(start_time, end_time)
+  def calculate_license_stats(start_time, end_time)
     licenses_in_period = License.where(created_at: start_time..end_time)
 
     total_licenses = licenses_in_period.count
@@ -724,7 +724,7 @@ module AdminControllers::FeaturesController
   end
 
   # Calculate order statistics for date range
-  def self.calculate_order_stats(start_time, end_time)
+  def calculate_order_stats(start_time, end_time)
     orders_in_period = Order.where(created_at: start_time..end_time)
 
     total_orders = orders_in_period.count
@@ -757,7 +757,7 @@ module AdminControllers::FeaturesController
   end
 
   # Calculate customer statistics for date range
-  def self.calculate_customer_stats(start_time, end_time)
+  def calculate_customer_stats(start_time, end_time)
     new_customers = User.where(created_at: start_time..end_time).count
 
     # Customer activity
@@ -793,7 +793,7 @@ module AdminControllers::FeaturesController
   end
 
   # Calculate product performance for date range
-  def self.calculate_product_performance(start_time, end_time)
+  def calculate_product_performance(start_time, end_time)
     # Get order items in the period with product info
     performance_data = DB[:order_items]
       .join(:orders, id: :order_id)
@@ -825,7 +825,7 @@ module AdminControllers::FeaturesController
   end
 
   # Calculate revenue trend data for charts
-  def self.calculate_revenue_trend(start_time, end_time)
+  def calculate_revenue_trend(start_time, end_time)
     # Group by day for date ranges up to 90 days, otherwise by week
     period_length = (end_time - start_time) / (24 * 60 * 60)
 
@@ -868,19 +868,19 @@ module AdminControllers::FeaturesController
   end
 
   # Calculate license distribution by status
-  def self.calculate_license_distribution
+  def calculate_license_distribution
     result = License.group(:status).count
-    result.empty? ? { 'no_data' => 1 } : result
+    result.is_a?(Hash) && result.any? ? result : { 'no_data' => 1 }
   end
 
   # Calculate order status distribution for date range
-  def self.calculate_order_status_distribution(start_time, end_time)
+  def calculate_order_status_distribution(start_time, end_time)
     result = Order.where(created_at: start_time..end_time).group(:status).count
-    result.empty? ? { 'no_data' => 1 } : result
+    result.is_a?(Hash) && result.any? ? result : { 'no_data' => 1 }
   end
 
   # Calculate monthly growth data for the last 12 months
-  def self.calculate_monthly_growth_data
+  def calculate_monthly_growth_data
     twelve_months_ago = Date.today - 365
 
     month_func = case DB.database_type
@@ -906,7 +906,7 @@ module AdminControllers::FeaturesController
   end
 
   # Generate CSV reports
-  def self.generate_summary_csv_report(start_time, end_time)
+  def generate_summary_csv_report(start_time, end_time)
     revenue_stats = calculate_revenue_stats(start_time, end_time)
     license_stats = calculate_license_stats(start_time, end_time)
     order_stats = calculate_order_stats(start_time, end_time)
@@ -928,7 +928,7 @@ module AdminControllers::FeaturesController
     csv_data
   end
 
-  def self.generate_revenue_csv_report(start_time, end_time)
+  def generate_revenue_csv_report(start_time, end_time)
     orders = Order.where(status: 'completed', created_at: start_time..end_time).order(:created_at)
 
     csv_data = "Date,Order ID,Customer Email,Amount,Payment Method,Products\n"
@@ -940,7 +940,7 @@ module AdminControllers::FeaturesController
     csv_data
   end
 
-  def self.generate_licenses_csv_report(start_time, end_time)
+  def generate_licenses_csv_report(start_time, end_time)
     licenses = License.where(created_at: start_time..end_time).order(:created_at)
 
     csv_data = "Date,License Key,Customer Email,Product,Status,Max Activations,Used Activations\n"
@@ -951,7 +951,7 @@ module AdminControllers::FeaturesController
     csv_data
   end
 
-  def self.generate_orders_csv_report(start_time, end_time)
+  def generate_orders_csv_report(start_time, end_time)
     orders = Order.where(created_at: start_time..end_time).order(:created_at)
 
     csv_data = "Date,Order ID,Customer Email,Customer Name,Amount,Status,Payment Method,Items Count\n"
@@ -963,7 +963,7 @@ module AdminControllers::FeaturesController
     csv_data
   end
 
-  def self.generate_customers_csv_report(start_time, end_time)
+  def generate_customers_csv_report(start_time, end_time)
     customers = User.where(created_at: start_time..end_time).order(:created_at)
 
     csv_data = "Registration Date,Name,Email,Status,License Count,Total Orders,Last Login\n"
@@ -975,7 +975,7 @@ module AdminControllers::FeaturesController
     csv_data
   end
 
-  def self.format_currency(amount, _currency = 'USD')
+  def format_currency(amount, _currency = 'USD')
     "$#{format('%.2f', amount || 0)}"
   end
 end

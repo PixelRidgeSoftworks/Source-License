@@ -58,7 +58,12 @@ class User < Sequel::Model
 
   # Check if account is active
   def active?
-    status == 'active'
+    # Support both status field and active boolean field
+    if respond_to?(:active) && !self[:active].nil?
+      self[:active] == true
+    else
+      status == 'active'
+    end
   end
 
   # Account status management
@@ -373,15 +378,30 @@ class Admin < Sequel::Model
 
   # Secure admin creation
   def self.create_secure_admin(email, password, roles = ['admin'])
+    # Normalize email first to check for existing
+    normalized_email = email.strip.downcase
+    
+    # Check if admin already exists with this email
+    existing_admin = Admin.first(email: normalized_email)
+    if existing_admin
+      puts "Admin with email #{normalized_email} already exists (ID: #{existing_admin.id})"
+      return existing_admin
+    end
+
     admin = new
-    admin.email = email.strip.downcase
+    admin.email = normalized_email
     admin.password = password
     admin.roles = roles.join(',')
     admin.status = 'active'
     admin.created_at = Time.now
     admin.password_changed_at = Time.now
 
-    admin.save_changes if admin.valid?
+    if admin.valid?
+      admin.save_changes
+      puts "Created new admin: #{normalized_email} (ID: #{admin.id})"
+    else
+      puts "Failed to create admin: #{admin.errors.full_messages.join(', ')}"
+    end
 
     admin
   end
@@ -532,6 +552,7 @@ class Order < Sequel::Model
   set_dataset :orders
   one_to_many :order_items
   one_to_many :licenses
+  one_to_many :order_taxes
 
   # Parse payment details from JSON
   def payment_details_hash
@@ -550,6 +571,16 @@ class Order < Sequel::Model
   # Get formatted amount
   def formatted_amount
     "$#{format('%.2f', amount)}"
+  end
+
+  # Get formatted subtotal (before taxes)
+  def formatted_subtotal
+    "$#{format('%.2f', subtotal || 0)}"
+  end
+
+  # Get formatted tax total
+  def formatted_tax_total
+    "$#{format('%.2f', tax_total || 0)}"
   end
 
   # Check order status
@@ -574,9 +605,120 @@ class Order < Sequel::Model
     update(status: 'completed', completed_at: Time.now)
   end
 
-  # Calculate total from order items
-  def calculate_total
+  # Calculate subtotal from order items (before taxes)
+  def calculate_subtotal
     order_items.sum { |item| item.price * item.quantity }
+  end
+
+  # Calculate tax total from order taxes
+  def calculate_tax_total
+    order_taxes.sum(&:amount)
+  end
+
+  # Calculate total (subtotal + taxes)
+  def calculate_total
+    calculate_subtotal + calculate_tax_total
+  end
+
+  # Apply taxes to order
+  def apply_taxes!
+    # Check if taxes are enabled globally
+    return 0.0 unless SettingsManager.get('tax.enable_taxes')
+
+    # Clear existing taxes
+    order_taxes_dataset.delete
+
+    subtotal_amount = calculate_subtotal
+    return 0.0 if subtotal_amount <= 0
+
+    total_tax = 0.0
+
+    # Only apply taxes if auto-apply is enabled
+    if SettingsManager.get('tax.auto_apply_taxes')
+      # Apply all active taxes
+      Tax.active.each do |tax|
+        tax_amount = tax.calculate_amount(subtotal_amount)
+        next if tax_amount <= 0
+
+        # Round tax amount if setting is enabled
+        if SettingsManager.get('tax.round_tax_amounts')
+          tax_amount = tax_amount.round(2)
+        end
+
+        add_order_tax(
+          tax_id: tax.id,
+          tax_name: tax.name,
+          rate: tax.rate,
+          amount: tax_amount
+        )
+
+        total_tax += tax_amount
+      end
+    end
+
+    # Update order totals
+    update(
+      subtotal: subtotal_amount,
+      tax_total: total_tax,
+      amount: subtotal_amount + total_tax,
+      tax_applied: true
+    )
+
+    total_tax
+  end
+
+  # Apply specific taxes to order (for manual tax application)
+  def apply_specific_taxes!(tax_ids)
+    # Check if taxes are enabled globally
+    return 0.0 unless SettingsManager.get('tax.enable_taxes')
+
+    # Clear existing taxes
+    order_taxes_dataset.delete
+
+    subtotal_amount = calculate_subtotal
+    return 0.0 if subtotal_amount <= 0
+
+    total_tax = 0.0
+
+    # Apply only specified taxes
+    Tax.where(id: tax_ids, status: 'active').each do |tax|
+      tax_amount = tax.calculate_amount(subtotal_amount)
+      next if tax_amount <= 0
+
+      # Round tax amount if setting is enabled
+      if SettingsManager.get('tax.round_tax_amounts')
+        tax_amount = tax_amount.round(2)
+      end
+
+      add_order_tax(
+        tax_id: tax.id,
+        tax_name: tax.name,
+        rate: tax.rate,
+        amount: tax_amount
+      )
+
+      total_tax += tax_amount
+    end
+
+    # Update order totals
+    update(
+      subtotal: subtotal_amount,
+      tax_total: total_tax,
+      amount: subtotal_amount + total_tax,
+      tax_applied: true
+    )
+
+    total_tax
+  end
+
+  # Check if taxes are enabled and should be displayed
+  def should_display_taxes?
+    SettingsManager.get('tax.enable_taxes') && SettingsManager.get('tax.display_tax_breakdown')
+  end
+
+  # Check if prices include tax
+  def tax_inclusive_pricing?
+    SettingsManager.get('tax.include_tax_in_price')
   end
 
   # Get payment URL (would be set during payment processing)
@@ -599,6 +741,18 @@ class Order < Sequel::Model
       quantity: quantity,
       price: price
     )
+  end
+
+  # Get tax breakdown as hash
+  def tax_breakdown
+    order_taxes.map do |order_tax|
+      {
+        name: order_tax.tax_name,
+        rate: order_tax.rate,
+        amount: order_tax.amount,
+        formatted_amount: order_tax.formatted_amount
+      }
+    end
   end
 
   # Validation
@@ -1081,5 +1235,81 @@ class SubscriptionBillingHistory < Sequel::Model
     return unless billing_period_end && billing_period_start && billing_period_end <= billing_period_start
 
     errors.add(:billing_period_end, 'must be after start')
+  end
+end
+
+# Tax configurations for orders
+class Tax < Sequel::Model
+  include BaseModelMethods
+  set_dataset :taxes
+  one_to_many :order_taxes
+
+  # Check if tax is active
+  def active?
+    status == 'active'
+  end
+
+  # Get formatted rate as percentage
+  def formatted_rate
+    "#{format('%.2f', rate)}%"
+  end
+
+  # Calculate tax amount for a given subtotal
+  def calculate_amount(subtotal)
+    return 0.0 unless active? && rate > 0
+
+    (subtotal * rate / 100.0).round(2)
+  end
+
+  # Activate tax
+  def activate!
+    update(status: 'active')
+  end
+
+  # Deactivate tax
+  def deactivate!
+    update(status: 'inactive')
+  end
+
+  # Get all active taxes
+  def self.active
+    where(status: 'active').order(:name)
+  end
+
+  # Validation
+  def validate
+    super
+    errors.add(:name, 'cannot be empty') if !name || name.strip.empty?
+    errors.add(:rate, 'must be greater than or equal to 0') if !rate || rate < 0
+    errors.add(:rate, 'must be less than 100') if rate && rate >= 100
+    errors.add(:status, 'invalid status') unless %w[active inactive].include?(status)
+  end
+
+  # Before save hooks
+  def before_save
+    super
+    self.name = name.strip if name
+    self.status ||= 'active'
+    self.created_at ||= Time.now
+  end
+end
+
+# Order tax tracking
+class OrderTax < Sequel::Model
+  include BaseModelMethods
+  set_dataset :order_taxes
+  many_to_one :order
+  many_to_one :tax
+
+  # Get formatted amount
+  def formatted_amount
+    "$#{format('%.2f', amount)}"
+  end
+
+  # Validation
+  def validate
+    super
+    errors.add(:amount, 'must be greater than or equal to 0') if !amount || amount < 0
+    errors.add(:rate, 'must be greater than or equal to 0') if !rate || rate < 0
   end
 end

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><%= @page_title ? "#{h(@page_title)} - Admin - Source License" : "Admin - Source License" %></title>
+    <title><%= @page_title ? "#{h(@page_title)} - Admin - #{ENV['APP_NAME'] || 'Source License'}" : "Admin - #{ENV['APP_NAME'] || 'Source License'}" %></title>
     
     <!-- Bootstrap CSS (Dark Theme) -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -307,7 +307,7 @@
         <nav class="admin-sidebar" id="adminSidebar">
             <a href="/admin" class="sidebar-brand d-flex align-items-center">
                 <i class="fas fa-shield-alt me-2"></i>
-                <span>Source License Admin</span>
+                <span><%= ENV['APP_NAME'] || 'Source License' %> Admin</span>
             </a>
             
             <ul class="sidebar-nav list-unstyled">
@@ -328,6 +328,16 @@
                 </li>
                 <li class="nav-item">
                     <%= nav_link '<i class="fas fa-chart-bar"></i> Reports', '/admin/reports', class: 'nav-link' %>
+                </li>
+                
+                <hr class="my-3" style="border-color: rgba(255,255,255,0.2);">
+                
+                <!-- Security Section -->
+                <li class="nav-item">
+                    <%= nav_link '<i class="fas fa-users-cog"></i> Admin Management', '/admin/admins', class: 'nav-link' %>
+                </li>
+                <li class="nav-item">
+                    <%= nav_link '<i class="fas fa-ban"></i> Ban Management', '/admin/bans', class: 'nav-link' %>
                 </li>
                 
                 <hr class="my-3" style="border-color: rgba(255,255,255,0.2);">

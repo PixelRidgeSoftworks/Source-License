@@ -1,0 +1,543 @@
+<!-- Ban Management Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-1">Ban Management</h1>
+        <p class="text-muted mb-0">Monitor and manage account bans and security violations</p>
+    </div>
+    <div>
+        <button type="button" class="btn btn-primary" onclick="showSearchModal()">
+            <i class="fas fa-search me-2"></i>Search Account
+        </button>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row g-4 mb-4">
+    <div class="col-xl-3 col-md-6">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <div class="stat-number text-danger"><%= @active_bans.length %></div>
+                    <div class="stat-label">Active Bans</div>
+                </div>
+                <div class="text-danger">
+                    <i class="fas fa-ban fa-2x"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <div class="stat-number text-warning"><%= @active_bans.select { |ban| (ban[:banned_until] - Time.now) < 3600 }.length %></div>
+                    <div class="stat-label">Expiring Soon</div>
+                </div>
+                <div class="text-warning">
+                    <i class="fas fa-clock fa-2x"></i>
+                </div>
+            </div>
+            <div class="mt-3">
+                <small class="text-muted">Next hour</small>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <div class="stat-number text-info"><%= @active_bans.map { |ban| ban[:ban_count] }.max || 0 %></div>
+                    <div class="stat-label">Highest Ban Count</div>
+                </div>
+                <div class="text-info">
+                    <i class="fas fa-chart-line fa-2x"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <div class="stat-number text-success"><%= @active_bans.select { |ban| ban[:admin_id] }.length %></div>
+                    <div class="stat-label">Admin Bans</div>
+                </div>
+                <div class="text-success">
+                    <i class="fas fa-shield-alt fa-2x"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bans Table -->
+<div class="data-table">
+    <h5 class="table-header">
+        <i class="fas fa-ban me-2"></i>
+        Active Account Bans
+    </h5>
+    
+    <div class="table-responsive">
+        <% if @active_bans.any? %>
+        <table class="table table-hover table-dark mb-0">
+            <thead>
+                <tr>
+                    <th>Account</th>
+                    <th>Ban Details</th>
+                    <th>Duration</th>
+                    <th>Progress</th>
+                    <th>Source</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% @active_bans.each do |ban| %>
+                <% time_remaining = ban[:banned_until] - Time.now %>
+                <% duration_text = format_ban_duration(time_remaining) %>
+                <% progress_percent = [(1.0 - (time_remaining / (24 * 60 * 60))) * 100, 0].max.round(1) %>
+                <tr data-email="<%= ban[:email] %>">
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <div class="ban-icon me-3">
+                                <i class="fas fa-user-slash text-danger"></i>
+                            </div>
+                            <div>
+                                <div class="fw-bold">
+                                    <%= h(ban[:email]) %>
+                                    <% if ban[:admin_id] %>
+                                        <span class="badge bg-warning ms-2">Admin</span>
+                                    <% end %>
+                                </div>
+                                <small class="text-muted">
+                                    Banned: <%= ban[:created_at]&.strftime('%m/%d/%Y %I:%M %p') || 'Unknown' %>
+                                </small>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <div>
+                            <span class="ban-count count-<%= ban[:ban_count] %>">
+                                #<%= ban[:ban_count] %>
+                            </span>
+                            <div class="mt-1">
+                                <small class="text-muted">
+                                    <%= h(humanize(ban[:reason]) || 'Multiple failed attempts') %>
+                                </small>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <div>
+                            <div class="fw-bold">Until</div>
+                            <small class="text-muted">
+                                <%= ban[:banned_until].strftime('%m/%d/%Y') %><br>
+                                <%= ban[:banned_until].strftime('%I:%M %p') %>
+                            </small>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="time-remaining" data-until="<%= ban[:banned_until].to_i %>">
+                            <div class="progress mb-1" style="height: 6px;">
+                                <div class="progress-bar <%= time_remaining < 3600 ? 'bg-danger' : 'bg-warning' %>" 
+                                     style="width: <%= progress_percent %>%"></div>
+                            </div>
+                            <small class="<%= 'text-danger fw-bold' if time_remaining < 3600 %>">
+                                <%= duration_text %>
+                            </small>
+                        </div>
+                    </td>
+                    <td>
+                        <div>
+                            <% if ban[:ip_address] %>
+                                <div>
+                                    <i class="fas fa-globe me-1"></i>
+                                    <code class="small"><%= ban[:ip_address] %></code>
+                                </div>
+                            <% end %>
+                            <% if ban[:user_agent] %>
+                                <small class="text-muted d-block mt-1">
+                                    <%= h(truncate(ban[:user_agent], 40)) %>
+                                </small>
+                            <% end %>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="btn-group btn-group-sm">
+                            <button type="button" class="btn btn-outline-success" 
+                                    onclick="removeBan('<%= ban[:email] %>')" 
+                                    title="Remove Ban">
+                                <i class="fas fa-unlock"></i>
+                            </button>
+                            <div class="dropdown">
+                                <button class="btn btn-outline-secondary dropdown-toggle" 
+                                        data-bs-toggle="dropdown">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li>
+                                        <button class="dropdown-item" onclick="resetBanCount('<%= ban[:email] %>')">
+                                            <i class="fas fa-undo me-2"></i>Reset Ban Count
+                                        </button>
+                                    </li>
+                                    <li>
+                                        <button class="dropdown-item" onclick="showBanDetails('<%= ban[:email] %>')">
+                                            <i class="fas fa-info-circle me-2"></i>View Details
+                                        </button>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                <% end %>
+            </tbody>
+        </table>
+        <% else %>
+        <div class="text-center py-5">
+            <i class="fas fa-check-circle text-success mb-3" style="font-size: 3rem;"></i>
+            <h5 class="text-muted">No Active Bans</h5>
+            <p class="text-muted mb-4">
+                There are currently no banned accounts. The progressive ban system is protecting your application.
+            </p>
+            <button class="btn btn-primary" onclick="showSearchModal()">
+                <i class="fas fa-search me-2"></i>Search Specific Account
+            </button>
+        </div>
+        <% end %>
+    </div>
+    
+    <% if @active_bans.any? %>
+    <div class="card-footer" style="background: var(--surface-tertiary); border-top: 1px solid var(--border-default);">
+        <div class="d-flex justify-content-between align-items-center">
+            <small class="text-muted">
+                Showing <%= @active_bans.count %> active ban<%= @active_bans.count != 1 ? 's' : '' %>
+            </small>
+            <div class="btn-group btn-group-sm">
+                <button class="btn btn-outline-secondary" onclick="refreshBanList()">
+                    <i class="fas fa-sync-alt me-1"></i>Refresh
+                </button>
+            </div>
+        </div>
+    </div>
+    <% end %>
+</div>
+
+<!-- Search Modal -->
+<div id="searchModal" class="modal fade">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-search me-2"></i>Search Account Ban Status
+                </h5>
+                <button type="button" class="btn-close" onclick="hideSearchModal()"></button>
+            </div>
+            <div class="modal-body">
+                <form onsubmit="searchAccount(event)">
+                    <div class="mb-3">
+                        <label for="search-email" class="form-label">Email Address</label>
+                        <input type="email" id="search-email" name="email" class="form-control" required 
+                               placeholder="Enter email address to check ban status">
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-search me-1"></i>Search
+                        </button>
+                        <button type="button" class="btn btn-secondary" onclick="hideSearchModal()">
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+                
+                <div id="search-results" class="mt-4" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Custom Styles -->
+<style>
+.ban-icon {
+    width: 40px;
+    height: 40px;
+    background: var(--surface-tertiary);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+}
+
+.ban-count {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-weight: bold;
+    color: white;
+    min-width: 2rem;
+    text-align: center;
+    font-size: 0.875rem;
+}
+
+.count-1 { background: #ffc107; color: #212529; }
+.count-2 { background: #fd7e14; }
+.count-3 { background: #dc3545; }
+.count-4 { background: #6f42c1; }
+.count-5, .count-6, .count-7, .count-8, .count-9 { background: #343a40; }
+
+.progress {
+    background-color: var(--surface-tertiary);
+}
+
+.search-results {
+    border-top: 1px solid var(--border-default);
+    padding-top: 1rem;
+}
+
+.result-card {
+    background: var(--surface-secondary);
+    border: 1px solid var(--border-default);
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+.result-banned {
+    background: rgba(220, 53, 69, 0.1);
+    border-color: rgba(220, 53, 69, 0.3);
+}
+
+.result-clear {
+    background: rgba(40, 167, 69, 0.1);
+    border-color: rgba(40, 167, 69, 0.3);
+}
+
+@media (max-width: 768px) {
+    .ban-icon {
+        width: 30px;
+        height: 30px;
+        font-size: 1rem;
+    }
+    
+    .btn-group-sm .btn {
+        padding: 0.25rem 0.4rem;
+    }
+}
+</style>
+
+<!-- Ban Management JavaScript -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Update time remaining every minute
+    updateTimeRemaining();
+    setInterval(updateTimeRemaining, 60000);
+});
+
+function showSearchModal() {
+    const modal = document.getElementById('searchModal');
+    modal.style.display = 'block';
+    modal.classList.add('show');
+    document.getElementById('search-email').focus();
+}
+
+function hideSearchModal() {
+    const modal = document.getElementById('searchModal');
+    modal.style.display = 'none';
+    modal.classList.remove('show');
+    document.getElementById('search-results').style.display = 'none';
+    document.getElementById('search-email').value = '';
+}
+
+function searchAccount(event) {
+    event.preventDefault();
+    
+    const email = document.getElementById('search-email').value;
+    const resultsDiv = document.getElementById('search-results');
+    
+    resultsDiv.innerHTML = '<p><i class="fas fa-spinner fa-spin"></i> Searching...</p>';
+    resultsDiv.style.display = 'block';
+    
+    fetch(`/admin/bans/search?email=${encodeURIComponent(email)}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                if (data.banned) {
+                    const ban = data.ban_info;
+                    resultsDiv.innerHTML = `
+                        <div class="result-card result-banned">
+                            <h6><i class="fas fa-ban text-danger"></i> Account is Banned</h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p class="mb-1"><strong>Email:</strong> ${email}</p>
+                                    <p class="mb-1"><strong>Ban Count:</strong> ${data.ban_count}</p>
+                                    <p class="mb-1"><strong>Reason:</strong> ${ban.reason || 'Multiple failed attempts'}</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p class="mb-1"><strong>Time Remaining:</strong> ${ban.time_remaining_text}</p>
+                                    <p class="mb-1"><strong>Banned Until:</strong> ${new Date(ban.banned_until).toLocaleString()}</p>
+                                </div>
+                            </div>
+                            <div class="mt-3">
+                                <button class="btn btn-success btn-sm me-2" onclick="removeBan('${email}')">
+                                    <i class="fas fa-unlock me-1"></i>Remove Ban
+                                </button>
+                                <button class="btn btn-warning btn-sm" onclick="resetBanCount('${email}')">
+                                    <i class="fas fa-undo me-1"></i>Reset Count
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    resultsDiv.innerHTML = `
+                        <div class="result-card result-clear">
+                            <h6><i class="fas fa-check-circle text-success"></i> Account is Not Banned</h6>
+                            <p class="mb-1"><strong>Email:</strong> ${email}</p>
+                            <p class="mb-1"><strong>Ban Count:</strong> ${data.ban_count}</p>
+                            <p class="mb-3">This account is currently not banned and can log in normally.</p>
+                            ${data.ban_count > 0 ? `
+                                <button class="btn btn-warning btn-sm" onclick="resetBanCount('${email}')">
+                                    <i class="fas fa-undo me-1"></i>Reset Ban Count
+                                </button>
+                            ` : ''}
+                        </div>
+                    `;
+                }
+            } else {
+                resultsDiv.innerHTML = `
+                    <div class="result-card">
+                        <h6><i class="fas fa-exclamation-triangle text-warning"></i> Error</h6>
+                        <p>${data.error}</p>
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            resultsDiv.innerHTML = `
+                <div class="result-card">
+                    <h6><i class="fas fa-exclamation-triangle text-danger"></i> Error</h6>
+                    <p>Failed to search account: ${error.message}</p>
+                </div>
+            `;
+        });
+}
+
+function removeBan(email) {
+    if (!confirm(`Are you sure you want to remove the ban for ${email}?`)) return;
+    
+    fetch(`/admin/bans/${encodeURIComponent(email)}/remove`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify({
+            _token: '<%= session[:csrf_token] %>'
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const row = document.querySelector(`tr[data-email="${email}"]`);
+            if (row) {
+                row.remove();
+            }
+            
+            showAlert('success', `Ban removed successfully for ${email}`);
+            setTimeout(() => location.reload(), 2000);
+        } else {
+            showAlert('error', data.error || 'Failed to remove ban');
+        }
+    })
+    .catch(error => {
+        showAlert('error', `Error: ${error.message}`);
+    });
+}
+
+function resetBanCount(email) {
+    if (!confirm(`Are you sure you want to reset the ban count for ${email}?`)) return;
+    
+    fetch(`/admin/bans/${encodeURIComponent(email)}/reset-count`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify({
+            _token: '<%= session[:csrf_token] %>'
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('success', `Ban count reset successfully for ${email}`);
+            setTimeout(() => location.reload(), 2000);
+        } else {
+            showAlert('error', data.error || 'Failed to reset ban count');
+        }
+    })
+    .catch(error => {
+        showAlert('error', `Error: ${error.message}`);
+    });
+}
+
+function refreshBanList() {
+    location.reload();
+}
+
+function updateTimeRemaining() {
+    document.querySelectorAll('.time-remaining').forEach(element => {
+        const until = parseInt(element.dataset.until);
+        const now = Math.floor(Date.now() / 1000);
+        const remaining = until - now;
+        
+        if (remaining <= 0) {
+            element.querySelector('small').innerHTML = '<span class="text-success">Expired</span>';
+            element.querySelector('.progress-bar').style.width = '100%';
+            element.querySelector('.progress-bar').classList.remove('bg-warning');
+            element.querySelector('.progress-bar').classList.add('bg-success');
+        } else {
+            const hours = Math.floor(remaining / 3600);
+            const minutes = Math.floor((remaining % 3600) / 60);
+            
+            let text;
+            if (hours > 24) {
+                const days = Math.floor(hours / 24);
+                text = `${days} day${days !== 1 ? 's' : ''}`;
+            } else if (hours > 0) {
+                text = `${hours}h ${minutes}m`;
+            } else {
+                text = `${minutes} min`;
+            }
+            
+            const small = element.querySelector('small');
+            small.innerHTML = text;
+            small.className = remaining < 3600 ? 'text-danger fw-bold' : '';
+        }
+    });
+}
+
+function showAlert(type, message) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show`;
+    alertDiv.innerHTML = `
+        <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-triangle'}"></i>
+        ${message}
+        <button type="button" class="btn-close" onclick="this.parentElement.remove()"></button>
+    `;
+    
+    const header = document.querySelector('.d-flex.justify-content-between.align-items-center.mb-4');
+    header.parentNode.insertBefore(alertDiv, header.nextSibling);
+    
+    setTimeout(() => alertDiv.remove(), 5000);
+}
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+    const modal = document.getElementById('searchModal');
+    if (event.target === modal) {
+        hideSearchModal();
+    }
+}
+</script>

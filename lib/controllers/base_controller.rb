@@ -33,6 +33,7 @@ module BaseController
         include LicenseHelpers
         include OrderHelpers
         include CustomerHelpers
+        include AdminHelpers
         include CustomizationHelpers
         include SecurityHelpers
         include ReportsHelpers

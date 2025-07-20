@@ -235,19 +235,125 @@ function New-LogsDirectory {
     Write-Success "Logs directory ready"
 }
 
-# Run tests
-function Invoke-Tests {
-    Write-Info "Running basic tests..."
+# Interactive configuration setup
+function Set-ApplicationConfiguration {
+    Write-Info "Setting up application configuration..."
     
-    try {
-        ruby run_tests.rb
-        Write-Success "Tests passed"
-        return $true
-    } catch {
-        Write-Warning "Some tests failed - this may not be critical"
-        Write-Info "The application should still work for basic usage"
-        return $true
+    if (-not (Test-Path ".env")) {
+        Write-Error "No .env file found. Please run Initialize-Environment first."
+        return $false
     }
+    
+    Write-Host ""
+    Write-Info "Let's configure your Source-License application:"
+    Write-Host ""
+    
+    # Ask for application name
+    $app_name = Read-Host "Enter your application name (default: Source-License)"
+    if ([string]::IsNullOrWhiteSpace($app_name)) {
+        $app_name = "Source-License"
+    }
+    
+    # Ask for organization details
+    $org_name = Read-Host "Enter your organization name"
+    $org_url = Read-Host "Enter your organization website URL (optional)"
+    
+    # Ask for support email
+    do {
+        $support_email = Read-Host "Enter support email address"
+        if ($support_email -match '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$') {
+            break
+        } else {
+            Write-Error "Please enter a valid email address"
+        }
+    } while ($true)
+    
+    # Ask for admin email
+    do {
+        $admin_email = Read-Host "Enter initial admin email address"
+        if ($admin_email -match '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$') {
+            break
+        } else {
+            Write-Error "Please enter a valid email address"
+        }
+    } while ($true)
+    
+    # Ask for admin password
+    do {
+        $admin_password = Read-Host "Enter initial admin password (min 12 characters)" -AsSecureString
+        $admin_password_plain = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($admin_password))
+        
+        if ($admin_password_plain.Length -ge 12) {
+            $admin_password_confirm = Read-Host "Confirm admin password" -AsSecureString
+            $admin_password_confirm_plain = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($admin_password_confirm))
+            
+            if ($admin_password_plain -eq $admin_password_confirm_plain) {
+                break
+            } else {
+                Write-Error "Passwords do not match. Please try again."
+            }
+        } else {
+            Write-Error "Password must be at least 12 characters long"
+        }
+    } while ($true)
+    
+    # Ask for port
+    $port = Read-Host "Enter port number (default: 4567)"
+    if ([string]::IsNullOrWhiteSpace($port)) {
+        $port = "4567"
+    }
+    
+    # Ask for environment
+    Write-Host "Select environment:"
+    Write-Host "1) Development"
+    Write-Host "2) Production"
+    $env_choice = Read-Host "Choose (1-2, default: 1)"
+    switch ($env_choice) {
+        "2" { $environment = "production" }
+        default { $environment = "development" }
+    }
+    
+    # Update .env file
+    Write-Info "Updating configuration..."
+    
+    # Create a backup
+    Copy-Item ".env" ".env.backup"
+    
+    # Read current .env content
+    $envContent = Get-Content ".env"
+    
+    # Update values
+    $envContent = $envContent -replace "^APP_NAME=.*", "APP_NAME=$app_name"
+    $envContent = $envContent -replace "^PORT=.*", "PORT=$port"
+    $envContent = $envContent -replace "^APP_ENV=.*", "APP_ENV=$environment"
+    
+    # Update organization details
+    if (-not [string]::IsNullOrWhiteSpace($org_name)) {
+        $envContent = $envContent -replace "^ORGANIZATION_NAME=.*", "ORGANIZATION_NAME=$org_name"
+    }
+    if (-not [string]::IsNullOrWhiteSpace($org_url)) {
+        $envContent = $envContent -replace "^ORGANIZATION_URL=.*", "ORGANIZATION_URL=$org_url"
+    }
+    $envContent = $envContent -replace "^SUPPORT_EMAIL=.*", "SUPPORT_EMAIL=$support_email"
+    
+    # Update initial admin credentials
+    $envContent = $envContent -replace "^INITIAL_ADMIN_EMAIL=.*", "INITIAL_ADMIN_EMAIL=$admin_email"
+    $envContent = $envContent -replace "^INITIAL_ADMIN_PASSWORD=.*", "INITIAL_ADMIN_PASSWORD=$admin_password_plain"
+    
+    # Write updated content
+    $envContent | Set-Content ".env"
+    
+    Write-Success "Configuration completed!"
+    Write-Host ""
+    Write-Info "Your settings:"
+    Write-Info "  Application: $app_name"
+    Write-Info "  Admin Email: $admin_email"
+    Write-Info "  Port: $port"
+    Write-Info "  Environment: $environment"
+    Write-Host ""
+    Write-Warning "Remember to remove INITIAL_ADMIN_* from .env after first login!"
+    
+    return $true
 }
 
 # Main installation function
@@ -329,9 +435,9 @@ function Main {
     }
     
     if ($success) { 
-        Write-FunctionCall "Invoke-Tests" "START"
-        Invoke-Tests | Out-Null 
-        Write-FunctionCall "Invoke-Tests" "COMPLETE"
+        Write-FunctionCall "Set-ApplicationConfiguration" "START"
+        Set-ApplicationConfiguration | Out-Null 
+        Write-FunctionCall "Set-ApplicationConfiguration" "COMPLETE"
     }
     
     Write-Host ""
@@ -339,19 +445,18 @@ function Main {
     
     if ($success) {
         Write-Log "SUCCESS" "Installation completed successfully"
-        Write-Success "Installation completed successfully!"
+        Write-Success "Installation and setup completed successfully!"
         Write-Host ""
-        Write-Host "🎉 Source-License is now installed!" -ForegroundColor Green
+        Write-Host "🎉 Source-License is ready to use!" -ForegroundColor Green
         Write-Host ""
-        Write-Host "Next steps:"
-        Write-Host "  1. Edit .env file with your configuration"
-        Write-Host "  2. Configure database settings if needed"
-        Write-Host "  3. Run the application:"
-        Write-Host "     Development: ruby launch.rb"
-        Write-Host "     Production:  .\deploy.ps1"
+        Write-Host "To start the application:"
+        Write-Host "  Development: ruby launch.rb"
+        Write-Host "  Production:  .\deploy.ps1"
         Write-Host ""
-        Write-Host "The application will be available at: http://localhost:4567"
-        Write-Host "Admin panel will be at: http://localhost:4567/admin"
+        Write-Host "The application will be available at: http://localhost:$port"
+        Write-Host "Admin panel will be at: http://localhost:$port/admin"
+        Write-Host ""
+        Write-Info "Use the admin credentials you configured to log in."
     } else {
         Write-Log "ERROR" "Installation failed"
         Write-Error "Installation failed!"

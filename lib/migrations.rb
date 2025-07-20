@@ -23,6 +23,12 @@ class Migrations
       run_migration(11, :add_customer_name_to_orders)
       run_migration(12, :create_users_table)
       run_migration(13, :add_user_id_to_licenses)
+      run_migration(14, :create_failed_login_attempts_table)
+      run_migration(15, :create_account_bans_table)
+      run_migration(16, :enhance_admin_table_for_security)
+      run_migration(17, :create_taxes_table)
+      run_migration(18, :create_order_taxes_table)
+      run_migration(19, :add_tax_fields_to_orders)
 
       puts '✓ All migrations completed successfully'
     end
@@ -426,6 +432,166 @@ class Migrations
       end
 
       puts '✓ Added user_id to licenses table'
+    end
+
+    # Migration 14: Create failed login attempts table for rate limiting
+    def create_failed_login_attempts_table
+      puts 'Creating failed_login_attempts table for authentication security...'
+
+      DB.create_table :failed_login_attempts do
+        primary_key :id
+        String :email, null: false, size: 255
+        Integer :admin_id, null: true  # null if not an admin account
+        String :ip_address, size: 45   # Support both IPv4 and IPv6
+        String :user_agent, text: true
+        DateTime :created_at, null: false, default: Sequel::CURRENT_TIMESTAMP
+        
+        # Indexes for performance
+        index :email
+        index :created_at
+        index [:email, :created_at]
+        index :ip_address
+      end
+
+      puts '✓ Created failed_login_attempts table'
+    end
+
+    # Migration 15: Create account bans table for progressive bans
+    def create_account_bans_table
+      puts 'Creating account_bans table for progressive ban system...'
+
+      DB.create_table :account_bans do
+        primary_key :id
+        String :email, null: false, size: 255
+        Integer :admin_id, null: true   # null if not an admin account
+        Integer :ban_count, null: false, default: 1
+        DateTime :banned_until, null: false
+        String :reason, default: 'multiple_failed_login_attempts', size: 255
+        String :ip_address, size: 45    # Support both IPv4 and IPv6
+        String :user_agent, text: true
+        DateTime :created_at, null: false, default: Sequel::CURRENT_TIMESTAMP
+        DateTime :updated_at, null: true
+        
+        # Indexes for performance
+        index :email
+        index :banned_until
+        index [:email, :banned_until]
+        index [:email, :created_at]
+        index :created_at
+      end
+
+      puts '✓ Created account_bans table'
+    end
+
+    # Migration 16: Enhance admin table for security features
+    def enhance_admin_table_for_security
+      puts 'Enhancing admin table for security features...'
+
+      # Add missing fields to admin table if they don't exist
+      admin_schema = DB.schema(:admins).map { |col| col[0] }
+
+      DB.alter_table :admins do
+        # Add name field for admin management
+        add_column :name, String, size: 255 unless admin_schema.include?(:name)
+        
+        # Add active boolean field (maps to status but easier to use)
+        add_column :active, :boolean, default: true unless admin_schema.include?(:active)
+        
+        # Add session tracking for enhanced security
+        add_column :current_session_id, String, size: 64 unless admin_schema.include?(:current_session_id)
+        add_column :session_expires_at, DateTime unless admin_schema.include?(:session_expires_at)
+        
+        # Add failed login tracking
+        add_column :failed_login_count, Integer, default: 0 unless admin_schema.include?(:failed_login_count)
+        add_column :last_failed_login_at, DateTime unless admin_schema.include?(:last_failed_login_at)
+        
+        # Add password policy fields
+        add_column :password_expires_at, DateTime unless admin_schema.include?(:password_expires_at)
+        add_column :force_password_change, :boolean, default: false unless admin_schema.include?(:force_password_change)
+      end
+
+      # Add indexes for new fields
+      begin
+        DB.alter_table :admins do
+          add_index :name unless DB.indexes(:admins).key?(:admins_name_index)
+          add_index :active unless DB.indexes(:admins).key?(:admins_active_index)
+          add_index :current_session_id unless DB.indexes(:admins).key?(:admins_current_session_id_index)
+          add_index :failed_login_count unless DB.indexes(:admins).key?(:admins_failed_login_count_index)
+        end
+      rescue Sequel::DatabaseError => e
+        puts "Note: Some indexes may already exist: #{e.message}"
+      end
+
+      puts '✓ Enhanced admin table for security features'
+    end
+
+    # Migration 17: Create taxes table
+    def create_taxes_table
+      puts 'Creating taxes table for custom tax configuration...'
+
+      DB.create_table :taxes do
+        primary_key :id
+        String :name, null: false, size: 255
+        String :description, size: 500
+        Decimal :rate, size: [8, 4], null: false # percentage rate (e.g., 8.25 for 8.25%)
+        String :status, default: 'active', size: 20 # active, inactive
+        String :type, default: 'percentage', size: 20 # percentage, fixed (for future use)
+        DateTime :created_at, null: false, default: Sequel::CURRENT_TIMESTAMP
+        DateTime :updated_at, null: false, default: Sequel::CURRENT_TIMESTAMP
+
+        index :name
+        index :status
+        index :rate
+      end
+
+      puts '✓ Created taxes table'
+    end
+
+    # Migration 18: Create order_taxes table
+    def create_order_taxes_table
+      puts 'Creating order_taxes table for tracking applied taxes...'
+
+      DB.create_table :order_taxes do
+        primary_key :id
+        foreign_key :order_id, :orders, null: false, on_delete: :cascade
+        foreign_key :tax_id, :taxes, null: true # null if tax was deleted
+        String :tax_name, null: false, size: 255 # store name for historical purposes
+        Decimal :rate, size: [8, 4], null: false # store rate at time of application
+        Decimal :amount, size: [10, 2], null: false # calculated tax amount
+        DateTime :created_at, null: false, default: Sequel::CURRENT_TIMESTAMP
+
+        index :order_id
+        index :tax_id
+      end
+
+      puts '✓ Created order_taxes table'
+    end
+
+    # Migration 19: Add tax fields to orders table
+    def add_tax_fields_to_orders
+      puts 'Adding tax fields to orders table...'
+
+      # Add tax-related fields to orders table
+      orders_schema = DB.schema(:orders).map { |col| col[0] }
+
+      DB.alter_table :orders do
+        add_column :subtotal, :decimal, size: [10, 2], default: 0.00 unless orders_schema.include?(:subtotal)
+        add_column :tax_total, :decimal, size: [10, 2], default: 0.00 unless orders_schema.include?(:tax_total)
+        add_column :tax_applied, :boolean, default: false unless orders_schema.include?(:tax_applied)
+      end
+
+      # Add indexes for the new fields
+      begin
+        DB.alter_table :orders do
+          add_index :subtotal unless DB.indexes(:orders).key?(:orders_subtotal_index)
+          add_index :tax_total unless DB.indexes(:orders).key?(:orders_tax_total_index)
+          add_index :tax_applied unless DB.indexes(:orders).key?(:orders_tax_applied_index)
+        end
+      rescue Sequel::DatabaseError => e
+        puts "Note: Some indexes may already exist: #{e.message}"
+      end
+
+      puts '✓ Added tax fields to orders table'
     end
   end
 end

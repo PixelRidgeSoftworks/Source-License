@@ -365,7 +365,6 @@ module AdminController
           if new_admin && new_admin.id
             # Set the name separately if needed
             new_admin.update(name: name) if name && !name.empty?
-            end
 
             # Log the admin creation
             log_auth_event('admin_created', {

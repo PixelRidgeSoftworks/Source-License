@@ -63,3 +63,4 @@ test.db
 installer-logs/*
 deployment-logs/*
 .env.backup
+launch.ps1

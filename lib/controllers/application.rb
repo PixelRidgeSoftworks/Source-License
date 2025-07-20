@@ -14,7 +14,15 @@ require_relative 'api_controller'
 class SourceLicenseApp < Sinatra::Base
   # Security middleware
   use SecurityMiddleware unless ENV['APP_ENV'] == 'test' || ENV['RACK_ENV'] == 'test'
-  use Rack::Protection, except: [:json_csrf] # We'll handle CSRF manually
+  
+  # Configure Rack::Protection based on environment
+  if ENV['APP_ENV'] == 'development'
+    # Disable host authorization in development for easier testing
+    use Rack::Protection, except: [:json_csrf, :host_authorization]
+  else
+    # Full protection in production and test
+    use Rack::Protection, except: [:json_csrf] # We'll handle CSRF manually
+  end
 
   # Configure mail delivery
   def self.configure_mail

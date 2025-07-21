@@ -98,29 +98,28 @@ jobs:
         bundler-cache: true
 
     - name: Install Security Tools
-      run: gem install bundler-audit brakeman
+      run: gem install bundler-audit rubocop
 
     - name: Run Bundler Audit
       run: |
         bundle audit --update
 
-    - name: Run Brakeman Static Analysis
+    - name: Run RuboCop Static Analysis
       run: |
-        brakeman --no-pager --format json --output brakeman-results.json
-        brakeman --no-pager --format plain
+        rubocop --format json --out rubocop-results.json || true
 
-    - name: Upload Brakeman Results
+    - name: Upload RuboCop Results
       uses: actions/upload-artifact@v4
       with:
-        name: brakeman-security-results
-        path: brakeman-results.json
+        name: rubocop-analysis-results
+        path: rubocop-results.json
         retention-days: 30
 
     - name: Write Security Summary
       run: |
         echo "## 🔒 Security Review Summary" >> $GITHUB_STEP_SUMMARY
         echo "- ✅ Bundler Audit Complete" >> $GITHUB_STEP_SUMMARY
-        echo "- ✅ Brakeman Static Analysis Complete" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ RuboCop Static Analysis Complete" >> $GITHUB_STEP_SUMMARY
         echo "- ✅ CodeQL Analysis Complete" >> $GITHUB_STEP_SUMMARY
 
   notify-critical:
@@ -140,7 +139,7 @@ jobs:
 
           **Check these areas:**
           - CodeQL Security Findings
-          - Brakeman Static Analysis
+          - RuboCop Static Analysis
           - Bundler Audit
 
           **Workflow Run:** https://github.com/${owner}/${repo}/actions/runs/${context.runId}

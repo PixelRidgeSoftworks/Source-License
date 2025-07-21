@@ -62,6 +62,14 @@ module AdminControllers::LicensesController
       erb :'admin/licenses', layout: :'layouts/admin_layout'
     end
 
+    # Generate license page
+    app.get '/admin/licenses/generate' do
+      require_secure_admin_auth
+      @products = Product.where(active: true).order(:name)
+      @page_title = 'Generate License'
+      erb :'admin/licenses_generate', layout: :'layouts/admin_layout'
+    end
+
     # View license details
     app.get '/admin/licenses/:id' do
       require_secure_admin_auth
@@ -69,14 +77,6 @@ module AdminControllers::LicensesController
       halt 404 unless @license
       @page_title = "License #{@license.license_key}"
       erb :'admin/licenses_show', layout: :'layouts/admin_layout'
-    end
-
-    # Generate license page
-    app.get '/admin/licenses/generate' do
-      require_secure_admin_auth
-      @products = Product.where(active: true).order(:name)
-      @page_title = 'Generate License'
-      erb :'admin/licenses_generate', layout: :'layouts/admin_layout'
     end
 
     # Create new license

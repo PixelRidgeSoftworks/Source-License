@@ -1,0 +1,555 @@
+<!-- Edit Product Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-1">Edit Product</h1>
+        <p class="text-muted mb-0">Update product details and settings</p>
+    </div>
+    <div>
+        <a href="/admin/products" class="btn btn-outline-secondary me-2">
+            <i class="fas fa-arrow-left me-2"></i>Back to Products
+        </a>
+        <a href="/admin/products/<%= @product.id %>" class="btn btn-outline-primary">
+            <i class="fas fa-eye me-2"></i>View Product
+        </a>
+    </div>
+</div>
+
+<!-- Breadcrumbs -->
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/admin">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="/admin/products">Products</a></li>
+        <li class="breadcrumb-item"><a href="/admin/products/<%= @product.id %>"><%= @product.name %></a></li>
+        <li class="breadcrumb-item active">Edit</li>
+    </ol>
+</nav>
+
+<!-- Edit Product Form -->
+<div class="row">
+    <div class="col-lg-8">
+        <form action="/admin/products/<%= @product.id %>" method="post" id="productForm" enctype="multipart/form-data">
+            <input type="hidden" name="_method" value="put">
+            <%= csrf_input %>
+            
+            <!-- Basic Information Card -->
+            <div class="admin-card mb-4">
+                <div class="admin-card-header">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Basic Information
+                </div>
+                <div class="admin-card-body">
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <div class="form-floating">
+                                <input type="text" class="form-control" id="name" name="name" 
+                                       placeholder="Product Name" required maxlength="255" value="<%= @product.name %>">
+                                <label for="name">Product Name *</label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-floating">
+                                <input type="text" class="form-control" id="version" name="version" 
+                                       placeholder="1.0.0" maxlength="50" value="<%= @product.version || '' %>">
+                                <label for="version">Version</label>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-floating">
+                                <textarea class="form-control" id="description" name="description" 
+                                          placeholder="Product Description" style="height: 120px;" maxlength="1000"><%= @product.description || '' %></textarea>
+                                <label for="description">Description</label>
+                            </div>
+                            <div class="form-text">
+                                Describe what this software does and its key features. This will be shown to customers.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Pricing and License Type Card -->
+            <div class="admin-card mb-4">
+                <div class="admin-card-header">
+                    <i class="fas fa-dollar-sign me-2"></i>
+                    Pricing & License Type
+                </div>
+                <div class="admin-card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">License Type *</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="license_type" 
+                                       id="one_time" value="one_time" <%= @product.license_type == 'one_time' ? 'checked' : '' %>>
+                                <label class="form-check-label" for="one_time">
+                                    <strong>One-time Purchase</strong>
+                                    <br><small class="text-muted">Customer pays once and owns the license</small>
+                                </label>
+                            </div>
+                            <div class="form-check mt-2">
+                                <input class="form-check-input" type="radio" name="license_type" 
+                                       id="subscription" value="subscription" <%= @product.license_type == 'subscription' ? 'checked' : '' %>>
+                                <label class="form-check-label" for="subscription">
+                                    <strong>Subscription</strong>
+                                    <br><small class="text-muted">Recurring billing with automatic renewal</small>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="number" class="form-control" id="price" name="price" 
+                                       placeholder="0.00" step="0.01" min="0" required value="<%= @product.price %>">
+                                <label for="price">Price (USD) *</label>
+                            </div>
+                            <div class="form-text">
+                                Base price for the product or subscription period (0.00 for free products)
+                            </div>
+                        </div>
+                        <div class="col-md-6" id="setupFeeGroup" style="display: <%= @product.license_type == 'subscription' ? 'block' : 'none' %>;">
+                            <div class="form-floating">
+                                <input type="number" class="form-control" id="setup_fee" name="setup_fee" 
+                                       placeholder="0.00" step="0.01" min="0" value="<%= @product.setup_fee || 0 %>">
+                                <label for="setup_fee">Setup Fee (USD)</label>
+                            </div>
+                            <div class="form-text">
+                                One-time setup fee for new subscriptions
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Subscription Options -->
+                    <div id="subscriptionOptions" style="display: <%= @product.license_type == 'subscription' ? 'block' : 'none' %>;">
+                        <hr class="my-4">
+                        <h6 class="fw-bold mb-3">Subscription Settings</h6>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <select class="form-select" id="billing_cycle" name="billing_cycle">
+                                        <option value="monthly" <%= @product.billing_cycle == 'monthly' ? 'selected' : '' %>>Monthly</option>
+                                        <option value="quarterly" <%= @product.billing_cycle == 'quarterly' ? 'selected' : '' %>>Quarterly</option>
+                                        <option value="yearly" <%= @product.billing_cycle == 'yearly' ? 'selected' : '' %>>Yearly</option>
+                                    </select>
+                                    <label for="billing_cycle">Billing Cycle</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input type="number" class="form-control" id="billing_interval" name="billing_interval" 
+                                           value="<%= @product.billing_interval || 1 %>" min="1" max="12">
+                                    <label for="billing_interval">Billing Interval</label>
+                                </div>
+                                <div class="form-text">
+                                    Bill every X cycles (e.g., every 3 months)
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input type="number" class="form-control" id="license_duration_days" name="license_duration_days" 
+                                           placeholder="30" min="1" value="<%= @product.license_duration_days || '' %>">
+                                    <label for="license_duration_days">License Duration (Days)</label>
+                                </div>
+                                <div class="form-text">
+                                    How long each billing period license is valid
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input type="number" class="form-control" id="trial_period_days" name="trial_period_days" 
+                                           placeholder="0" min="0" max="365" value="<%= @product.trial_period_days || 0 %>">
+                                    <label for="trial_period_days">Trial Period (Days)</label>
+                                </div>
+                                <div class="form-text">
+                                    Free trial period before billing starts (0 = no trial)
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- License Settings Card -->
+            <div class="admin-card mb-4">
+                <div class="admin-card-header">
+                    <i class="fas fa-key me-2"></i>
+                    License Settings
+                </div>
+                <div class="admin-card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="number" class="form-control" id="max_activations" name="max_activations" 
+                                       value="<%= @product.max_activations %>" min="1" max="1000" required>
+                                <label for="max_activations">Max Activations *</label>
+                            </div>
+                            <div class="form-text">
+                                Maximum number of devices this license can be activated on
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="text" class="form-control" id="license_key_pattern" name="license_key_pattern" 
+                                       value="XXXX-XXXX-XXXX-XXXX" readonly>
+                                <label for="license_key_pattern">License Key Format</label>
+                            </div>
+                            <div class="form-text">
+                                Format used for generating license keys
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Download & Files Card -->
+            <div class="admin-card mb-4">
+                <div class="admin-card-header">
+                    <i class="fas fa-download me-2"></i>
+                    Download & Files
+                </div>
+                <div class="admin-card-body">
+                    <div class="row g-3">
+                        <% if @product.download_file %>
+                        <div class="col-12">
+                            <div class="alert alert-info">
+                                <i class="fas fa-file me-2"></i>
+                                Current file: <strong><%= @product.download_file %></strong>
+                                <br><small>Upload a new file to replace the current one</small>
+                            </div>
+                        </div>
+                        <% end %>
+                        <div class="col-12">
+                            <label for="download_file" class="form-label">Product Download File</label>
+                            <input type="file" class="form-control" id="download_file" name="download_file" 
+                                   accept=".zip,.exe,.dmg,.pkg,.deb,.rpm,.tar.gz">
+                            <div class="form-text">
+                                Upload the software file that customers will download. Supported formats: ZIP, EXE, DMG, PKG, DEB, RPM, TAR.GZ
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="text" class="form-control" id="download_url" name="download_url" 
+                                       placeholder="https://example.com/download" value="<%= @product.download_url || '' %>">
+                                <label for="download_url">External Download URL</label>
+                            </div>
+                            <div class="form-text">
+                                Alternative to file upload - direct download link
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="text" class="form-control" id="file_size" name="file_size" 
+                                       placeholder="e.g., 25.5 MB" value="<%= @product.file_size || '' %>">
+                                <label for="file_size">File Size</label>
+                            </div>
+                            <div class="form-text">
+                                Display file size to customers
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Product Status Card -->
+            <div class="admin-card mb-4">
+                <div class="admin-card-header">
+                    <i class="fas fa-cog me-2"></i>
+                    Product Status & Visibility
+                </div>
+                <div class="admin-card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="active" name="active" <%= @product.active ? 'checked' : '' %>>
+                                <label class="form-check-label" for="active">
+                                    <strong>Active Product</strong>
+                                    <br><small class="text-muted">Show this product in the store</small>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="featured" name="featured" <%= @product.featured ? 'checked' : '' %>>
+                                <label class="form-check-label" for="featured">
+                                    <strong>Featured Product</strong>
+                                    <br><small class="text-muted">Highlight this product on homepage</small>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Form Actions -->
+            <div class="d-flex gap-3 mb-4">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save me-2"></i>Update Product
+                </button>
+                <a href="/admin/products/<%= @product.id %>" class="btn btn-outline-secondary">
+                    <i class="fas fa-times me-2"></i>Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+    
+    <!-- Help Sidebar -->
+    <div class="col-lg-4">
+        <div class="admin-card">
+            <div class="admin-card-header">
+                <i class="fas fa-lightbulb me-2"></i>
+                Product Editing Tips
+            </div>
+            <div class="admin-card-body">
+                <div class="mb-3">
+                    <h6><i class="fas fa-exclamation-triangle text-warning me-2"></i>Important Notes</h6>
+                    <p class="small text-muted">
+                        Changing license type or pricing may affect existing customers. 
+                        Consider creating a new product version instead of major changes.
+                    </p>
+                </div>
+                
+                <div class="mb-3">
+                    <h6><i class="fas fa-file-alt text-info me-2"></i>File Updates</h6>
+                    <p class="small text-muted">
+                        Uploading a new file will replace the current download. Ensure 
+                        compatibility with existing licenses before updating.
+                    </p>
+                </div>
+                
+                <div class="mb-3">
+                    <h6><i class="fas fa-users text-success me-2"></i>Active Customers</h6>
+                    <p class="small text-muted">
+                        <% if defined?(@product.licenses) && @product.licenses.any? %>
+                        This product has <strong><%= @product.licenses.count %></strong> active license(s).
+                        <% else %>
+                        This product has no active licenses yet.
+                        <% end %>
+                    </p>
+                </div>
+                
+                <hr>
+                
+                <div class="text-center">
+                    <a href="/admin/customize/code-guide" class="btn btn-outline-info btn-sm">
+                        <i class="fas fa-book me-2"></i>View Documentation
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Product Info Card -->
+        <div class="admin-card mt-4">
+            <div class="admin-card-header">
+                <i class="fas fa-info me-2"></i>
+                Product Information
+            </div>
+            <div class="admin-card-body">
+                <div class="row g-2 small">
+                    <div class="col-6"><strong>Product ID:</strong></div>
+                    <div class="col-6"><%= @product.id %></div>
+                    
+                    <div class="col-6"><strong>Created:</strong></div>
+                    <div class="col-6"><%= @product.created_at.strftime('%m/%d/%Y') %></div>
+                    
+                    <div class="col-6"><strong>Updated:</strong></div>
+                    <div class="col-6"><%= @product.updated_at.strftime('%m/%d/%Y') %></div>
+                    
+                    <div class="col-6"><strong>Status:</strong></div>
+                    <div class="col-6">
+                        <span class="badge bg-<%= @product.active ? 'success' : 'secondary' %>">
+                            <%= @product.active ? 'Active' : 'Inactive' %>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Preview Card -->
+        <div class="admin-card mt-4">
+            <div class="admin-card-header">
+                <i class="fas fa-eye me-2"></i>
+                Product Preview
+            </div>
+            <div class="admin-card-body">
+                <div id="productPreview">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between">
+                            <span id="previewName" class="fw-bold"><%= @product.name %></span>
+                            <span id="previewType" class="badge bg-<%= @product.license_type == 'subscription' ? 'info' : 'success' %>">
+                                <%= @product.license_type == 'subscription' ? 'Subscription' : 'One-time' %>
+                            </span>
+                        </div>
+                        <div class="card-body">
+                            <div class="h4 text-success mb-2">
+                                $<span id="previewPrice"><%= @product.price %></span>
+                                <small id="previewCycle" class="text-muted"><%= @product.license_type == 'subscription' ? '/month' : '' %></small>
+                            </div>
+                            <p id="previewDescription" class="text-muted"><%= @product.description || 'Product description will appear here...' %></p>
+                            <div class="small">
+                                <strong>Max Activations:</strong> <span id="previewActivations"><%= @product.max_activations %></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Form JavaScript -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const licenseTypeRadios = document.querySelectorAll('input[name="license_type"]');
+    const subscriptionOptions = document.getElementById('subscriptionOptions');
+    const setupFeeGroup = document.getElementById('setupFeeGroup');
+    const form = document.getElementById('productForm');
+    
+    // Handle license type changes
+    licenseTypeRadios.forEach(radio => {
+        radio.addEventListener('change', function() {
+            if (this.value === 'subscription') {
+                subscriptionOptions.style.display = 'block';
+                setupFeeGroup.style.display = 'block';
+                document.getElementById('license_duration_days').required = true;
+            } else {
+                subscriptionOptions.style.display = 'none';
+                setupFeeGroup.style.display = 'none';
+                document.getElementById('license_duration_days').required = false;
+            }
+            updatePreview();
+        });
+    });
+    
+    // Real-time preview updates
+    const previewFields = ['name', 'price', 'description', 'max_activations'];
+    previewFields.forEach(fieldId => {
+        const field = document.getElementById(fieldId);
+        if (field) {
+            field.addEventListener('input', updatePreview);
+        }
+    });
+    
+    licenseTypeRadios.forEach(radio => {
+        radio.addEventListener('change', updatePreview);
+    });
+    
+    function updatePreview() {
+        const name = document.getElementById('name').value || 'Product Name';
+        const price = document.getElementById('price').value || '0.00';
+        const description = document.getElementById('description').value || 'Product description will appear here...';
+        const maxActivations = document.getElementById('max_activations').value || '1';
+        const licenseType = document.querySelector('input[name="license_type"]:checked').value;
+        
+        document.getElementById('previewName').textContent = name;
+        document.getElementById('previewPrice').textContent = parseFloat(price).toFixed(2);
+        document.getElementById('previewDescription').textContent = description;
+        document.getElementById('previewActivations').textContent = maxActivations;
+        
+        const typeSpan = document.getElementById('previewType');
+        const cycleSpan = document.getElementById('previewCycle');
+        
+        if (licenseType === 'subscription') {
+            typeSpan.textContent = 'Subscription';
+            typeSpan.className = 'badge bg-info';
+            cycleSpan.textContent = '/month';
+        } else {
+            typeSpan.textContent = 'One-time';
+            typeSpan.className = 'badge bg-success';
+            cycleSpan.textContent = '';
+        }
+    }
+    
+    // Form validation
+    form.addEventListener('submit', function(e) {
+        const name = document.getElementById('name').value.trim();
+        const price = parseFloat(document.getElementById('price').value);
+        const maxActivations = parseInt(document.getElementById('max_activations').value);
+        
+        if (!name) {
+            e.preventDefault();
+            alert('Product name is required.');
+            document.getElementById('name').focus();
+            return;
+        }
+        
+        if (isNaN(price) || price < 0) {
+            e.preventDefault();
+            alert('Please enter a valid price (0 or greater).');
+            document.getElementById('price').focus();
+            return;
+        }
+        
+        if (isNaN(maxActivations) || maxActivations <= 0) {
+            e.preventDefault();
+            alert('Please enter a valid number of max activations.');
+            document.getElementById('max_activations').focus();
+            return;
+        }
+        
+        // Check if subscription has required fields
+        const licenseType = document.querySelector('input[name="license_type"]:checked').value;
+        if (licenseType === 'subscription') {
+            const licenseDuration = parseInt(document.getElementById('license_duration_days').value);
+            if (isNaN(licenseDuration) || licenseDuration <= 0) {
+                e.preventDefault();
+                alert('License duration is required for subscription products.');
+                document.getElementById('license_duration_days').focus();
+                return;
+            }
+        }
+    });
+    
+    // Initialize preview
+    updatePreview();
+});
+</script>
+
+<!-- Custom Styles -->
+<style>
+.form-floating {
+    margin-bottom: 1rem;
+}
+
+.form-check {
+    margin-bottom: 1rem;
+}
+
+.admin-card {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: box-shadow 0.3s ease;
+}
+
+.admin-card:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+#productPreview .card {
+    border: 1px solid var(--border-default);
+    background: var(--surface-secondary);
+}
+
+#productPreview .card-header {
+    background: var(--surface-tertiary);
+    border-bottom: 1px solid var(--border-default);
+}
+
+.form-text {
+    font-size: 0.8rem;
+    margin-top: 0.25rem;
+}
+
+.breadcrumb {
+    background: transparent;
+    padding: 0;
+}
+
+.breadcrumb-item a {
+    color: var(--accent-primary);
+    text-decoration: none;
+}
+
+.breadcrumb-item a:hover {
+    text-decoration: underline;
+}
+
+.alert {
+    border-radius: 0.5rem;
+}
+</style>

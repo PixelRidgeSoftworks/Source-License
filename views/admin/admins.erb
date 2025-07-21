@@ -74,13 +74,13 @@
 </div>
 
 <!-- Admins Table -->
-<div class="data-table">
+<div class="data-table" style="height: calc(100vh - 350px); display: flex; flex-direction: column;">
     <h5 class="table-header">
         <i class="fas fa-users-cog me-2"></i>
         Administrator Accounts
     </h5>
     
-    <div class="table-responsive">
+    <div class="table-responsive" style="flex: 1; overflow-y: auto;">
         <% if @admins.any? %>
         <table class="table table-hover table-dark mb-0">
             <thead>

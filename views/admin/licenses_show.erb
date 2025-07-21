@@ -1,0 +1,681 @@
+<!-- License Details Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-1">License <%= format_license_key(@license.license_key) %></h1>
+        <p class="text-muted mb-0">
+            Created <%= format_date(@license.created_at, :datetime) %> 
+            <span class="mx-2">•</span>
+            <%= time_ago(@license.created_at) %>
+        </p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="/admin/licenses" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Back to Licenses
+        </a>
+        <div class="dropdown">
+            <button class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown">
+                <i class="fas fa-cog me-2"></i>Actions
+            </button>
+            <ul class="dropdown-menu">
+                <li>
+                    <a class="dropdown-item" href="mailto:<%= h(@license.customer_email) %>?subject=Regarding License <%= @license.license_key %>">
+                        <i class="fas fa-envelope me-2"></i>Email Customer
+                    </a>
+                </li>
+                <li>
+                    <button class="dropdown-item" onclick="copyLicenseKey('<%= @license.license_key %>')">
+                        <i class="fas fa-copy me-2"></i>Copy License Key
+                    </button>
+                </li>
+                <% if @license.order %>
+                <li>
+                    <a class="dropdown-item" href="/admin/orders/<%= @license.order.id %>">
+                        <i class="fas fa-receipt me-2"></i>View Order
+                    </a>
+                </li>
+                <% end %>
+                <li><hr class="dropdown-divider"></li>
+                <% if @license.active? %>
+                <li>
+                    <button class="dropdown-item text-warning" onclick="updateLicenseStatus('suspend')">
+                        <i class="fas fa-pause me-2"></i>Suspend License
+                    </button>
+                </li>
+                <li>
+                    <button class="dropdown-item text-danger" onclick="updateLicenseStatus('revoke')">
+                        <i class="fas fa-ban me-2"></i>Revoke License
+                    </button>
+                </li>
+                <% elsif @license.suspended? %>
+                <li>
+                    <button class="dropdown-item text-success" onclick="updateLicenseStatus('activate')">
+                        <i class="fas fa-play me-2"></i>Reactivate License
+                    </button>
+                </li>
+                <li>
+                    <button class="dropdown-item text-danger" onclick="updateLicenseStatus('revoke')">
+                        <i class="fas fa-ban me-2"></i>Revoke License
+                    </button>
+                </li>
+                <% end %>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- License Status Banner -->
+<div class="alert alert-<%= @license.active? ? 'success' : (@license.suspended? ? 'warning' : 'danger') %> mb-4">
+    <div class="d-flex align-items-center">
+        <div class="me-3">
+            <%= license_status_icon(@license.status) %>
+        </div>
+        <div class="flex-grow-1">
+            <h5 class="alert-heading mb-1">License Status: <%= @license.status.capitalize %></h5>
+            <p class="mb-0">
+                <% if @license.active? %>
+                This license is active and can be used for software activation.
+                <% elsif @license.suspended? %>
+                This license has been suspended and cannot be used until reactivated.
+                <% elsif @license.revoked? %>
+                This license has been permanently revoked and cannot be used.
+                <% elsif @license.expired? %>
+                This license has expired and cannot be used.
+                <% end %>
+                <% if @license.expired? %>
+                <strong>Expired on <%= format_date(@license.effective_expires_at, :datetime) %></strong>
+                <% elsif @license.effective_expires_at %>
+                Expires on <%= format_date(@license.effective_expires_at, :datetime) %>
+                <% end %>
+            </p>
+        </div>
+        <% if @license.last_activated_at %>
+        <div class="text-end">
+            <small class="text-muted">
+                Last activated: <%= format_date(@license.last_activated_at, :datetime) %>
+            </small>
+        </div>
+        <% end %>
+    </div>
+</div>
+
+<!-- Main Content Grid -->
+<div class="row g-4">
+    <!-- Left Column: License Details -->
+    <div class="col-lg-8">
+        <!-- License Information -->
+        <div class="admin-card mb-4">
+            <div class="admin-card-header">
+                <i class="fas fa-key me-2"></i>License Information
+            </div>
+            <div class="admin-card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-muted mb-2">License Key</h6>
+                        <p class="fw-bold font-monospace">
+                            <%= format_license_key(@license.license_key) %>
+                            <button class="btn btn-sm btn-outline-secondary ms-2" onclick="copyLicenseKey('<%= @license.license_key %>')">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-muted mb-2">Product</h6>
+                        <p class="fw-bold">
+                            <% if @license.product %>
+                            <a href="/admin/products/<%= @license.product.id %>" class="text-decoration-none">
+                                <%= h(@license.product.name) %>
+                            </a>
+                            <% if @license.product.version %>
+                            <small class="text-muted d-block">Version: <%= h(@license.product.version) %></small>
+                            <% end %>
+                            <% else %>
+                            <span class="text-muted">Unknown Product (Deleted)</span>
+                            <% end %>
+                        </p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-muted mb-2">License Type</h6>
+                        <p class="fw-bold">
+                            <%= @license.license_type&.capitalize || 'Standard' %>
+                            <% if @license.trial? %>
+                            <span class="badge bg-info ms-2">Trial</span>
+                            <% elsif @license.subscription_based? %>
+                            <span class="badge bg-primary ms-2">Subscription</span>
+                            <% elsif @license.perpetual? %>
+                            <span class="badge bg-success ms-2">Perpetual</span>
+                            <% end %>
+                        </p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-muted mb-2">Activations</h6>
+                        <p class="fw-bold">
+                            <span class="<%= @license.activation_count >= @license.effective_max_activations ? 'text-danger' : 'text-success' %>">
+                                <%= @license.activation_count %>/<%= @license.effective_max_activations %>
+                            </span>
+                            <% if @license.custom_max_activations %>
+                            <small class="text-muted d-block">Custom limit set</small>
+                            <% end %>
+                        </p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-muted mb-2">Created Date</h6>
+                        <p class="fw-bold">
+                            <%= format_date(@license.created_at, :datetime) %>
+                        </p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-muted mb-2">Expiration Date</h6>
+                        <p class="fw-bold">
+                            <% if @license.effective_expires_at %>
+                            <%= format_date(@license.effective_expires_at, :datetime) %>
+                            <% if @license.custom_expires_at %>
+                            <small class="text-muted d-block">Custom expiration set</small>
+                            <% end %>
+                            <% else %>
+                            <span class="text-success">Never expires</span>
+                            <% end %>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Customer Information -->
+        <div class="admin-card mb-4">
+            <div class="admin-card-header">
+                <i class="fas fa-user me-2"></i>Customer Information
+            </div>
+            <div class="admin-card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-muted mb-2">Customer Name</h6>
+                        <p class="fw-bold">
+                            <%= h(@license.customer_name || 'Not provided') %>
+                        </p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-muted mb-2">Email Address</h6>
+                        <p class="fw-bold">
+                            <a href="mailto:<%= h(@license.customer_email) %>" class="text-decoration-none">
+                                <%= h(@license.customer_email) %>
+                            </a>
+                        </p>
+                    </div>
+                    <% if @license.user %>
+                    <div class="col-md-12">
+                        <h6 class="text-muted mb-2">User Account</h6>
+                        <p class="fw-bold">
+                            <a href="/admin/customers/<%= @license.user.id %>" class="text-decoration-none">
+                                View User Profile
+                            </a>
+                        </p>
+                    </div>
+                    <% end %>
+                </div>
+            </div>
+        </div>
+
+        <!-- License Activations -->
+        <div class="admin-card">
+            <div class="admin-card-header d-flex justify-content-between align-items-center">
+                <span>
+                    <i class="fas fa-desktop me-2"></i>License Activations
+                </span>
+                <span class="badge bg-secondary">
+                    <%= @license.license_activations.select { |a| a.active }.count %> active
+                </span>
+            </div>
+            <div class="admin-card-body">
+                <% if @license.license_activations.any? %>
+                <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                        <thead>
+                            <tr>
+                                <th>Machine Fingerprint</th>
+                                <th>Status</th>
+                                <th>Activated At</th>
+                                <th>IP Address</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% @license.license_activations.sort_by(&:created_at).reverse.each do |activation| %>
+                            <tr class="<%= activation.active? ? '' : 'text-muted' %>">
+                                <td>
+                                    <div class="font-monospace">
+                                        <%= truncate(activation.machine_fingerprint, 20) %>
+                                    </div>
+                                    <% if activation.system_info_hash.any? %>
+                                    <small class="text-muted">
+                                        <% if activation.system_info_hash['os'] %>
+                                        <%= activation.system_info_hash['os'] %>
+                                        <% end %>
+                                        <% if activation.system_info_hash['version'] %>
+                                        <%= activation.system_info_hash['version'] %>
+                                        <% end %>
+                                    </small>
+                                    <% end %>
+                                </td>
+                                <td>
+                                    <% if activation.active? %>
+                                    <span class="badge bg-success">Active</span>
+                                    <% else %>
+                                    <span class="badge bg-secondary">Deactivated</span>
+                                    <% end %>
+                                </td>
+                                <td>
+                                    <%= format_date(activation.created_at, :short) %>
+                                    <% if activation.deactivated_at %>
+                                    <br><small class="text-muted">Deactivated: <%= format_date(activation.deactivated_at, :short) %></small>
+                                    <% end %>
+                                </td>
+                                <td>
+                                    <%= activation.ip_address || 'Unknown' %>
+                                </td>
+                                <td>
+                                    <% if activation.active? %>
+                                    <button class="btn btn-outline-danger btn-sm" onclick="deactivateLicense('<%= activation.machine_fingerprint %>')">
+                                        <i class="fas fa-times"></i> Deactivate
+                                    </button>
+                                    <% end %>
+                                </td>
+                            </tr>
+                            <% end %>
+                        </tbody>
+                    </table>
+                </div>
+                <% else %>
+                <div class="text-center py-4">
+                    <i class="fas fa-desktop text-muted mb-3" style="font-size: 2rem;"></i>
+                    <p class="text-muted mb-0">No activations recorded for this license</p>
+                </div>
+                <% end %>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: License Summary & Actions -->
+    <div class="col-lg-4">
+        <!-- License Summary -->
+        <div class="admin-card mb-4">
+            <div class="admin-card-header">
+                <i class="fas fa-info-circle me-2"></i>License Summary
+            </div>
+            <div class="admin-card-body">
+                <div class="row g-3">
+                    <div class="col-12">
+                        <div class="d-flex justify-content-between">
+                            <span class="text-muted">License ID:</span>
+                            <span class="fw-bold">#<%= @license.id %></span>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="d-flex justify-content-between">
+                            <span class="text-muted">Status:</span>
+                            <%= status_badge(@license.status) %>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="d-flex justify-content-between">
+                            <span class="text-muted">Type:</span>
+                            <span><%= @license.license_type&.capitalize || 'Standard' %></span>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="d-flex justify-content-between">
+                            <span class="text-muted">Activations:</span>
+                            <span class="<%= @license.activation_count >= @license.effective_max_activations ? 'text-danger' : 'text-success' %>">
+                                <%= @license.activation_count %>/<%= @license.effective_max_activations %>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="d-flex justify-content-between">
+                            <span class="text-muted">Valid:</span>
+                            <span class="<%= @license.valid? ? 'text-success' : 'text-danger' %>">
+                                <%= @license.valid? ? 'Yes' : 'No' %>
+                            </span>
+                        </div>
+                    </div>
+                    <% if @license.order_id %>
+                    <div class="col-12">
+                        <div class="d-flex justify-content-between">
+                            <span class="text-muted">Order ID:</span>
+                            <span>
+                                <a href="/admin/orders/<%= @license.order_id %>" class="text-decoration-none">
+                                    #<%= @license.order_id %>
+                                </a>
+                            </span>
+                        </div>
+                    </div>
+                    <% end %>
+                    <div class="col-12">
+                        <hr class="my-2">
+                    </div>
+                    <div class="col-12">
+                        <div class="d-flex justify-content-between">
+                            <span class="text-muted">Created:</span>
+                            <span><%= format_date(@license.created_at, :short) %></span>
+                        </div>
+                    </div>
+                    <% if @license.effective_expires_at %>
+                    <div class="col-12">
+                        <div class="d-flex justify-content-between">
+                            <span class="text-muted">Expires:</span>
+                            <span class="<%= @license.expired? ? 'text-danger' : 'text-success' %>">
+                                <%= format_date(@license.effective_expires_at, :short) %>
+                            </span>
+                        </div>
+                    </div>
+                    <% end %>
+                    <% if @license.last_activated_at %>
+                    <div class="col-12">
+                        <div class="d-flex justify-content-between">
+                            <span class="text-muted">Last Activated:</span>
+                            <span><%= format_date(@license.last_activated_at, :short) %></span>
+                        </div>
+                    </div>
+                    <% end %>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="admin-card mb-4">
+            <div class="admin-card-header">
+                <i class="fas fa-bolt me-2"></i>Quick Actions
+            </div>
+            <div class="admin-card-body">
+                <div class="d-grid gap-2">
+                    <% if @license.active? %>
+                    <button class="btn btn-warning" onclick="updateLicenseStatus('suspend')">
+                        <i class="fas fa-pause me-2"></i>Suspend License
+                    </button>
+                    <button class="btn btn-danger" onclick="updateLicenseStatus('revoke')">
+                        <i class="fas fa-ban me-2"></i>Revoke License
+                    </button>
+                    <% elsif @license.suspended? %>
+                    <button class="btn btn-success" onclick="updateLicenseStatus('activate')">
+                        <i class="fas fa-play me-2"></i>Reactivate License
+                    </button>
+                    <button class="btn btn-danger" onclick="updateLicenseStatus('revoke')">
+                        <i class="fas fa-ban me-2"></i>Revoke License
+                    </button>
+                    <% end %>
+                    
+                    <button class="btn btn-outline-primary" onclick="copyLicenseKey('<%= @license.license_key %>')">
+                        <i class="fas fa-copy me-2"></i>Copy License Key
+                    </button>
+                    
+                    <a href="mailto:<%= h(@license.customer_email) %>?subject=Regarding License <%= @license.license_key %>" class="btn btn-outline-secondary">
+                        <i class="fas fa-envelope me-2"></i>Email Customer
+                    </a>
+                    
+                    <% if @license.order %>
+                    <a href="/admin/orders/<%= @license.order.id %>" class="btn btn-outline-info">
+                        <i class="fas fa-receipt me-2"></i>View Order
+                    </a>
+                    <% end %>
+                </div>
+            </div>
+        </div>
+
+        <!-- Custom Configuration -->
+        <% if @license.custom_config? %>
+        <div class="admin-card">
+            <div class="admin-card-header">
+                <i class="fas fa-sliders-h me-2"></i>Custom Configuration
+            </div>
+            <div class="admin-card-body">
+                <% if @license.custom_max_activations %>
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">Custom Max Activations:</span>
+                    <span class="fw-bold"><%= @license.custom_max_activations %></span>
+                </div>
+                <% end %>
+                <% if @license.custom_expires_at %>
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">Custom Expiration:</span>
+                    <span class="fw-bold"><%= format_date(@license.custom_expires_at, :short) %></span>
+                </div>
+                <% end %>
+            </div>
+        </div>
+        <% end %>
+    </div>
+</div>
+
+<!-- JavaScript -->
+<script>
+// Update license status
+function updateLicenseStatus(action) {
+    const confirmText = action === 'activate' ? 
+        'Are you sure you want to reactivate this license?' :
+        action === 'suspend' ? 
+        'Are you sure you want to suspend this license? It will no longer be usable until reactivated.' :
+        action === 'revoke' ?
+        'Are you sure you want to revoke this license? This action cannot be undone and will deactivate all activations.' :
+        `Are you sure you want to update this license status to ${action}?`;
+    
+    if (confirm(confirmText)) {
+        fetch(`/admin/licenses/<%= @license.id %>/toggle-status`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({ action: action })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while updating the license status.');
+        });
+    }
+}
+
+// Deactivate license on specific machine
+function deactivateLicense(machineFingerprint) {
+    if (confirm('Are you sure you want to deactivate this license on this machine?')) {
+        fetch(`/admin/licenses/<%= @license.id %>/deactivate`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({ machine_fingerprint: machineFingerprint })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while deactivating the license.');
+        });
+    }
+}
+
+// Copy license key to clipboard
+function copyLicenseKey(licenseKey) {
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(licenseKey).then(() => {
+            AdminUtils.showNotification('License key copied to clipboard!', 'success');
+        }).catch(err => {
+            console.error('Failed to copy: ', err);
+            fallbackCopyTextToClipboard(licenseKey);
+        });
+    } else {
+        fallbackCopyTextToClipboard(licenseKey);
+    }
+}
+
+// Fallback copy function for older browsers
+function fallbackCopyTextToClipboard(text) {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.style.position = "fixed";
+    textArea.style.left = "-999999px";
+    textArea.style.top = "-999999px";
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    
+    try {
+        const successful = document.execCommand('copy');
+        if (successful) {
+            AdminUtils.showNotification('License key copied to clipboard!', 'success');
+        } else {
+            AdminUtils.showNotification('Failed to copy license key', 'error');
+        }
+    } catch (err) {
+        AdminUtils.showNotification('Failed to copy license key', 'error');
+    }
+    
+    document.body.removeChild(textArea);
+}
+</script>
+
+<!-- Custom Styles -->
+<style>
+.admin-card {
+    background: var(--surface-secondary);
+    border: 1px solid var(--border-default);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    color: var(--text-primary);
+}
+
+.admin-card-header {
+    background-color: var(--surface-tertiary);
+    border-bottom: 1px solid var(--border-default);
+    padding: 1rem 1.5rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.admin-card-body {
+    padding: 1.5rem;
+}
+
+.table {
+    color: var(--text-primary);
+}
+
+.table th {
+    border-bottom: 2px solid var(--border-default);
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.table td {
+    border-bottom: 1px solid var(--border-muted);
+}
+
+.table-active {
+    background-color: var(--surface-tertiary);
+}
+
+.alert {
+    border: none;
+    border-radius: 12px;
+}
+
+.font-monospace {
+    font-family: 'Courier New', monospace;
+    letter-spacing: 0.5px;
+}
+
+.text-break {
+    word-break: break-all;
+}
+
+/* Status-specific alert styling */
+.alert-success {
+    background: rgba(46, 160, 67, 0.1);
+    color: var(--text-primary);
+    border-left: 4px solid #2ea043;
+}
+
+.alert-warning {
+    background: rgba(251, 133, 0, 0.1);
+    color: var(--text-primary);
+    border-left: 4px solid #fb8500;
+}
+
+.alert-danger {
+    background: rgba(218, 54, 51, 0.1);
+    color: var(--text-primary);
+    border-left: 4px solid #da3633;
+}
+
+.alert-info {
+    background: rgba(9, 105, 218, 0.1);
+    color: var(--text-primary);
+    border-left: 4px solid #0969da;
+}
+
+/* Dropdown menu styling */
+.dropdown-menu {
+    background: var(--surface-secondary);
+    border: 1px solid var(--border-default);
+    box-shadow: var(--shadow-lg);
+}
+
+.dropdown-item {
+    color: var(--text-primary);
+}
+
+.dropdown-item:hover {
+    background: var(--surface-tertiary);
+    color: var(--accent-primary);
+}
+
+.dropdown-divider {
+    border-color: var(--border-default);
+}
+
+/* Button styling improvements */
+.btn {
+    border-radius: 8px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .admin-card-body {
+        padding: 1rem;
+    }
+    
+    .table-responsive {
+        font-size: 0.875rem;
+    }
+    
+    .d-flex.justify-content-between {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: 0.5rem;
+    }
+    
+    .d-flex.justify-content-between > span:last-child {
+        margin-left: auto;
+    }
+}
+</style>

@@ -17,6 +17,7 @@ class LicenseGenerator
         order_id: order.id,
         product_id: product.id,
         customer_email: order.email,
+        customer_name: order.customer_name,
         status: 'active',
         max_activations: product.max_activations,
         activation_count: 0,
@@ -71,6 +72,7 @@ class LicenseGenerator
         # Create a temporary order for batch generation
         order = Order.create(
           email: customer_email || 'batch@generated.com',
+          customer_name: 'Batch Generated',
           amount: product.price,
           currency: 'USD',
           status: 'completed',

@@ -605,6 +605,11 @@ class Order < Sequel::Model
     update(status: 'completed', completed_at: Time.now)
   end
 
+  # Mark order as refunded
+  def refund!
+    update(status: 'refunded', refunded_at: Time.now)
+  end
+
   # Calculate subtotal from order items (before taxes)
   def calculate_subtotal
     order_items.sum { |item| item.price * item.quantity }

@@ -179,11 +179,11 @@ module ApiController
           new_order
         end
 
-        # Generate licenses for the free order
-        generate_licenses_for_order(order)
+        # Generate licenses for the completed free order
+        ApiController.generate_licenses_for_order(order)
 
         # Send confirmation email if configured
-        send_order_confirmation_email(order) if ENV['SMTP_HOST']
+        ApiController.send_order_confirmation_email(order) if ENV['SMTP_HOST']
 
         status 201
         {
@@ -224,10 +224,10 @@ module ApiController
 
         if result[:success]
           # Generate licenses for successful payment
-          generate_licenses_for_order(order)
+          ApiController.generate_licenses_for_order(order)
 
           # Send confirmation email if configured
-          send_order_confirmation_email(order) if ENV['SMTP_HOST']
+          ApiController.send_order_confirmation_email(order) if ENV['SMTP_HOST']
 
           {
             success: true,
@@ -574,21 +574,44 @@ module ApiController
     end
 
     # Send confirmation email
-    send_order_confirmation_email(order) if ENV['SMTP_HOST']
+    ApiController.send_order_confirmation_email(order) if ENV['SMTP_HOST']
   end
 
   # Send order confirmation email
   def self.send_order_confirmation_email(order)
-    mail = Mail.new do
-      from ENV.fetch('SMTP_USERNAME', nil)
-      to order.email
-      subject "Your Software License Purchase - Order ##{order.id}"
-      body erb(:'emails/order_confirmation', locals: { order: order }, layout: false)
-    end
+    # Skip email sending if SMTP is not properly configured
+    return unless ENV['SMTP_HOST'] && ENV['SMTP_USERNAME'] && ENV['SMTP_PASSWORD']
 
-    mail.deliver!
-  rescue StandardError => e
-    logger.error "Failed to send confirmation email: #{e.message}"
+    begin
+      # Simple email body since email templates don't exist
+      email_body = "Thank you for your order!\n\n"
+      email_body += "Order ID: #{order.id}\n"
+      email_body += "Customer: #{order.customer_name}\n"
+      email_body += "Email: #{order.email}\n"
+      email_body += "Amount: #{order.amount}\n"
+      email_body += "Status: #{order.status}\n\n"
+      
+      if order.licenses.any?
+        email_body += "Your license keys:\n"
+        order.licenses.each do |license|
+          email_body += "- #{license.license_key} (#{license.product&.name})\n"
+        end
+      end
+      
+      email_body += "\nThank you for your business!"
+
+      mail = Mail.new do
+        from ENV.fetch('SMTP_USERNAME', nil)
+        to order.email
+        subject "Your Software License Purchase - Order ##{order.id}"
+        body email_body
+      end
+
+      mail.deliver!
+    rescue StandardError => e
+      # Log error but don't fail the request
+      puts "Failed to send confirmation email: #{e.message}" if ENV['APP_ENV'] == 'development'
+    end
   end
 
   # Generate licenses for completed order

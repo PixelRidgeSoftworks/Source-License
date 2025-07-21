@@ -64,14 +64,13 @@
         <div class="flex-grow-1">
             <h5 class="alert-heading mb-1">Order Status: <%= @order.status.capitalize %></h5>
             <p class="mb-0">
-                <% case @order.status %>
-                <% when 'pending' %>
+                <% if @order.status == 'pending' %>
                 This order is awaiting payment or manual completion.
-                <% when 'completed' %>
+                <% elsif @order.status == 'completed' %>
                 This order has been completed and licenses have been generated.
-                <% when 'failed' %>
+                <% elsif @order.status == 'failed' %>
                 This order failed to process. Check payment details or contact the customer.
-                <% when 'refunded' %>
+                <% elsif @order.status == 'refunded' %>
                 This order has been refunded and associated licenses have been revoked.
                 <% end %>
             </p>

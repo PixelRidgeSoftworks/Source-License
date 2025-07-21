@@ -29,6 +29,8 @@ class Migrations
       run_migration(17, :create_taxes_table)
       run_migration(18, :create_order_taxes_table)
       run_migration(19, :add_tax_fields_to_orders)
+      run_migration(20, :add_refunded_at_to_orders)
+      run_migration(21, :add_customer_name_to_licenses)
 
       puts '✓ All migrations completed successfully'
     end
@@ -592,6 +594,56 @@ class Migrations
       end
 
       puts '✓ Added tax fields to orders table'
+    end
+
+    # Migration 20: Add refunded_at to orders table
+    def add_refunded_at_to_orders
+      puts 'Adding refunded_at field to orders table...'
+
+      # Add refunded_at field if it doesn't exist
+      orders_schema = DB.schema(:orders).map { |col| col[0] }
+
+      unless orders_schema.include?(:refunded_at)
+        DB.alter_table :orders do
+          add_column :refunded_at, DateTime
+        end
+      end
+
+      # Add index for the new field
+      begin
+        DB.alter_table :orders do
+          add_index :refunded_at unless DB.indexes(:orders).key?(:orders_refunded_at_index)
+        end
+      rescue Sequel::DatabaseError => e
+        puts "Note: Index may already exist: #{e.message}"
+      end
+
+      puts '✓ Added refunded_at field to orders table'
+    end
+
+    # Migration 21: Add customer_name to licenses table
+    def add_customer_name_to_licenses
+      puts 'Adding customer_name field to licenses table...'
+
+      # Add customer_name field if it doesn't exist
+      licenses_schema = DB.schema(:licenses).map { |col| col[0] }
+
+      unless licenses_schema.include?(:customer_name)
+        DB.alter_table :licenses do
+          add_column :customer_name, String, size: 255
+        end
+      end
+
+      # Add index for the new field
+      begin
+        DB.alter_table :licenses do
+          add_index :customer_name unless DB.indexes(:licenses).key?(:licenses_customer_name_index)
+        end
+      rescue Sequel::DatabaseError => e
+        puts "Note: Index may already exist: #{e.message}"
+      end
+
+      puts '✓ Added customer_name field to licenses table'
     end
   end
 end

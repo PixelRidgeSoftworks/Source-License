@@ -13,6 +13,7 @@
 ## Product Features
 
 - [ ] Services as products
+- [ ] Ability to let customers customize licenses before purchase (for example, buying a special license with more than the set default activations) with auto-price adjustment
 
 ## Miscellaneous Features
 

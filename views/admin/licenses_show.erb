@@ -458,13 +458,16 @@ function updateLicenseStatus(action) {
         `Are you sure you want to update this license status to ${action}?`;
     
     if (confirm(confirmText)) {
+        // Create form data to send the action parameter
+        const formData = new FormData();
+        formData.append('action', action);
+        
         fetch(`/admin/licenses/<%= @license.id %>/toggle-status`, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
                 'X-Requested-With': 'XMLHttpRequest'
             },
-            body: JSON.stringify({ action: action })
+            body: formData
         })
         .then(response => response.json())
         .then(data => {

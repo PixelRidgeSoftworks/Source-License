@@ -1,0 +1,19 @@
+name: "CodeQL Config"
+
+paths-ignore:
+  - "vendor/**"
+  - "node_modules/**"
+  - ".bundle/**"
+  - "coverage/**"
+  - "logs/**"
+  - "tmp/**"
+  - "public/assets/**"
+  - "public/javascripts/vendor/**"
+  - "public/stylesheets/vendor/**"
+  - "**/*.gemspec"
+  - "Gemfile.lock"
+  - "package-lock.json"
+  - "yarn.lock"
+
+queries:
+  - uses: security-extended

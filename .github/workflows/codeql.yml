@@ -90,6 +90,7 @@ jobs:
       with:
         languages: ${{ matrix.language }}
         queries: security-extended
+        config-file: ./.github/codeql/codeql-config.yml
 
     - name: Setup test DB for Ruby analysis
       if: matrix.language == 'ruby'

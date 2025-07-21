@@ -73,18 +73,17 @@ class SourceLicenseApp < Sinatra::Base
     is_production = ENV['APP_ENV'] == 'production' || ENV['RACK_ENV'] == 'production'
     is_render = ENV['RENDER'] == 'true'
     is_https = ENV['HTTPS'] == 'true' || ENV['RAILS_FORCE_SSL'] == 'true' || is_render
-    
+
     # Use more permissive session settings for Render deployments (even in development)
     # to handle load balancer/proxy scenarios
     use Rack::Session::Cookie, {
       key: is_production ? '_source_license_session' : 'rack.session',
-      secret: ENV.fetch('APP_SECRET') { 
-        if is_production
-          raise 'APP_SECRET must be set in production'
-        else
-          'dev_secret_change_me_this_is_a_much_longer_fallback_secret_that_meets_the_64_character_minimum_requirement'
-        end
-      },
+      secret: ENV.fetch('APP_SECRET') do
+        raise 'APP_SECRET must be set in production' if is_production
+
+
+        'dev_secret_change_me_this_is_a_much_longer_fallback_secret_that_meets_the_64_character_minimum_requirement'
+      end,
       secure: is_https, # HTTPS when available
       httponly: true, # Prevent XSS
       same_site: is_render ? :none : :lax, # Use :none for Render to handle proxy/load balancer

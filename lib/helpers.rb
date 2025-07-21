@@ -205,26 +205,26 @@ module TemplateHelpers
   # Time ago helper for admin views
   def time_ago_in_words(time)
     return 'never' unless time
-    
+
     seconds_ago = Time.now - time
-    
+
     case seconds_ago
     when 0..59
       'less than a minute'
     when 60..3599
       minutes = (seconds_ago / 60).round
       "#{minutes} minute#{'s' if minutes != 1}"
-    when 3600..86399
+    when 3600..86_399
       hours = (seconds_ago / 3600).round
       "#{hours} hour#{'s' if hours != 1}"
-    when 86400..2591999
-      days = (seconds_ago / 86400).round
+    when 86_400..2_591_999
+      days = (seconds_ago / 86_400).round
       "#{days} day#{'s' if days != 1}"
-    when 2592000..31535999
-      months = (seconds_ago / 2592000).round
+    when 2_592_000..31_535_999
+      months = (seconds_ago / 2_592_000).round
       "#{months} month#{'s' if months != 1}"
     else
-      years = (seconds_ago / 31536000).round
+      years = (seconds_ago / 31_536_000).round
       "#{years} year#{'s' if years != 1}"
     end
   end
@@ -408,7 +408,7 @@ module TemplateHelpers
   def humanize(text)
     return '' unless text
 
-    text.to_s.gsub('_', ' ').split.map(&:capitalize).join(' ')
+    text.to_s.tr('_', ' ').split.map(&:capitalize).join(' ')
   end
 end
 
@@ -707,7 +707,7 @@ module AdminHelpers
     return false unless admin
 
     # Check if this admin's email matches the initial admin email from .env
-    initial_admin_email = ENV['INITIAL_ADMIN_EMAIL']
+    initial_admin_email = ENV.fetch('INITIAL_ADMIN_EMAIL', nil)
     return false unless initial_admin_email
 
     admin.email&.downcase == initial_admin_email.downcase
@@ -780,7 +780,7 @@ module AdminHelpers
   # Get admin status with protection info
   def admin_status_with_protection(admin)
     status = admin.active? ? 'Active' : 'Inactive'
-    
+
     if is_protected_admin?(admin)
       protection_reason = admin_protection_reason(admin)
       "#{status} (Protected: #{protection_reason})"
@@ -794,22 +794,22 @@ module AdminHelpers
     return 'Unknown' unless admin
 
     level = 0
-    
+
     # Recent login
-    level += 1 if admin.last_login_at && admin.last_login_at > (Time.now - 30 * 24 * 60 * 60)
-    
+    level += 1 if admin.last_login_at && admin.last_login_at > (Time.now - (30 * 24 * 60 * 60))
+
     # Has name set
     level += 1 if admin.name && !admin.name.empty?
-    
+
     # Email verified (if field exists)
     level += 1 if admin.respond_to?(:email_verified) && admin.email_verified
-    
+
     # Two-factor enabled (if field exists)
     level += 1 if admin.respond_to?(:two_factor_enabled) && admin.two_factor_enabled
-    
+
     # Recent password change (if field exists)
-    if admin.respond_to?(:password_changed_at) && admin.password_changed_at
-      level += 1 if admin.password_changed_at > (Time.now - 90 * 24 * 60 * 60)
+    if admin.respond_to?(:password_changed_at) && admin.password_changed_at && (admin.password_changed_at > (Time.now - (90 * 24 * 60 * 60)))
+      level += 1
     end
 
     case level

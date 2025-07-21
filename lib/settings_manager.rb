@@ -325,7 +325,7 @@ class SettingsManager
     },
     'security.hsts_max_age' => {
       type: 'number',
-      default: 31536000,
+      default: 31_536_000,
       category: 'security',
       description: 'HTTP Strict Transport Security max age in seconds',
       web_editable: true,
@@ -360,7 +360,7 @@ class SettingsManager
     },
     'security.session_timeout' => {
       type: 'number',
-      default: 28800,
+      default: 28_800,
       category: 'security',
       description: 'Session timeout in seconds',
       web_editable: true,
@@ -1070,10 +1070,8 @@ class SettingsManager
 
     def test_performance_configuration
       redis_url = get('performance.redis_url')
-      
-      if redis_url.empty?
-        return { status: 'disabled', message: 'Redis not configured' }
-      end
+
+      return { status: 'disabled', message: 'Redis not configured' } if redis_url.empty?
 
       begin
         # Basic Redis URL validation
@@ -1089,21 +1087,19 @@ class SettingsManager
 
     def test_security_configuration
       issues = []
-      
+
       # Check for strong secrets
       app_secret = get('app.secret')
       jwt_secret = get('security.jwt_secret')
-      
+
       issues << 'APP_SECRET not configured' if app_secret.empty?
       issues << 'JWT_SECRET not configured' if jwt_secret.empty?
       issues << 'APP_SECRET too short' if app_secret.length < 32
       issues << 'JWT_SECRET too short' if jwt_secret.length < 32
-      
+
       # Check SSL configuration
-      unless get('security.force_ssl')
-        issues << 'SSL not enforced'
-      end
-      
+      issues << 'SSL not enforced' unless get('security.force_ssl')
+
       if issues.any?
         { status: 'warning', message: "Security issues: #{issues.join(', ')}" }
       else
@@ -1113,20 +1109,20 @@ class SettingsManager
 
     def test_application_configuration
       issues = []
-      
+
       # Check required application settings
       app_name = get('app.name')
       support_email = get('app.support_email')
-      
+
       issues << 'Application name not configured' if app_name.empty?
       issues << 'Support email not configured' if support_email.empty?
-      
+
       # Check if in production with development settings
       if get('app.environment') == 'production'
         issues << 'Using default host in production' if get('app.host') == 'localhost'
         issues << 'Using default port in production' if get('app.port') == 4567
       end
-      
+
       if issues.any?
         { status: 'warning', message: "Configuration issues: #{issues.join(', ')}" }
       else

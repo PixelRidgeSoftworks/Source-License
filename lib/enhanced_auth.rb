@@ -17,11 +17,11 @@ module EnhancedAuthHelpers
   # Progressive ban configuration
   BAN_DURATIONS = [
     30 * 60,      # 1st ban: 30 minutes
-    2 * 60 * 60,  # 2nd ban: 2 hours  
+    2 * 60 * 60,  # 2nd ban: 2 hours
     8 * 60 * 60,  # 3rd ban: 8 hours
     24 * 60 * 60, # 4th ban: 24 hours
     72 * 60 * 60, # 5th ban: 72 hours (3 days)
-    168 * 60 * 60 # 6th+ ban: 168 hours (7 days)
+    168 * 60 * 60, # 6th+ ban: 168 hours (7 days)
   ].freeze
 
   # Session security configuration
@@ -50,16 +50,17 @@ module EnhancedAuthHelpers
       ban_info = get_current_ban(email)
       time_remaining = get_ban_time_remaining(email)
       duration_text = format_ban_duration(time_remaining)
-      
+
       log_auth_event('login_attempt_banned_account', {
         email: email,
         ip: request_info[:ip],
         user_agent: request_info[:user_agent],
         ban_count: ban_info[:ban_count],
-        time_remaining: time_remaining
+        time_remaining: time_remaining,
       })
-      
-      return security_response(false, "Account is temporarily banned for #{duration_text} due to multiple failed login attempts")
+
+      return security_response(false,
+                               "Account is temporarily banned for #{duration_text} due to multiple failed login attempts")
     end
 
     # Rate limiting for login attempts
@@ -180,7 +181,7 @@ module EnhancedAuthHelpers
       log_auth_event('session_invalidated_inactive_admin', {
         admin_id: session_data[:admin_id],
         admin_email: session_data[:admin_email],
-        reason: admin ? 'account_deactivated' : 'account_deleted'
+        reason: admin ? 'account_deactivated' : 'account_deleted',
       })
       destroy_session('admin_account_deactivated')
       return false
@@ -269,16 +270,17 @@ module EnhancedAuthHelpers
       ban_info = get_current_ban(email)
       time_remaining = get_ban_time_remaining(email)
       duration_text = format_ban_duration(time_remaining)
-      
+
       log_auth_event('login_attempt_banned_account', {
         email: email,
         ip: request_info[:ip],
         user_agent: request_info[:user_agent],
         ban_count: ban_info[:ban_count],
-        time_remaining: time_remaining
+        time_remaining: time_remaining,
       })
-      
-      return security_response(false, "Account is temporarily banned for #{duration_text} due to multiple failed login attempts")
+
+      return security_response(false,
+                               "Account is temporarily banned for #{duration_text} due to multiple failed login attempts")
     end
 
     # Rate limiting for login attempts
@@ -422,12 +424,12 @@ module EnhancedAuthHelpers
   def apply_progressive_ban(email, admin_id = nil, request_info = {})
     # Get previous ban count
     ban_count = get_ban_count(email)
-    
+
     # Calculate new ban duration
     duration_index = [ban_count, BAN_DURATIONS.length - 1].min
     ban_duration = BAN_DURATIONS[duration_index]
     banned_until = Time.now + ban_duration
-    
+
     # Create ban record
     ban_data = {
       email: email,
@@ -437,16 +439,16 @@ module EnhancedAuthHelpers
       reason: 'multiple_failed_login_attempts',
       ip_address: request_info[:ip],
       user_agent: request_info[:user_agent],
-      created_at: Time.now
+      created_at: Time.now,
     }
-    
+
     # Store the ban
     if use_redis_for_auth?
       store_ban_redis(ban_data)
     else
       store_ban_database(ban_data)
     end
-    
+
     # Log the ban
     log_auth_event('account_banned', {
       email: email,
@@ -454,9 +456,9 @@ module EnhancedAuthHelpers
       ban_count: ban_count + 1,
       ban_duration_minutes: ban_duration / 60,
       banned_until: banned_until.iso8601,
-      ip: request_info[:ip]
+      ip: request_info[:ip],
     })
-    
+
     ban_data
   end
 
@@ -471,17 +473,17 @@ module EnhancedAuthHelpers
   def format_ban_duration(seconds)
     if seconds < 3600
       "#{seconds / 60} minutes"
-    elsif seconds < 86400
+    elsif seconds < 86_400
       "#{seconds / 3600} hours"
     else
-      "#{seconds / 86400} days"
+      "#{seconds / 86_400} days"
     end
   end
 
   def get_ban_time_remaining(email)
     ban_info = get_current_ban(email)
     return 0 unless ban_info && ban_info[:banned_until] > Time.now
-    
+
     ban_info[:banned_until] - Time.now
   end
 
@@ -497,7 +499,7 @@ module EnhancedAuthHelpers
     log_auth_event('ban_removed_by_admin', {
       email: email,
       removed_by_admin: admin_who_removed&.id || 'system',
-      removed_by_email: admin_who_removed&.email || 'system'
+      removed_by_email: admin_who_removed&.email || 'system',
     })
 
     true
@@ -515,7 +517,7 @@ module EnhancedAuthHelpers
     log_auth_event('ban_count_reset_by_admin', {
       email: email,
       reset_by_admin: admin_who_reset&.id || 'system',
-      reset_by_email: admin_who_reset&.email || 'system'
+      reset_by_email: admin_who_reset&.email || 'system',
     })
 
     true
@@ -568,7 +570,7 @@ module EnhancedAuthHelpers
 
   # Production-ready storage methods
   def use_redis_for_auth?
-    ENV['REDIS_URL'] && !ENV['REDIS_URL'].empty?
+    ENV.fetch('REDIS_URL', nil) && !ENV['REDIS_URL'].empty?
   end
 
   def store_failed_attempt_redis(attempt_data)
@@ -576,15 +578,15 @@ module EnhancedAuthHelpers
 
     begin
       require 'redis'
-      redis = Redis.new(url: ENV['REDIS_URL'])
-      
+      redis = Redis.new(url: ENV.fetch('REDIS_URL', nil))
+
       key = "failed_attempts:#{attempt_data[:email]}"
       attempt_json = attempt_data.to_json
-      
+
       # Add to list and set expiration
       redis.lpush(key, attempt_json)
       redis.expire(key, LOGIN_ATTEMPT_WINDOW)
-      
+
       # Keep only recent attempts
       redis.ltrim(key, 0, MAX_FAILED_ATTEMPTS * 2)
     rescue StandardError => e
@@ -599,13 +601,13 @@ module EnhancedAuthHelpers
 
     begin
       require 'redis'
-      redis = Redis.new(url: ENV['REDIS_URL'])
-      
+      redis = Redis.new(url: ENV.fetch('REDIS_URL', nil))
+
       key = "failed_attempts:#{email}"
       attempts_json = redis.lrange(key, 0, -1)
-      
+
       attempts = attempts_json.map { |json| JSON.parse(json, symbolize_names: true) }
-      
+
       # Filter to recent attempts only
       cutoff_time = Time.now - LOGIN_ATTEMPT_WINDOW
       attempts.select { |attempt| Time.parse(attempt[:timestamp].to_s) > cutoff_time }
@@ -620,7 +622,7 @@ module EnhancedAuthHelpers
 
     begin
       require 'redis'
-      redis = Redis.new(url: ENV['REDIS_URL'])
+      redis = Redis.new(url: ENV.fetch('REDIS_URL', nil))
       redis.del("failed_attempts:#{email}")
     rescue StandardError => e
       AppLogger.error("Redis failed for auth clearing: #{e.message}")
@@ -629,67 +631,61 @@ module EnhancedAuthHelpers
   end
 
   def store_failed_attempt_database(attempt_data)
-    begin
-      # Create failed_login_attempts table if it doesn't exist
-      create_failed_attempts_table_if_needed
+    # Create failed_login_attempts table if it doesn't exist
+    create_failed_attempts_table_if_needed
 
-      DB[:failed_login_attempts].insert(
-        email: attempt_data[:email],
-        admin_id: attempt_data[:admin_id],
-        ip_address: attempt_data[:ip_address],
-        user_agent: attempt_data[:user_agent],
-        created_at: attempt_data[:timestamp],
-      )
+    DB[:failed_login_attempts].insert(
+      email: attempt_data[:email],
+      admin_id: attempt_data[:admin_id],
+      ip_address: attempt_data[:ip_address],
+      user_agent: attempt_data[:user_agent],
+      created_at: attempt_data[:timestamp]
+    )
 
-      # Clean up old attempts
-      cutoff_time = Time.now - LOGIN_ATTEMPT_WINDOW
-      DB[:failed_login_attempts].where { created_at < cutoff_time }.delete
-    rescue StandardError => e
-      AppLogger.error("Database failed for auth storage: #{e.message}")
-      # Fallback to session storage for this request
-      session[:failed_attempts] ||= []
-      session[:failed_attempts] << attempt_data
-    end
+    # Clean up old attempts
+    cutoff_time = Time.now - LOGIN_ATTEMPT_WINDOW
+    DB[:failed_login_attempts].where { created_at < cutoff_time }.delete
+  rescue StandardError => e
+    AppLogger.error("Database failed for auth storage: #{e.message}")
+    # Fallback to session storage for this request
+    session[:failed_attempts] ||= []
+    session[:failed_attempts] << attempt_data
   end
 
   def get_failed_attempts_database(email)
-    begin
-      return [] unless DB.table_exists?(:failed_login_attempts)
+    return [] unless DB.table_exists?(:failed_login_attempts)
 
-      cutoff_time = Time.now - LOGIN_ATTEMPT_WINDOW
-      
-      attempts = DB[:failed_login_attempts]
-                   .where(email: email)
-                   .where { created_at > cutoff_time }
-                   .order(Sequel.desc(:created_at))
-                   .all
+    cutoff_time = Time.now - LOGIN_ATTEMPT_WINDOW
 
-      attempts.map do |attempt|
-        {
-          email: attempt[:email],
-          admin_id: attempt[:admin_id],
-          ip_address: attempt[:ip_address],
-          user_agent: attempt[:user_agent],
-          timestamp: attempt[:created_at],
-        }
-      end
-    rescue StandardError => e
-      AppLogger.error("Database failed for auth retrieval: #{e.message}")
-      # Fallback to session storage
-      session[:failed_attempts] || []
+    attempts = DB[:failed_login_attempts]
+      .where(email: email)
+      .where { created_at > cutoff_time }
+      .order(Sequel.desc(:created_at))
+      .all
+
+    attempts.map do |attempt|
+      {
+        email: attempt[:email],
+        admin_id: attempt[:admin_id],
+        ip_address: attempt[:ip_address],
+        user_agent: attempt[:user_agent],
+        timestamp: attempt[:created_at],
+      }
     end
+  rescue StandardError => e
+    AppLogger.error("Database failed for auth retrieval: #{e.message}")
+    # Fallback to session storage
+    session[:failed_attempts] || []
   end
 
   def clear_failed_attempts_database(email)
-    begin
-      return unless DB.table_exists?(:failed_login_attempts)
+    return unless DB.table_exists?(:failed_login_attempts)
 
-      DB[:failed_login_attempts].where(email: email).delete
-    rescue StandardError => e
-      AppLogger.error("Database failed for auth clearing: #{e.message}")
-      # Fallback to session clearing
-      session[:failed_attempts] = []
-    end
+    DB[:failed_login_attempts].where(email: email).delete
+  rescue StandardError => e
+    AppLogger.error("Database failed for auth clearing: #{e.message}")
+    # Fallback to session clearing
+    session[:failed_attempts] = []
   end
 
   def create_failed_attempts_table_if_needed
@@ -702,10 +698,10 @@ module EnhancedAuthHelpers
       String :ip_address
       String :user_agent
       DateTime :created_at, null: false
-      
+
       index :email
       index :created_at
-      index [:email, :created_at]
+      index %i[email created_at]
     end
   end
 
@@ -715,19 +711,19 @@ module EnhancedAuthHelpers
 
     begin
       require 'redis'
-      redis = Redis.new(url: ENV['REDIS_URL'])
-      
+      redis = Redis.new(url: ENV.fetch('REDIS_URL', nil))
+
       key = "account_ban:#{ban_data[:email]}"
       ban_json = ban_data.to_json
-      
+
       # Store ban with expiration
       redis.set(key, ban_json)
       redis.expireat(key, ban_data[:banned_until].to_i)
-      
+
       # Also store ban count separately for tracking progressive bans
       count_key = "ban_count:#{ban_data[:email]}"
       redis.set(count_key, ban_data[:ban_count])
-      redis.expire(count_key, 86400 * 30) # Keep ban count for 30 days
+      redis.expire(count_key, 86_400 * 30) # Keep ban count for 30 days
     rescue StandardError => e
       AppLogger.error("Redis failed for ban storage: #{e.message}")
       store_ban_database(ban_data)
@@ -739,12 +735,12 @@ module EnhancedAuthHelpers
 
     begin
       require 'redis'
-      redis = Redis.new(url: ENV['REDIS_URL'])
-      
+      redis = Redis.new(url: ENV.fetch('REDIS_URL', nil))
+
       key = "account_ban:#{email}"
       ban_json = redis.get(key)
       return nil unless ban_json
-      
+
       ban_data = JSON.parse(ban_json, symbolize_names: true)
       ban_data[:banned_until] = Time.parse(ban_data[:banned_until].to_s)
       ban_data
@@ -759,8 +755,8 @@ module EnhancedAuthHelpers
 
     begin
       require 'redis'
-      redis = Redis.new(url: ENV['REDIS_URL'])
-      
+      redis = Redis.new(url: ENV.fetch('REDIS_URL', nil))
+
       count_key = "ban_count:#{email}"
       count = redis.get(count_key)
       count ? count.to_i : 0
@@ -771,70 +767,64 @@ module EnhancedAuthHelpers
   end
 
   def store_ban_database(ban_data)
-    begin
-      create_account_bans_table_if_needed
+    create_account_bans_table_if_needed
 
-      DB[:account_bans].insert(
-        email: ban_data[:email],
-        admin_id: ban_data[:admin_id],
-        ban_count: ban_data[:ban_count],
-        banned_until: ban_data[:banned_until],
-        reason: ban_data[:reason],
-        ip_address: ban_data[:ip_address],
-        user_agent: ban_data[:user_agent],
-        created_at: ban_data[:created_at]
-      )
+    DB[:account_bans].insert(
+      email: ban_data[:email],
+      admin_id: ban_data[:admin_id],
+      ban_count: ban_data[:ban_count],
+      banned_until: ban_data[:banned_until],
+      reason: ban_data[:reason],
+      ip_address: ban_data[:ip_address],
+      user_agent: ban_data[:user_agent],
+      created_at: ban_data[:created_at]
+    )
 
-      # Clean up expired bans
-      DB[:account_bans].where { banned_until < Time.now }.delete
-    rescue StandardError => e
-      AppLogger.error("Database failed for ban storage: #{e.message}")
-    end
+    # Clean up expired bans
+    DB[:account_bans].where { banned_until < Time.now }.delete
+  rescue StandardError => e
+    AppLogger.error("Database failed for ban storage: #{e.message}")
   end
 
   def get_ban_database(email)
-    begin
-      return nil unless DB.table_exists?(:account_bans)
+    return nil unless DB.table_exists?(:account_bans)
 
-      ban = DB[:account_bans]
-              .where(email: email)
-              .where { banned_until > Time.now }
-              .order(Sequel.desc(:created_at))
-              .first
+    ban = DB[:account_bans]
+      .where(email: email)
+      .where { banned_until > Time.now }
+      .order(Sequel.desc(:created_at))
+      .first
 
-      return nil unless ban
+    return nil unless ban
 
-      {
-        email: ban[:email],
-        admin_id: ban[:admin_id],
-        ban_count: ban[:ban_count],
-        banned_until: ban[:banned_until],
-        reason: ban[:reason],
-        ip_address: ban[:ip_address],
-        user_agent: ban[:user_agent],
-        created_at: ban[:created_at]
-      }
-    rescue StandardError => e
-      AppLogger.error("Database failed for ban retrieval: #{e.message}")
-      nil
-    end
+    {
+      email: ban[:email],
+      admin_id: ban[:admin_id],
+      ban_count: ban[:ban_count],
+      banned_until: ban[:banned_until],
+      reason: ban[:reason],
+      ip_address: ban[:ip_address],
+      user_agent: ban[:user_agent],
+      created_at: ban[:created_at],
+    }
+  rescue StandardError => e
+    AppLogger.error("Database failed for ban retrieval: #{e.message}")
+    nil
   end
 
   def get_ban_count_database(email)
-    begin
-      return 0 unless DB.table_exists?(:account_bans)
+    return 0 unless DB.table_exists?(:account_bans)
 
-      # Get the most recent ban count, or count historical bans
-      latest_ban = DB[:account_bans]
-                     .where(email: email)
-                     .order(Sequel.desc(:created_at))
-                     .first
+    # Get the most recent ban count, or count historical bans
+    latest_ban = DB[:account_bans]
+      .where(email: email)
+      .order(Sequel.desc(:created_at))
+      .first
 
-      latest_ban ? latest_ban[:ban_count] : 0
-    rescue StandardError => e
-      AppLogger.error("Database failed for ban count retrieval: #{e.message}")
-      0
-    end
+    latest_ban ? latest_ban[:ban_count] : 0
+  rescue StandardError => e
+    AppLogger.error("Database failed for ban count retrieval: #{e.message}")
+    0
   end
 
   def create_account_bans_table_if_needed
@@ -850,11 +840,11 @@ module EnhancedAuthHelpers
       String :ip_address
       String :user_agent
       DateTime :created_at, null: false
-      
+
       index :email
       index :banned_until
-      index [:email, :banned_until]
-      index [:email, :created_at]
+      index %i[email banned_until]
+      index %i[email created_at]
     end
   end
 
@@ -864,7 +854,7 @@ module EnhancedAuthHelpers
 
     begin
       require 'redis'
-      redis = Redis.new(url: ENV['REDIS_URL'])
+      redis = Redis.new(url: ENV.fetch('REDIS_URL', nil))
       redis.del("account_ban:#{email}")
     rescue StandardError => e
       AppLogger.error("Redis failed for ban removal: #{e.message}")
@@ -873,16 +863,14 @@ module EnhancedAuthHelpers
   end
 
   def remove_ban_database(email)
-    begin
-      return unless DB.table_exists?(:account_bans)
+    return unless DB.table_exists?(:account_bans)
 
-      DB[:account_bans]
-        .where(email: email)
-        .where { banned_until > Time.now }
-        .delete
-    rescue StandardError => e
-      AppLogger.error("Database failed for ban removal: #{e.message}")
-    end
+    DB[:account_bans]
+      .where(email: email)
+      .where { banned_until > Time.now }
+      .delete
+  rescue StandardError => e
+    AppLogger.error("Database failed for ban removal: #{e.message}")
   end
 
   def reset_ban_count_redis(email)
@@ -890,7 +878,7 @@ module EnhancedAuthHelpers
 
     begin
       require 'redis'
-      redis = Redis.new(url: ENV['REDIS_URL'])
+      redis = Redis.new(url: ENV.fetch('REDIS_URL', nil))
       redis.del("ban_count:#{email}")
     rescue StandardError => e
       AppLogger.error("Redis failed for ban count reset: #{e.message}")
@@ -899,17 +887,15 @@ module EnhancedAuthHelpers
   end
 
   def reset_ban_count_database(email)
-    begin
-      return unless DB.table_exists?(:account_bans)
+    return unless DB.table_exists?(:account_bans)
 
-      # We don't actually delete historical bans, but we can mark them as reset
-      # This preserves audit trail while resetting the progressive count
-      DB[:account_bans]
-        .where(email: email)
-        .update(ban_count: 0, updated_at: Time.now)
-    rescue StandardError => e
-      AppLogger.error("Database failed for ban count reset: #{e.message}")
-    end
+    # We don't actually delete historical bans, but we can mark them as reset
+    # This preserves audit trail while resetting the progressive count
+    DB[:account_bans]
+      .where(email: email)
+      .update(ban_count: 0, updated_at: Time.now)
+  rescue StandardError => e
+    AppLogger.error("Database failed for ban count reset: #{e.message}")
   end
 
   def get_all_active_bans_redis(limit = 50)
@@ -917,23 +903,23 @@ module EnhancedAuthHelpers
 
     begin
       require 'redis'
-      redis = Redis.new(url: ENV['REDIS_URL'])
-      
+      redis = Redis.new(url: ENV.fetch('REDIS_URL', nil))
+
       # Get all ban keys
-      ban_keys = redis.keys("account_ban:*")
+      ban_keys = redis.keys('account_ban:*')
       active_bans = []
-      
+
       ban_keys.first(limit).each do |key|
         ban_json = redis.get(key)
         next unless ban_json
-        
+
         ban_data = JSON.parse(ban_json, symbolize_names: true)
         ban_data[:banned_until] = Time.parse(ban_data[:banned_until].to_s)
-        
+
         # Only include active bans
         active_bans << ban_data if ban_data[:banned_until] > Time.now
       end
-      
+
       active_bans.sort_by { |ban| ban[:created_at] }.reverse
     rescue StandardError => e
       AppLogger.error("Redis failed for getting all active bans: #{e.message}")
@@ -942,31 +928,29 @@ module EnhancedAuthHelpers
   end
 
   def get_all_active_bans_database(limit = 50)
-    begin
-      return [] unless DB.table_exists?(:account_bans)
+    return [] unless DB.table_exists?(:account_bans)
 
-      bans = DB[:account_bans]
-               .where { banned_until > Time.now }
-               .order(Sequel.desc(:created_at))
-               .limit(limit)
-               .all
+    bans = DB[:account_bans]
+      .where { banned_until > Time.now }
+      .order(Sequel.desc(:created_at))
+      .limit(limit)
+      .all
 
-      bans.map do |ban|
-        {
-          email: ban[:email],
-          admin_id: ban[:admin_id],
-          ban_count: ban[:ban_count],
-          banned_until: ban[:banned_until],
-          reason: ban[:reason],
-          ip_address: ban[:ip_address],
-          user_agent: ban[:user_agent],
-          created_at: ban[:created_at]
-        }
-      end
-    rescue StandardError => e
-      AppLogger.error("Database failed for getting all active bans: #{e.message}")
-      []
+    bans.map do |ban|
+      {
+        email: ban[:email],
+        admin_id: ban[:admin_id],
+        ban_count: ban[:ban_count],
+        banned_until: ban[:banned_until],
+        reason: ban[:reason],
+        ip_address: ban[:ip_address],
+        user_agent: ban[:user_agent],
+        created_at: ban[:created_at],
+      }
     end
+  rescue StandardError => e
+    AppLogger.error("Database failed for getting all active bans: #{e.message}")
+    []
   end
 
   # Rate limiting
@@ -981,13 +965,13 @@ module EnhancedAuthHelpers
     if recent_email_attempts.count >= MAX_FAILED_ATTEMPTS
       # Find admin_id from the failed attempts if available
       admin_id = recent_email_attempts.find { |attempt| attempt[:admin_id] }&.dig(:admin_id)
-      
+
       # Apply the progressive ban
       apply_progressive_ban(email, admin_id, { ip: ip, user_agent: request&.user_agent })
-      
+
       # Clear failed attempts since we're applying a ban
       clear_failed_login_attempts(email)
-      
+
       return true
     end
 
@@ -1012,10 +996,10 @@ module EnhancedAuthHelpers
     return false if ENV['APP_ENV'] == 'development'
     return false if ENV['RENDER'] == 'true'
     return false if ENV['BEHIND_LOAD_BALANCER'] == 'true'
-    
+
     suspicious_indicators = 0
-    max_indicators = 3  # Threshold for suspicious activity
-    
+    max_indicators = 3 # Threshold for suspicious activity
+
     # Check 1: IP address consistency (for traditional hosting)
     current_ip = request.ip
     session_ip = session_data[:ip_address]
@@ -1024,10 +1008,10 @@ module EnhancedAuthHelpers
       log_auth_event('session_ip_mismatch', {
         current_ip: current_ip,
         session_ip: session_ip,
-        admin_id: session_data[:admin_id]
+        admin_id: session_data[:admin_id],
       })
     end
-    
+
     # Check 2: User agent consistency
     current_ua = request.user_agent
     session_ua = session_data[:user_agent]
@@ -1036,86 +1020,86 @@ module EnhancedAuthHelpers
       log_auth_event('session_user_agent_change', {
         current_ua: current_ua&.slice(0, 100),
         session_ua: session_ua&.slice(0, 100),
-        admin_id: session_data[:admin_id]
+        admin_id: session_data[:admin_id],
       })
     end
-    
+
     # Check 3: Rapid geographic location changes (IP geolocation)
     if rapid_location_change?(current_ip, session_ip, session_data[:created_at])
       suspicious_indicators += 1
       log_auth_event('session_rapid_location_change', {
         current_ip: current_ip,
         session_ip: session_ip,
-        admin_id: session_data[:admin_id]
+        admin_id: session_data[:admin_id],
       })
     end
-    
+
     # Check 4: Session timing anomalies
     if suspicious_timing_pattern?(session_data)
       suspicious_indicators += 1
       log_auth_event('session_timing_anomaly', {
         admin_id: session_data[:admin_id],
-        session_age: Time.now.to_i - session_data[:created_at]
+        session_age: Time.now.to_i - session_data[:created_at],
       })
     end
-    
+
     # Check 5: Known malicious IP patterns
     if malicious_ip?(current_ip)
-      suspicious_indicators += 2  # Weight this higher
+      suspicious_indicators += 2 # Weight this higher
       log_auth_event('session_malicious_ip', {
         ip: current_ip,
-        admin_id: session_data[:admin_id]
+        admin_id: session_data[:admin_id],
       })
     end
-    
+
     suspicious = suspicious_indicators >= max_indicators
-    
+
     if suspicious
       log_auth_event('session_marked_suspicious', {
         indicators: suspicious_indicators,
         threshold: max_indicators,
-        admin_id: session_data[:admin_id]
+        admin_id: session_data[:admin_id],
       })
     end
-    
+
     suspicious
   end
 
   def load_balancer_environment?
     # Detect if we're behind a load balancer or proxy
     ENV['RENDER'] == 'true' ||
-    ENV['BEHIND_LOAD_BALANCER'] == 'true' ||
-    ENV['HEROKU'] == 'true' ||
-    request.env['HTTP_X_FORWARDED_FOR'] ||
-    request.env['HTTP_X_REAL_IP'] ||
-    request.env['HTTP_CF_CONNECTING_IP']  # Cloudflare
+      ENV['BEHIND_LOAD_BALANCER'] == 'true' ||
+      ENV['HEROKU'] == 'true' ||
+      request.env['HTTP_X_FORWARDED_FOR'] ||
+      request.env['HTTP_X_REAL_IP'] ||
+      request.env['HTTP_CF_CONNECTING_IP'] # Cloudflare
   end
 
   def significant_ua_change?(current_ua, session_ua)
     return false if current_ua.nil? || session_ua.nil?
-    
+
     # Extract key components of user agent
     current_browser = extract_browser_info(current_ua)
     session_browser = extract_browser_info(session_ua)
-    
+
     # Different browser or major version change is suspicious
     current_browser[:name] != session_browser[:name] ||
-    (current_browser[:major_version] - session_browser[:major_version]).abs > 1
+      (current_browser[:major_version] - session_browser[:major_version]).abs > 1
   end
 
   def extract_browser_info(user_agent)
     return { name: 'unknown', major_version: 0 } unless user_agent
-    
+
     # Simple browser detection (in production, use a proper library like browser_details)
     case user_agent.downcase
     when /chrome\/(\d+)/
-      { name: 'chrome', major_version: $1.to_i }
+      { name: 'chrome', major_version: ::Regexp.last_match(1).to_i }
     when /firefox\/(\d+)/
-      { name: 'firefox', major_version: $1.to_i }
+      { name: 'firefox', major_version: ::Regexp.last_match(1).to_i }
     when /safari\/(\d+)/
-      { name: 'safari', major_version: $1.to_i }
+      { name: 'safari', major_version: ::Regexp.last_match(1).to_i }
     when /edge\/(\d+)/
-      { name: 'edge', major_version: $1.to_i }
+      { name: 'edge', major_version: ::Regexp.last_match(1).to_i }
     else
       { name: 'other', major_version: 0 }
     end
@@ -1124,18 +1108,18 @@ module EnhancedAuthHelpers
   def rapid_location_change?(current_ip, session_ip, session_created_at)
     return false if current_ip == session_ip
     return false if load_balancer_environment?
-    
+
     # Check if IPs are from different countries/regions
     # In production, you'd use a geolocation service like MaxMind
-    
+
     # Simple check: if session is less than 30 minutes old and IPs are very different
     session_age = Time.now.to_i - session_created_at.to_i
-    return false if session_age > 1800  # 30 minutes
-    
+    return false if session_age > 1800 # 30 minutes
+
     # Basic IP range check (this is simplified - use proper geolocation in production)
     current_network = current_ip.split('.')[0..2].join('.')
     session_network = session_ip.split('.')[0..2].join('.')
-    
+
     current_network != session_network
   end
 
@@ -1143,28 +1127,28 @@ module EnhancedAuthHelpers
     # Check for impossible timing patterns
     last_activity = session_data[:last_activity]
     return false unless last_activity
-    
+
     time_since_activity = Time.now.to_i - last_activity
-    
+
     # If session was active very recently but from different characteristics,
     # that might indicate session hijacking
-    time_since_activity < 60  # Less than 1 minute
+    time_since_activity < 60 # Less than 1 minute
   end
 
   def malicious_ip?(ip)
     # Check against known malicious IP patterns
     # In production, integrate with threat intelligence feeds
-    
+
     # Simple checks for obviously malicious patterns
-    return true if ip.start_with?('127.', '169.254.', '::1')  # Local/invalid IPs
-    
+    return true if ip.start_with?('127.', '169.254.', '::1') # Local/invalid IPs
+
     # Check against a basic blacklist (in production, use external feeds)
     malicious_patterns = [
-      /^10\./,      # Private networks shouldn't reach public apps
+      /^10\./, # Private networks shouldn't reach public apps
       /^192\.168\./, # Private networks
-      /^172\.(1[6-9]|2[0-9]|3[0-1])\./ # Private networks
+      /^172\.(1[6-9]|2[0-9]|3[0-1])\./, # Private networks
     ]
-    
+
     malicious_patterns.any? { |pattern| ip.match?(pattern) }
   end
 

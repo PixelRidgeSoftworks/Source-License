@@ -218,7 +218,7 @@ module AdminController
       errors << 'Email is required' if email.nil? || email.empty?
       errors << 'Invalid email format' unless valid_email_format?(email)
       errors << 'Name is required' if name.nil? || name.empty?
-      errors << 'Invalid status' unless ['active', 'inactive', 'locked', 'suspended'].include?(status)
+      errors << 'Invalid status' unless %w[active inactive locked suspended].include?(status)
 
       # Check if email already exists for another admin
       if email && email != @admin.email
@@ -243,7 +243,7 @@ module AdminController
             name: name,
             status: status,
             active: (status == 'active'),
-            updated_at: Time.now
+            updated_at: Time.now,
           }
 
           @admin.update(update_data)
@@ -254,7 +254,7 @@ module AdminController
             updated_admin_email: @admin.email,
             updated_by_admin: current_secure_admin.id,
             updated_by_email: current_secure_admin.email,
-            changes: update_data.keys
+            changes: update_data.keys,
           })
 
           redirect '/admin/admins?success=Admin updated successfully'
@@ -315,7 +315,7 @@ module AdminController
             target_admin_id: @admin.id,
             target_admin_email: @admin.email,
             reset_by_admin: current_secure_admin.id,
-            reset_by_email: current_secure_admin.email
+            reset_by_email: current_secure_admin.email,
           })
 
           redirect '/admin/admins?success=Admin password reset successfully'
@@ -349,9 +349,7 @@ module AdminController
       errors.concat(password_errors) if password_errors
 
       # Check if email already exists
-      if email && Admin.first(email: email)
-        errors << 'An admin with this email already exists'
-      end
+      errors << 'An admin with this email already exists' if email && Admin.first(email: email)
 
       if errors.any?
         @error = errors.join('. ')
@@ -361,8 +359,8 @@ module AdminController
         begin
           # Create new admin using the secure method
           new_admin = Admin.create_secure_admin(email, password, ['admin'])
-          
-          if new_admin && new_admin.id
+
+          if new_admin&.id
             # Set the name separately if needed
             new_admin.update(name: name) if name && !name.empty?
 
@@ -371,7 +369,7 @@ module AdminController
               new_admin_email: email,
               new_admin_id: new_admin.id,
               created_by_admin: current_secure_admin.id,
-              created_by_email: current_secure_admin.email
+              created_by_email: current_secure_admin.email,
             })
 
             redirect '/admin/admins?success=Admin created successfully'
@@ -405,19 +403,19 @@ module AdminController
       else
         new_active_state = !admin.active
         new_status = new_active_state ? 'active' : 'inactive'
-        
+
         admin.update(
           active: new_active_state,
           status: new_status,
           updated_at: Time.now
         )
-        
+
         log_auth_event('admin_toggled', {
           target_admin_id: admin.id,
           target_admin_email: admin.email,
           new_status: new_active_state ? 'activated' : 'deactivated',
           toggled_by_admin: current_secure_admin.id,
-          toggled_by_email: current_secure_admin.email
+          toggled_by_email: current_secure_admin.email,
         })
 
         status_text = new_active_state ? 'activated' : 'deactivated'
@@ -448,7 +446,7 @@ module AdminController
             deleted_admin_id: admin.id,
             deleted_admin_email: admin.email,
             deleted_by_admin: current_secure_admin.id,
-            deleted_by_email: current_secure_admin.email
+            deleted_by_email: current_secure_admin.email,
           })
 
           admin.delete
@@ -471,7 +469,7 @@ module AdminController
       content_type :json
 
       email = params[:email]
-      
+
       begin
         remove_ban(email, current_secure_admin)
         { success: true, message: 'Ban removed successfully' }.to_json
@@ -487,7 +485,7 @@ module AdminController
       content_type :json
 
       email = params[:email]
-      
+
       begin
         reset_ban_count(email, current_secure_admin)
         { success: true, message: 'Ban count reset successfully' }.to_json
@@ -502,29 +500,29 @@ module AdminController
       content_type :json
 
       email = params[:email]
-      
+
       if email && !email.empty?
         ban_info = get_current_ban(email.strip.downcase)
         ban_count = get_ban_count(email.strip.downcase)
-        
+
         if ban_info
           time_remaining = get_ban_time_remaining(email)
           duration_text = format_ban_duration(time_remaining)
-          
+
           {
             success: true,
             banned: true,
             ban_info: ban_info.merge({
               time_remaining_text: duration_text,
-              time_remaining_seconds: time_remaining
+              time_remaining_seconds: time_remaining,
             }),
-            ban_count: ban_count
+            ban_count: ban_count,
           }.to_json
         else
           {
             success: true,
             banned: false,
-            ban_count: ban_count
+            ban_count: ban_count,
           }.to_json
         end
       else

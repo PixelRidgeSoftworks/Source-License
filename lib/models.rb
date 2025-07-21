@@ -380,7 +380,7 @@ class Admin < Sequel::Model
   def self.create_secure_admin(email, password, roles = ['admin'])
     # Normalize email first to check for existing
     normalized_email = email.strip.downcase
-    
+
     # Check if admin already exists with this email
     existing_admin = Admin.first(email: normalized_email)
     if existing_admin
@@ -646,9 +646,7 @@ class Order < Sequel::Model
         next if tax_amount <= 0
 
         # Round tax amount if setting is enabled
-        if SettingsManager.get('tax.round_tax_amounts')
-          tax_amount = tax_amount.round(2)
-        end
+        tax_amount = tax_amount.round(2) if SettingsManager.get('tax.round_tax_amounts')
 
         add_order_tax(
           tax_id: tax.id,
@@ -691,9 +689,7 @@ class Order < Sequel::Model
       next if tax_amount <= 0
 
       # Round tax amount if setting is enabled
-      if SettingsManager.get('tax.round_tax_amounts')
-        tax_amount = tax_amount.round(2)
-      end
+      tax_amount = tax_amount.round(2) if SettingsManager.get('tax.round_tax_amounts')
 
       add_order_tax(
         tax_id: tax.id,
@@ -755,7 +751,7 @@ class Order < Sequel::Model
         name: order_tax.tax_name,
         rate: order_tax.rate,
         amount: order_tax.amount,
-        formatted_amount: order_tax.formatted_amount
+        formatted_amount: order_tax.formatted_amount,
       }
     end
   end
@@ -1261,7 +1257,7 @@ class Tax < Sequel::Model
 
   # Calculate tax amount for a given subtotal
   def calculate_amount(subtotal)
-    return 0.0 unless active? && rate > 0
+    return 0.0 unless active? && rate.positive?
 
     (subtotal * rate / 100.0).round(2)
   end
@@ -1285,7 +1281,7 @@ class Tax < Sequel::Model
   def validate
     super
     errors.add(:name, 'cannot be empty') if !name || name.strip.empty?
-    errors.add(:rate, 'must be greater than or equal to 0') if !rate || rate < 0
+    errors.add(:rate, 'must be greater than or equal to 0') if !rate || rate.negative?
     errors.add(:rate, 'must be less than 100') if rate && rate >= 100
     errors.add(:status, 'invalid status') unless %w[active inactive].include?(status)
   end
@@ -1314,7 +1310,7 @@ class OrderTax < Sequel::Model
   # Validation
   def validate
     super
-    errors.add(:amount, 'must be greater than or equal to 0') if !amount || amount < 0
-    errors.add(:rate, 'must be greater than or equal to 0') if !rate || rate < 0
+    errors.add(:amount, 'must be greater than or equal to 0') if !amount || amount.negative?
+    errors.add(:rate, 'must be greater than or equal to 0') if !rate || rate.negative?
   end
 end

@@ -580,7 +580,7 @@ module ApiController
   # Send order confirmation email
   def self.send_order_confirmation_email(order)
     # Skip email sending if SMTP is not properly configured
-    return unless ENV['SMTP_HOST'] && ENV['SMTP_USERNAME'] && ENV['SMTP_PASSWORD']
+    return unless ENV.fetch('SMTP_HOST', nil) && ENV.fetch('SMTP_USERNAME', nil) && ENV['SMTP_PASSWORD']
 
     begin
       # Simple email body since email templates don't exist
@@ -590,14 +590,14 @@ module ApiController
       email_body += "Email: #{order.email}\n"
       email_body += "Amount: #{order.amount}\n"
       email_body += "Status: #{order.status}\n\n"
-      
+
       if order.licenses.any?
         email_body += "Your license keys:\n"
         order.licenses.each do |license|
           email_body += "- #{license.license_key} (#{license.product&.name})\n"
         end
       end
-      
+
       email_body += "\nThank you for your business!"
 
       mail = Mail.new do

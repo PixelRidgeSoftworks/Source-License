@@ -447,11 +447,11 @@ class Migrations
         String :ip_address, size: 45   # Support both IPv4 and IPv6
         String :user_agent, text: true
         DateTime :created_at, null: false, default: Sequel::CURRENT_TIMESTAMP
-        
+
         # Indexes for performance
         index :email
         index :created_at
-        index [:email, :created_at]
+        index %i[email created_at]
         index :ip_address
       end
 
@@ -473,12 +473,12 @@ class Migrations
         String :user_agent, text: true
         DateTime :created_at, null: false, default: Sequel::CURRENT_TIMESTAMP
         DateTime :updated_at, null: true
-        
+
         # Indexes for performance
         index :email
         index :banned_until
-        index [:email, :banned_until]
-        index [:email, :created_at]
+        index %i[email banned_until]
+        index %i[email created_at]
         index :created_at
       end
 
@@ -495,18 +495,18 @@ class Migrations
       DB.alter_table :admins do
         # Add name field for admin management
         add_column :name, String, size: 255 unless admin_schema.include?(:name)
-        
+
         # Add active boolean field (maps to status but easier to use)
         add_column :active, :boolean, default: true unless admin_schema.include?(:active)
-        
+
         # Add session tracking for enhanced security
         add_column :current_session_id, String, size: 64 unless admin_schema.include?(:current_session_id)
         add_column :session_expires_at, DateTime unless admin_schema.include?(:session_expires_at)
-        
+
         # Add failed login tracking
         add_column :failed_login_count, Integer, default: 0 unless admin_schema.include?(:failed_login_count)
         add_column :last_failed_login_at, DateTime unless admin_schema.include?(:last_failed_login_at)
-        
+
         # Add password policy fields
         add_column :password_expires_at, DateTime unless admin_schema.include?(:password_expires_at)
         add_column :force_password_change, :boolean, default: false unless admin_schema.include?(:force_password_change)

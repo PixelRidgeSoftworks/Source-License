@@ -3,8 +3,36 @@ name: "CodeQL Security Analysis"
 on:
   push:
     branches: [ "main", "develop" ]
+    paths-ignore:
+      - 'vendor/**'
+      - 'node_modules/**'
+      - '*.gemspec'
+      - 'Gemfile.lock'
+      - 'package-lock.json'
+      - 'yarn.lock'
+      - '.bundle/**'
+      - 'coverage/**'
+      - 'logs/**'
+      - 'tmp/**'
+      - 'public/assets/**'
+      - 'public/javascripts/vendor/**'
+      - 'public/stylesheets/vendor/**'
   pull_request:
     branches: [ "main", "develop" ]
+    paths-ignore:
+      - 'vendor/**'
+      - 'node_modules/**'
+      - '*.gemspec'
+      - 'Gemfile.lock'
+      - 'package-lock.json'
+      - 'yarn.lock'
+      - '.bundle/**'
+      - 'coverage/**'
+      - 'logs/**'
+      - 'tmp/**'
+      - 'public/assets/**'
+      - 'public/javascripts/vendor/**'
+      - 'public/stylesheets/vendor/**'
   schedule:
     - cron: '0 6 * * 1'
   workflow_dispatch:

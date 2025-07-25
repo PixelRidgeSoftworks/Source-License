@@ -561,11 +561,15 @@ class CheckoutManager {
             phone: document.getElementById('phone-number').value
         };
         
+        // Get selected payment method
+        const selectedPaymentMethod = document.querySelector('input[name="payment-method"]:checked')?.value || 'stripe';
+        
         const orderData = {
             customer: customerData,
             items: this.cartItems,
             amount: this.calculateTotal(),
-            currency: 'USD'
+            currency: 'USD',
+            payment_method: selectedPaymentMethod
         };
         
         try {

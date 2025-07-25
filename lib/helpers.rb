@@ -323,6 +323,13 @@ module TemplateHelpers
     html
   end
 
+  # Build pagination URL with current query parameters
+  def build_pagination_url(page)
+    query_params = request.params.dup
+    query_params['page'] = page.to_s
+    "#{request.path}?#{URI.encode_www_form(query_params)}"
+  end
+
   # Generate breadcrumbs
   def breadcrumbs(*links)
     return '' if links.empty?

@@ -280,7 +280,7 @@
                     
                     <div class="card-body">
                         <div class="price-display mb-3">
-                            $<%= product.price %>
+                            <%= product.formatted_price %>
                             <% if product.subscription? %>
                                 <small class="text-muted">/month</small>
                             <% end %>
@@ -307,10 +307,17 @@
                     
                     <div class="card-footer border-0">
                         <div class="d-grid gap-2">
-                            <button class="btn btn-primary" onclick="window.cart.addItem(<%= product.id %>)">
-                                <i class="fas fa-cart-plus me-2"></i>
-                                Add to Cart
-                            </button>
+<% if user_logged_in? %>
+<button class="btn btn-primary" onclick="window.cart.addItem(<%= product.id %>)">
+    <i class="fas fa-cart-plus me-2"></i>
+    Add to Cart
+</button>
+<% else %>
+<a href="/register" class="btn btn-primary">
+    <i class="fas fa-user-plus me-2"></i>
+    Sign Up to Purchase
+</a>
+<% end %>
                             <a href="/product/<%= product.id %>" class="btn btn-outline-secondary">
                                 <i class="fas fa-info-circle me-2"></i>
                                 View Details

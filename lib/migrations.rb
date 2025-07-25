@@ -31,6 +31,7 @@ class Migrations
       run_migration(19, :add_tax_fields_to_orders)
       run_migration(20, :add_refunded_at_to_orders)
       run_migration(21, :add_customer_name_to_licenses)
+      run_migration(22, :add_performance_indexes)
 
       puts '✓ All migrations completed successfully'
     end
@@ -419,20 +420,31 @@ class Migrations
       puts '✓ Created users table'
     end
 
+    # Migration 15: Add user_id to orders table
+    def add_user_id_to_orders
+      puts 'Adding user_id to orders table...'
+      # Add user_id foreign key to orders table
+      DB.alter_table :orders do
+        add_foreign_key :user_id, :users, null: true # Allow null for backward compatibility
+      end
+      # Add index for user_id
+      DB.alter_table :orders do
+        add_index :user_id
+      end
+      puts '✓ Added user_id to orders table'
+    end
+
     # Migration 13: Add user_id to licenses table
     def add_user_id_to_licenses
       puts 'Adding user_id to licenses table...'
-
       # Add user_id foreign key to licenses table
       DB.alter_table :licenses do
         add_foreign_key :user_id, :users, null: true # Allow null for backward compatibility
       end
-
       # Add index for user_id
       DB.alter_table :licenses do
         add_index :user_id
       end
-
       puts '✓ Added user_id to licenses table'
     end
 
@@ -644,6 +656,96 @@ class Migrations
       end
 
       puts '✓ Added customer_name field to licenses table'
+    end
+
+    # Migration 22: Add performance indexes for license validation optimization
+    def add_performance_indexes
+      puts 'Adding performance indexes for license validation optimization...'
+
+      # Add critical indexes for license validation performance
+      add_performance_index_if_not_exists(:licenses, :license_key, 'licenses_license_key_perf_idx')
+
+      # Composite index for license validation query (license_key + status + expires_at)
+      add_performance_index_if_not_exists(:licenses, %i[license_key status expires_at],
+                                          'licenses_validation_composite_idx')
+
+      # Index for product lookups in joins (id + name for efficient JOINs)
+      add_performance_index_if_not_exists(:products, %i[id name], 'products_id_name_perf_idx')
+
+      # Index for license expiration date queries
+      add_performance_index_if_not_exists(:licenses, :expires_at, 'licenses_expires_at_perf_idx') unless index_exists?(
+        :licenses, :expires_at
+      )
+
+      # Index for activation counts (for activation limit checks)
+      add_performance_index_if_not_exists(:licenses, :activation_count, 'licenses_activation_count_perf_idx')
+
+      # Composite index for license-product joins with status
+      add_performance_index_if_not_exists(:licenses, %i[product_id status], 'licenses_product_status_perf_idx')
+
+      # Index for customer email lookups
+      unless index_exists?(
+        :licenses, :customer_email
+      )
+        add_performance_index_if_not_exists(:licenses, :customer_email,
+                                            'licenses_customer_email_perf_idx')
+      end
+
+      # Composite index for custom license configurations
+      add_performance_index_if_not_exists(:licenses, %i[custom_max_activations custom_expires_at],
+                                          'licenses_custom_config_idx')
+
+      puts '✓ Added performance indexes for license validation optimization'
+    end
+
+    # Add performance index if it doesn't already exist
+    def add_performance_index_if_not_exists(table, columns, index_name)
+      # Check if a similar index already exists
+      if performance_index_exists?(table, columns, index_name)
+        puts "  • Performance index #{index_name} or similar already exists, skipping"
+        return
+      end
+
+      # Add the index
+      DB.alter_table(table) do
+        add_index columns, name: index_name
+      end
+
+      puts "  • Added performance index: #{index_name} on #{table}(#{columns})"
+    rescue Sequel::DatabaseError => e
+      if e.message.include?('already exists') || e.message.include?('duplicate')
+        puts "  • Performance index #{index_name} already exists"
+      else
+        puts "  ⚠ Could not add performance index #{index_name}: #{e.message}"
+      end
+    end
+
+    # Check if performance index exists (more comprehensive than basic index check)
+    def performance_index_exists?(table, columns, index_name)
+      indexes = DB.indexes(table)
+
+      # Check by index name
+      return true if indexes.key?(index_name.to_sym)
+
+      # Check by column pattern (for cases where index exists with different name)
+      target_columns = columns.is_a?(Array) ? columns : [columns]
+
+      indexes.each_value do |index_info|
+        index_columns = index_info[:columns] || []
+        return true if index_columns == target_columns
+      end
+
+      false
+    rescue StandardError
+      false
+    end
+
+    # Basic index existence check (used by other methods)
+    def index_exists?(table, column)
+      indexes = DB.indexes(table)
+      indexes.values.any? { |idx| idx[:columns]&.include?(column) }
+    rescue StandardError
+      false
     end
   end
 end

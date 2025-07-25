@@ -11,8 +11,9 @@ module BaseController
     def configure_controller
       # Set security headers and rate limiting for all requests
       before do
-        # Skip security features in test environment
-        next if ENV['APP_ENV'] == 'test' || ENV['RACK_ENV'] == 'test' || ENV['APP_ENV'] == 'development'
+        # Skip security features in test and development environments
+        is_dev_or_test = ENV['APP_ENV'] == 'test' || ENV['RACK_ENV'] == 'test' || ENV['APP_ENV'] == 'development'
+        next if is_dev_or_test
 
         set_security_headers
 
@@ -39,13 +40,25 @@ module BaseController
         include ReportsHelpers
       end
 
-      # Error handling
+      # Error handling - different responses for API vs web endpoints
       error 404 do
-        erb :'errors/404', layout: :'layouts/main_layout'
+        if request.path_info.start_with?('/api/')
+          content_type :json
+          status 404
+          { success: false, error: 'Not found' }.to_json
+        else
+          erb :'errors/404', layout: :'layouts/main_layout'
+        end
       end
 
       error 500 do
-        erb :'errors/500', layout: :'layouts/main_layout'
+        if request.path_info.start_with?('/api/')
+          content_type :json
+          status 500
+          { success: false, error: 'Internal server error' }.to_json
+        else
+          erb :'errors/500', layout: :'layouts/main_layout'
+        end
       end
     end
   end

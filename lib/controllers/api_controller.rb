@@ -12,11 +12,23 @@ module ApiController
     # API ROUTES - Secure REST API
     # ==================================================
 
+    # Simple test endpoint for performance testing
+    app.get '/api/test' do
+      content_type :json
+      '{"test":true,"fast":true}'
+    end
+
+    # Minimal endpoint with no helpers or processing
+    app.get '/api/ping' do
+      'pong'
+    end
+
     # Get all products (for cart/checkout)
     app.get '/api/products' do
       content_type :json
 
-      products = Product.where(active: true).order(:name).all
+      # Use simple query
+      products = Product.where(active: true).select(:id, :name, :price, :description).order(:name).all
       products.map(&:values).to_json
     end
 
@@ -49,7 +61,8 @@ module ApiController
             payment_method: order_data['payment_method'] || 'stripe'
           )
 
-          # Add order items
+          # Add order items and calculate total
+          total = 0
           order_data['items'].each do |item|
             product = Product[item['productId']]
             next unless product
@@ -59,58 +72,57 @@ module ApiController
               quantity: item['quantity'] || 1,
               price: product.price
             )
+            total += product.price * (item['quantity'] || 1)
           end
 
-          # Update order amount based on items
-          total = new_order.order_items.sum { |item| item.price * item.quantity }
+          # Update order amount
           new_order.update(amount: total)
-
           new_order
         end
 
         # Create payment intent based on payment method
-        case order_data['payment_method']
-        when 'stripe'
-          if stripe_enabled?
-            payment_result = PaymentProcessor.create_payment_intent(order, 'stripe')
-            if payment_result[:client_secret]
-              status 201
-              {
-                success: true,
-                order_id: order.id,
-                client_secret: payment_result[:client_secret],
-              }.to_json
-            else
-              status 400
-              { success: false, error: 'Failed to create payment intent' }.to_json
-            end
-          else
-            status 400
-            { success: false, error: 'Stripe not configured' }.to_json
-          end
-        when 'paypal'
-          if paypal_enabled?
-            payment_result = PaymentProcessor.create_payment_intent(order, 'paypal')
-            if payment_result[:order_id]
-              status 201
-              {
-                success: true,
-                order_id: order.id,
-                paypal_order_id: payment_result[:order_id],
-                approval_url: payment_result[:approval_url],
-              }.to_json
-            else
-              status 400
-              { success: false, error: 'Failed to create PayPal order' }.to_json
-            end
-          else
-            status 400
-            { success: false, error: 'PayPal not configured' }.to_json
-          end
+        payment_result = case order_data['payment_method']
+                         when 'stripe'
+                           if stripe_enabled?
+                             result = PaymentProcessor.create_payment_intent(order, 'stripe')
+                             if result[:client_secret]
+                               {
+                                 success: true,
+                                 order_id: order.id,
+                                 client_secret: result[:client_secret],
+                               }
+                             else
+                               { success: false, error: 'Failed to create payment intent' }
+                             end
+                           else
+                             { success: false, error: 'Stripe not configured' }
+                           end
+                         when 'paypal'
+                           if paypal_enabled?
+                             result = PaymentProcessor.create_payment_intent(order, 'paypal')
+                             if result[:order_id]
+                               {
+                                 success: true,
+                                 order_id: order.id,
+                                 paypal_order_id: result[:order_id],
+                                 approval_url: result[:approval_url],
+                               }
+                             else
+                               { success: false, error: 'Failed to create PayPal order' }
+                             end
+                           else
+                             { success: false, error: 'PayPal not configured' }
+                           end
+                         else
+                           { success: false, error: 'Invalid payment method' }
+                         end
+
+        if payment_result[:success]
+          status 201
         else
           status 400
-          { success: false, error: 'Invalid payment method' }.to_json
         end
+        payment_result.to_json
       rescue JSON::ParserError
         status 400
         { success: false, error: 'Invalid JSON' }.to_json
@@ -179,10 +191,8 @@ module ApiController
           new_order
         end
 
-        # Generate licenses for the completed free order
+        # Generate licenses and send confirmation email
         ApiController.generate_licenses_for_order(order)
-
-        # Send confirmation email if configured
         ApiController.send_order_confirmation_email(order) if ENV['SMTP_HOST']
 
         status 201
@@ -264,19 +274,41 @@ module ApiController
     app.get '/api/license/:key/validate' do
       content_type :json
 
-      license = License.first(license_key: params[:key])
-      if license
-        {
-          valid: license.valid?,
-          status: license.status,
-          product: license.product.name,
-          expires_at: license.expires_at,
-          activations_used: license.activation_count,
-          max_activations: license.max_activations,
-        }.to_json
-      else
-        status 404
-        { valid: false, error: 'License not found' }.to_json
+      begin
+        # Single optimized JOIN query
+        license_data = DB[:licenses]
+          .select(Sequel[:licenses][:id].as(:id), :license_key, :status, :expires_at, :activation_count, 
+                  Sequel[:licenses][:max_activations].as(:max_activations),
+                  :custom_max_activations, :custom_expires_at, :product_id)
+          .join(:products, id: :product_id)
+          .select_append(Sequel[:products][:name].as(:product_name))
+          .where(license_key: params[:key])
+          .first
+
+        if license_data
+          # Calculate effective values without additional queries
+          effective_max_activations = license_data[:custom_max_activations] || license_data[:max_activations] || 1
+          effective_expires_at = license_data[:custom_expires_at] || license_data[:expires_at]
+
+          # Inline validity check
+          is_valid = license_data[:status] == 'active' &&
+                     (effective_expires_at.nil? || effective_expires_at > Time.now)
+
+          {
+            valid: is_valid,
+            status: license_data[:status],
+            product: license_data[:product_name] || 'Unknown',
+            expires_at: effective_expires_at,
+            activations_used: license_data[:activation_count] || 0,
+            max_activations: effective_max_activations,
+          }.to_json
+        else
+          status 404
+          { valid: false, error: 'License not found' }.to_json
+        end
+      rescue StandardError
+        status 500
+        { valid: false, error: 'Internal server error' }.to_json
       end
     end
 
@@ -284,28 +316,60 @@ module ApiController
     app.post '/api/license/:key/activate' do
       content_type :json
 
-      license = License.first(license_key: params[:key])
-      unless license
-        status 404
-        return { success: false, error: 'License not found' }.to_json
+      begin
+        # Single transaction with optimistic locking
+        result = DB.transaction do
+          # Use SELECT FOR UPDATE for row-level locking
+          license_data = DB[:licenses]
+            .select(:id, :status, :expires_at, :activation_count, :max_activations,
+                    :custom_max_activations, :custom_expires_at)
+            .where(license_key: params[:key])
+            .for_update
+            .first
+
+          unless license_data
+            status 404
+            return { success: false, error: 'License not found' }.to_json
+          end
+
+          # Quick validity checks
+          effective_max_activations = license_data[:custom_max_activations] || license_data[:max_activations] || 1
+          effective_expires_at = license_data[:custom_expires_at] || license_data[:expires_at]
+
+          unless license_data[:status] == 'active'
+            status 400
+            return { success: false, error: 'License is not active' }.to_json
+          end
+
+          if effective_expires_at && effective_expires_at <= Time.now
+            status 400
+            return { success: false, error: 'License has expired' }.to_json
+          end
+
+          if license_data[:activation_count] >= effective_max_activations
+            status 400
+            return { success: false, error: 'Maximum activations reached' }.to_json
+          end
+
+          # Update activation count in single query
+          DB[:licenses]
+            .where(id: license_data[:id])
+            .update(
+              activation_count: license_data[:activation_count] + 1,
+              last_activated_at: Time.now
+            )
+
+          {
+            success: true,
+            activations_remaining: effective_max_activations - license_data[:activation_count] - 1,
+          }
+        end
+
+        result.to_json
+      rescue StandardError => e
+        status 500
+        { success: false, error: e.message }.to_json
       end
-
-      unless license.valid?
-        status 400
-        return { success: false, error: 'License is not valid' }.to_json
-      end
-
-      if license.activation_count >= license.max_activations
-        status 400
-        return { success: false, error: 'Maximum activations reached' }.to_json
-      end
-
-      license.update(
-        activation_count: license.activation_count + 1,
-        last_activated_at: Time.now
-      )
-
-      { success: true, activations_remaining: license.max_activations - license.activation_count }.to_json
     end
 
     # Process payment webhook
@@ -618,9 +682,12 @@ module ApiController
   def self.generate_licenses_for_order(order)
     return unless order.completed?
 
+    # Check if there's a user account with this email
+    user = User.first(email: order.email.strip.downcase) if order.email
+
     order.order_items.each do |item|
       item.quantity.times do
-        license = LicenseGenerator.generate_for_product(item.product, order)
+        license = LicenseGenerator.generate_for_product(item.product, order, user)
         order.add_license(license)
       end
     end

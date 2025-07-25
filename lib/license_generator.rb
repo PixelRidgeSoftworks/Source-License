@@ -9,7 +9,7 @@ require 'digest'
 class LicenseGenerator
   class << self
     # Generate a new license for a product and order
-    def generate_for_product(product, order)
+    def generate_for_product(product, order, user = nil)
       license_key = generate_license_key
 
       license = License.create(
@@ -18,6 +18,7 @@ class LicenseGenerator
         product_id: product.id,
         customer_email: order.email,
         customer_name: order.customer_name,
+        user_id: user&.id, # Link to user account if available
         status: 'active',
         max_activations: product.max_activations,
         activation_count: 0,

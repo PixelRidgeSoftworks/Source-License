@@ -483,7 +483,7 @@ class SourceLicenseLauncher
       Set-Location "#{@script_dir}"
 
       try {
-          bundle exec rackup config.ru -o 0.0.0.0 -p 4567
+          bundle exec puma -C puma.rb config.ru
       }
       catch {
           Write-Host "Error starting application: $_" -ForegroundColor Red
@@ -513,7 +513,7 @@ class SourceLicenseLauncher
 
       cd /d "#{@script_dir}"
 
-      bundle exec rackup config.ru -o 0.0.0.0 -p 4567
+      bundle exec puma -C puma.rb config.ru
 
       if errorlevel 1 (
           echo Error starting application
@@ -543,7 +543,7 @@ class SourceLicenseLauncher
 
       cd "#{@script_dir}"
 
-      if bundle exec rackup config.ru -o 0.0.0.0 -p 4567; then
+      if bundle exec puma -C puma.rb config.ru; then
           echo "Application stopped normally"
       else
           echo "Error starting application"

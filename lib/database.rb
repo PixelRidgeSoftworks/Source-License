@@ -29,11 +29,41 @@ class Database
       # Configure database logging
       configure_logging
 
+      # Configure connection pool
+      configure_connection_pool
+
       # Run migrations if needed
       run_migrations if should_run_migrations?
 
       # Create default admin user if none exists
       create_default_admin if should_create_admin?
+    end
+
+    # Execute database operation
+    def with_fiber(&)
+      Fiber.new(&)
+    end
+
+    # Execute multiple database operations
+    def concurrent_execute(*operations)
+      fibers = operations.map do |operation|
+        Fiber.new { operation.call }
+      end
+
+      fibers.map(&:resume)
+    end
+
+    # Batch process records
+    def batch_process(collection, batch_size: 100, &)
+      fibers = []
+
+      collection.each_slice(batch_size) do |batch|
+        fibers << Fiber.new do
+          batch.map(&)
+        end
+      end
+
+      fibers.flat_map(&:resume)
     end
 
     private
@@ -179,6 +209,26 @@ class Database
       return unless ENV['APP_ENV'] == 'development'
 
       DB.loggers << Logger.new($stdout)
+    end
+
+    # Configure connection pool
+    def configure_connection_pool
+      pool_size = (ENV['DB_POOL_SIZE'] || '20').to_i
+      pool_timeout = (ENV['DB_POOL_TIMEOUT'] || '5').to_i
+
+      # Configure Sequel connection pool settings
+      if DB.pool.respond_to?(:max_size=)
+        DB.pool.max_size = pool_size
+        DB.pool.pool_timeout = pool_timeout
+      end
+
+      # Enable prepared statements
+      DB.extension :connection_validator
+      DB.pool.connection_validation_timeout = -1
+
+      puts "✓ Database connection pool configured (max: #{pool_size}, timeout: #{pool_timeout}s)"
+    rescue StandardError => e
+      puts "⚠ Could not configure connection pool: #{e.message}"
     end
 
     # Check if migrations should be run

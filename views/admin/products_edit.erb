@@ -378,7 +378,7 @@
                         </div>
                         <div class="card-body">
                             <div class="h4 text-success mb-2">
-                                $<span id="previewPrice"><%= @product.price %></span>
+                                $<span id="previewPrice"><%= @product.formatted_price %></span>
                                 <small id="previewCycle" class="text-muted"><%= @product.license_type == 'subscription' ? '/month' : '' %></small>
                             </div>
                             <p id="previewDescription" class="text-muted"><%= @product.description || 'Product description will appear here...' %></p>

@@ -103,12 +103,12 @@ class SourceLicenseApp < Sinatra::Base
   include AdminControllers::FeaturesController
   include ApiController
 
-  # Set up all routes
-  PublicController.setup_routes(self)
-  UserAuthController.setup_routes(self)
+  # Set up all routes - API routes FIRST to avoid conflicts
+  ApiController.setup_routes(self)
   AdminController.setup_routes(self)
   AdminControllers::ProductsController.setup_routes(self)
   AdminControllers::LicensesController.setup_routes(self)
   AdminControllers::FeaturesController.setup_routes(self)
-  ApiController.setup_routes(self)
+  UserAuthController.setup_routes(self)
+  PublicController.setup_routes(self)
 end

@@ -77,7 +77,13 @@ class ProductionLogger
 
   # API request logging
   def api_request(method, path, status, duration, details = {})
-    SpecializedLoggers.log_api_request(self, method, path, status, duration, details)
+    request_params = {
+      method: method,
+      path: path,
+      status: status,
+      duration: duration,
+    }
+    SpecializedLoggers.log_api_request(self, request_params, details)
   end
 
   # Error logging with exception details

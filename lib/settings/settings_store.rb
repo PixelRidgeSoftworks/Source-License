@@ -27,10 +27,10 @@ class Settings::SettingsStore
 
     # Set setting value in database
     def update_setting(key, value)
-      raise ArgumentError, "Invalid setting key: #{key}" unless SettingsSchema.valid_key?(key)
+      raise ArgumentError, "Invalid setting key: #{key}" unless Settings::SettingsSchema.valid_key?(key)
 
       schema = schema_for(key)
-      unless SettingsValidator.valid_value?(value, schema)
+      unless Settings::SettingsValidator.valid_value?(value, schema)
         raise ArgumentError, "Invalid value for setting #{key}: #{value}"
       end
 
@@ -63,7 +63,7 @@ class Settings::SettingsStore
 
     # Get all settings for a category
     def get_category(category)
-      SettingsSchema.get_category_settings(category).map do |setting|
+      Settings::SettingsSchema.get_category_settings(category).map do |setting|
         {
           key: setting[:key],
           value: get(setting[:key]),
@@ -75,7 +75,7 @@ class Settings::SettingsStore
     private
 
     def schema_for(key)
-      SettingsSchema.get_schema(key)
+      Settings::SettingsSchema.get_schema(key)
     end
 
     def key_to_env(key)

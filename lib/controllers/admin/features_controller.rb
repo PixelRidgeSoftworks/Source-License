@@ -576,8 +576,8 @@ module AdminControllers::FeaturesController
     app.get '/admin/customize' do
       require_secure_admin_auth
       @page_title = 'Template Customization'
-      @categories = TemplateCustomizer.get_categories
-      @customizations = TemplateCustomizer.get_all_customizations
+      @categories = TemplateCustomizer.categories
+      @customizations = TemplateCustomizer.all_customizations
       erb :'admin/customize', layout: :'layouts/admin_layout'
     end
 

@@ -430,10 +430,11 @@ module ApiController
       require_secure_admin_auth
       content_type :json
 
-      categories = SettingsManager.get_categories.map do |category|
+      category_names = SettingsManager.categories
+      categories = category_names.map do |category_name|
         {
-          name: category,
-          settings: SettingsManager.get_category(category),
+          name: category_name,
+          settings: SettingsManager.get_category(category_name),
         }
       end
 

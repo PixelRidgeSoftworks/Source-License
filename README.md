@@ -2,7 +2,7 @@
   <img src="logo.svg" alt="Source License Logo" width="400">
 </div>
 
-[![CodeQL Security Analysis](https://github.com/PixelRidge-Softworks/Source-License/actions/workflows/codeql.yml/badge.svg)](https://github.com/PixelRidge-Softworks/Source-License/actions/workflows/codeql.yml)
+[![CodeQL Security Analysis](https://github.com/PixelRidgeSoftworks/Source-License/actions/workflows/codeql.yml/badge.svg)](https://github.com/PixelRidgeSoftworks/Source-License/actions/workflows/codeql.yml)
 
 # Source License - Professional Software Licensing Platform
 
@@ -77,7 +77,7 @@ Source License is a complete solution for independent software vendors who need 
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/PixelRidge-Softworks/Source-License.git
+   git clone https://github.com/PixelRidgeSoftworks/Source-License.git
    cd Source-License
    ```
 
@@ -529,9 +529,9 @@ This project is licensed under the GNU General Public License v2.0 - see the [LI
 
 ## 🆘 Support
 
-- **Issues**: [GitHub Issues](https://github.com/PixelRidge-Softworks/Source-License/issues)
-- **Documentation**: [Project Wiki](https://github.com/PixelRidge-Softworks/Source-License/wiki)
-- **Discussions**: [GitHub Discussions](https://github.com/PixelRidge-Softworks/Source-License/discussions)
+- **Issues**: [GitHub Issues](https://github.com/PixelRidgeSoftworks/Source-License/issues)
+- **Documentation**: [Project Wiki](https://github.com/PixelRidgeSoftworks/Source-License/wiki)
+- **Discussions**: [GitHub Discussions](https://github.com/PixelRidgeSoftworks/Source-License/discussions)
 
 ## 📈 Roadmap
 

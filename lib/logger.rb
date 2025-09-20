@@ -327,12 +327,21 @@ class ProductionLogger
   def detect_error_service
     dsn = ENV['ERROR_TRACKING_DSN'].to_s.downcase
 
-    return :sentry if dsn.include?('sentry.io') || dsn.include?('ingest.sentry.io')
-    return :bugsnag if dsn.include?('bugsnag.com')
-    return :rollbar if dsn.include?('rollbar.com')
-    return :airbrake if dsn.include?('airbrake.io')
-    return :honeybadger if dsn.include?('honeybadger.io')
-    return :webhook if dsn.start_with?('http')
+    # Parse URL to check host properly instead of substring matching
+    begin
+      uri = URI(dsn)
+      host = uri.host&.downcase
+      
+      return :sentry if host == 'sentry.io' || host&.end_with?('.sentry.io') || host == 'ingest.sentry.io' || host&.end_with?('.ingest.sentry.io')
+      return :bugsnag if host == 'bugsnag.com' || host&.end_with?('.bugsnag.com')
+      return :rollbar if host == 'rollbar.com' || host&.end_with?('.rollbar.com')
+      return :airbrake if host == 'airbrake.io' || host&.end_with?('.airbrake.io')
+      return :honeybadger if host == 'honeybadger.io' || host&.end_with?('.honeybadger.io')
+      return :webhook if dsn.start_with?('http')
+    rescue URI::InvalidURIError
+      # If URL parsing fails, return unknown
+      return :unknown
+    end
 
     :unknown
   end

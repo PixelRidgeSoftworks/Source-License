@@ -1224,7 +1224,7 @@ module EnhancedAuthHelpers
     return false unless email.is_a?(String)
     return false if email.length > 254
 
-    email_regex = /\A[\w+\-.]+@[a-z\d\-]+(\.[a-z\d\-]+)*\.[a-z]+\z/i
+    email_regex = /\A[\w+\-.]+@[a-z\d-]+(\.[a-z\d-]+)*\.[a-z]+\z/i
     email.match?(email_regex)
   end
 

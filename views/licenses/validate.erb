@@ -19,15 +19,15 @@
                   <i class="fas fa-times-circle"></i> <%= custom_text('validate_invalid_title', 'Invalid License') %>
                 <% end %>
               </h5>
-              
+
               <% if @validation_result[:valid] %>
                 <p class="mb-2"><%= custom_text('validate_valid_message', 'This license is valid and active.') %></p>
-                
+
                 <div class="mt-3">
                   <strong>License Details:</strong>
                   <ul class="list-unstyled mt-2 ms-3">
                     <li><strong>Product:</strong> <%= h(@validation_result[:product_name]) %></li>
-                    <li><strong>Status:</strong> 
+                    <li><strong>Status:</strong>
                       <span class="badge bg-<%= @validation_result[:status] == 'active' ? 'success' : 'warning' %>">
                         <%= @validation_result[:status].capitalize %>
                       </span>
@@ -44,7 +44,7 @@
                 <p class="mb-0"><%= h(@validation_result[:error] || custom_text('validate_invalid_message', 'License could not be validated.')) %></p>
               <% end %>
             </div>
-            
+
             <!-- Search Again -->
             <div class="text-center">
               <a href="/validate-license" class="btn btn-outline-primary">
@@ -60,14 +60,14 @@
             <form method="POST" action="/validate-license">
               <div class="mb-3">
                 <label for="license_key" class="form-label"><%= custom_text('validate_license_key', 'License Key') %></label>
-                <input type="text" 
-                       class="form-control form-control-lg" 
-                       id="license_key" 
-                       name="license_key" 
-                       placeholder="<%= custom_text('validate_placeholder', 'Enter your license key...') %>" 
-                       required 
+                <input type="text"
+                       class="form-control form-control-lg"
+                       id="license_key"
+                       name="license_key"
+                       placeholder="<%= custom_text('validate_placeholder', 'Enter your license key...') %>"
+                       required
                        maxlength="255"
-                       style="font-family: monospace;">
+                       style="font-family: monospace;" autocomplete="off">
                 <div class="form-text">
                   <%= custom_text('validate_help_text', 'Your license key is typically provided in your purchase confirmation email.') %>
                 </div>

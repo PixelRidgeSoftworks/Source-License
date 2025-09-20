@@ -3,7 +3,7 @@
     <div>
         <h1 class="h3 mb-1">License <%= format_license_key(@license.license_key) %></h1>
         <p class="text-muted mb-0">
-            Created <%= format_date(@license.created_at, :datetime) %> 
+            Created <%= format_date(@license.created_at, :datetime) %>
             <span class="mx-2">•</span>
             <%= time_ago(@license.created_at) %>
         </p>
@@ -64,7 +64,11 @@
 </div>
 
 <!-- License Status Banner -->
-<div class="alert alert-<%= @license.active? ? 'success' : (@license.suspended? ? 'warning' : 'danger') %> mb-4">
+<div class="alert alert-<%= if @license.active?
+'success'
+else
+(@license.suspended? ? 'warning' : 'danger')
+end %> mb-4">
     <div class="d-flex align-items-center">
         <div class="me-3">
             <%= license_status_icon(@license.status) %>
@@ -113,7 +117,7 @@
                         <h6 class="text-muted mb-2">License Key</h6>
                         <p class="fw-bold font-monospace">
                             <%= format_license_key(@license.license_key) %>
-                            <button class="btn btn-sm btn-outline-secondary ms-2" onclick="copyLicenseKey('<%= @license.license_key %>')">
+                            <button class="btn btn-outline-secondary btn-sm ms-2" onclick="copyLicenseKey('<%= @license.license_key %>')">
                                 <i class="fas fa-copy"></i>
                             </button>
                         </p>
@@ -126,7 +130,7 @@
                                 <%= h(@license.product.name) %>
                             </a>
                             <% if @license.product.version %>
-                            <small class="text-muted d-block">Version: <%= h(@license.product.version) %></small>
+                                <small class="text-muted d-block">Version: <%= h(@license.product.version) %></small>
                             <% end %>
                             <% else %>
                             <span class="text-muted">Unknown Product (Deleted)</span>
@@ -248,10 +252,10 @@
                                     <% if activation.system_info_hash.any? %>
                                     <small class="text-muted">
                                         <% if activation.system_info_hash['os'] %>
-                                        <%= activation.system_info_hash['os'] %>
+                                            <%= activation.system_info_hash['os'] %>
                                         <% end %>
                                         <% if activation.system_info_hash['version'] %>
-                                        <%= activation.system_info_hash['version'] %>
+                                            <%= activation.system_info_hash['version'] %>
                                         <% end %>
                                     </small>
                                     <% end %>
@@ -266,7 +270,7 @@
                                 <td>
                                     <%= format_date(activation.created_at, :short) %>
                                     <% if activation.deactivated_at %>
-                                    <br><small class="text-muted">Deactivated: <%= format_date(activation.deactivated_at, :short) %></small>
+                                        <br><small class="text-muted">Deactivated: <%= format_date(activation.deactivated_at, :short) %></small>
                                     <% end %>
                                 </td>
                                 <td>
@@ -402,15 +406,15 @@
                         <i class="fas fa-ban me-2"></i>Revoke License
                     </button>
                     <% end %>
-                    
+
                     <button class="btn btn-outline-primary" onclick="copyLicenseKey('<%= @license.license_key %>')">
                         <i class="fas fa-copy me-2"></i>Copy License Key
                     </button>
-                    
+
                     <a href="mailto:<%= h(@license.customer_email) %>?subject=Regarding License <%= @license.license_key %>" class="btn btn-outline-secondary">
                         <i class="fas fa-envelope me-2"></i>Email Customer
                     </a>
-                    
+
                     <% if @license.order %>
                     <a href="/admin/orders/<%= @license.order.id %>" class="btn btn-outline-info">
                         <i class="fas fa-receipt me-2"></i>View Order
@@ -449,19 +453,19 @@
 <script>
 // Update license status
 function updateLicenseStatus(action) {
-    const confirmText = action === 'activate' ? 
+    const confirmText = action === 'activate' ?
         'Are you sure you want to reactivate this license?' :
-        action === 'suspend' ? 
+        action === 'suspend' ?
         'Are you sure you want to suspend this license? It will no longer be usable until reactivated.' :
         action === 'revoke' ?
         'Are you sure you want to revoke this license? This action cannot be undone and will deactivate all activations.' :
         `Are you sure you want to update this license status to ${action}?`;
-    
+
     if (confirm(confirmText)) {
         // Create form data to send the action parameter
         const formData = new FormData();
         formData.append('action', action);
-        
+
         fetch(`/admin/licenses/<%= @license.id %>/toggle-status`, {
             method: 'POST',
             headers: {
@@ -534,7 +538,7 @@ function fallbackCopyTextToClipboard(text) {
     document.body.appendChild(textArea);
     textArea.focus();
     textArea.select();
-    
+
     try {
         const successful = document.execCommand('copy');
         if (successful) {
@@ -545,7 +549,7 @@ function fallbackCopyTextToClipboard(text) {
     } catch (err) {
         AdminUtils.showNotification('Failed to copy license key', 'error');
     }
-    
+
     document.body.removeChild(textArea);
 }
 </script>
@@ -666,17 +670,17 @@ function fallbackCopyTextToClipboard(text) {
     .admin-card-body {
         padding: 1rem;
     }
-    
+
     .table-responsive {
         font-size: 0.875rem;
     }
-    
+
     .d-flex.justify-content-between {
         flex-direction: column;
         align-items: flex-start !important;
         gap: 0.5rem;
     }
-    
+
     .d-flex.justify-content-between > span:last-child {
         margin-left: auto;
     }

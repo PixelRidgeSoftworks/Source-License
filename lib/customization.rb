@@ -70,12 +70,12 @@ class TemplateCustomizer
     end
 
     # Get all customizations (alias for all_customizations)
-    def get_all_customizations
+    def all_customizations_list
       all_customizations
     end
 
     # Get categories (alias for categories)
-    def get_categories
+    def categories_list
       categories
     end
 
@@ -169,7 +169,9 @@ class TemplateCustomizer
         'hero_section' => {
           'enabled' => true,
           'title' => 'Professional Software Licensing Made Simple',
-          'subtitle' => 'Secure, reliable, and easy-to-manage software licenses for developers and businesses. Support for both one-time purchases and subscriptions with integrated payment processing.',
+          'subtitle' => 'Secure, reliable, and easy-to-manage software licenses for developers and ' \
+                        'businesses. Support for both one-time purchases and subscriptions with ' \
+                        'integrated payment processing.',
           'cta_primary_text' => 'Browse Products',
           'cta_primary_link' => '#products',
           'cta_secondary_text' => 'Create Account',
@@ -188,40 +190,49 @@ class TemplateCustomizer
         'features_section' => {
           'enabled' => true,
           'title' => 'Why Choose Source License?',
-          'subtitle' => 'Built with modern technology and security best practices to ensure your software licensing is handled professionally.',
+          'subtitle' => 'Built with modern technology and security best practices to ensure your software licensing ' \
+                        'is handled professionally.',
           'feature_1_enabled' => true,
           'feature_1_icon' => 'fas fa-shield-alt',
           'feature_1_title' => 'Ultra Secure',
-          'feature_1_description' => 'Military-grade encryption, secure API endpoints, and comprehensive license validation protect your intellectual property.',
+          'feature_1_description' => 'Military-grade encryption, secure API endpoints, and comprehensive license ' \
+                                     'validation protect your intellectual property.',
           'feature_2_enabled' => true,
           'feature_2_icon' => 'fas fa-code',
           'feature_2_title' => 'Easy Integration',
-          'feature_2_description' => 'RESTful API with comprehensive documentation makes it simple to integrate license validation into your software.',
+          'feature_2_description' => 'RESTful API with comprehensive documentation makes it simple to integrate ' \
+                                     'license validation into your software.',
           'feature_3_enabled' => true,
           'feature_3_icon' => 'fas fa-credit-card',
           'feature_3_title' => 'Payment Processing',
-          'feature_3_description' => 'Integrated Stripe and PayPal support for seamless payment processing and automatic license generation.',
+          'feature_3_description' => 'Integrated Stripe and PayPal support for seamless payment processing and ' \
+                                     'automatic license generation.',
           'feature_4_enabled' => true,
           'feature_4_icon' => 'fas fa-tachometer-alt',
           'feature_4_title' => 'Real-time Management',
-          'feature_4_description' => 'Instantly activate, suspend, or revoke licenses. Monitor usage and activations in real-time through the admin dashboard.',
+          'feature_4_description' => 'Instantly activate, suspend, or revoke licenses. Monitor usage and ' \
+                                     'activations in real-time through the admin dashboard.',
           'feature_5_enabled' => true,
           'feature_5_icon' => 'fas fa-sync-alt',
           'feature_5_title' => 'Subscription Support',
-          'feature_5_description' => 'Support for both one-time purchases and recurring subscriptions with automatic renewal and billing management.',
+          'feature_5_description' => 'Support for both one-time purchases and recurring subscriptions with ' \
+                                     'automatic renewal and billing management.',
           'feature_6_enabled' => true,
           'feature_6_icon' => 'fas fa-laptop',
           'feature_6_title' => 'Multi-Platform',
-          'feature_6_description' => 'Cross-platform support with activation tracking across Windows, macOS, and Linux environments.',
+          'feature_6_description' => 'Cross-platform support with activation tracking across Windows, macOS, ' \
+                                     'and Linux environments.',
           'columns_per_row' => 3,
         },
         'products_section' => {
           'enabled' => true,
           'title' => 'Available Software Products',
-          'subtitle' => 'Choose from our selection of professional software solutions. All products include secure licensing and instant delivery.',
+          'subtitle' => 'Choose from our selection of professional software solutions. All products include ' \
+                        'secure licensing and instant delivery.',
           'show_when_no_products' => true,
           'no_products_title' => 'No Products Available',
-          'no_products_message' => 'Products are currently being configured. Please check back soon or contact support.',
+          'no_products_message' => 'Products are currently being configured. Please check back soon or contact ' \
+                                   'support.',
           'columns_per_row' => 3,
         },
         'how_it_works' => {
@@ -231,15 +242,18 @@ class TemplateCustomizer
           'step_1_enabled' => true,
           'step_1_icon' => 'fas fa-shopping-cart',
           'step_1_title' => 'Choose & Purchase',
-          'step_1_description' => 'Select your desired software product and complete the secure checkout process using your preferred payment method.',
+          'step_1_description' => 'Select your desired software product and complete the secure checkout ' \
+                                  'process using your preferred payment method.',
           'step_2_enabled' => true,
           'step_2_icon' => 'fas fa-key',
           'step_2_title' => 'Receive License',
-          'step_2_description' => 'Get your license key instantly via email with download instructions and activation guidelines.',
+          'step_2_description' => 'Get your license key instantly via email with download instructions ' \
+                                  'and activation guidelines.',
           'step_3_enabled' => true,
           'step_3_icon' => 'fas fa-rocket',
           'step_3_title' => 'Activate & Use',
-          'step_3_description' => 'Download your software, activate it with your license key, and start using it immediately.',
+          'step_3_description' => 'Download your software, activate it with your license key, and ' \
+                                  'start using it immediately.',
         },
         'support_section' => {
           'enabled' => true,
@@ -248,7 +262,8 @@ class TemplateCustomizer
           'card_1_enabled' => true,
           'card_1_icon' => 'fas fa-shield-alt',
           'card_1_title' => 'License Management',
-          'card_1_description' => 'Validate license keys, manage your software licenses, or access your secure dashboard.',
+          'card_1_description' => 'Validate license keys, manage your software licenses, or ' \
+                                  'access your secure dashboard.',
           'card_1_button_1_text' => 'Validate License',
           'card_1_button_1_link' => '/validate-license',
           'card_1_button_2_text' => 'Login for Full Access',
@@ -270,9 +285,9 @@ class TemplateCustomizer
         },
         'text' => {
           'hero_title' => 'Professional Software Licensing Made Simple',
-          'hero_subtitle' => 'Secure, reliable, and easy-to-manage software licenses for developers and businesses. ' \
-                             'Support for both one-time purchases and subscriptions with integrated payment ' \
-                             'processing.',
+          'hero_subtitle' => 'Secure, reliable, and easy-to-manage software licenses for developers and ' \
+                             'businesses. Support for both one-time purchases and subscriptions with ' \
+                             'integrated payment processing.',
           'features_title' => 'Why Choose Source License?',
           'features_subtitle' => 'Built with modern technology and security best practices to ensure your ' \
                                  'software licensing is handled professionally.',
@@ -319,7 +334,9 @@ class TemplateCustomizer
           'checkout_instant_delivery' => 'Instant license delivery',
           # License validation page text
           'validate_title' => 'Validate License',
-          'validate_description' => 'Enter your license key below to verify its status and validity. This tool only shows basic license information and does not provide access to downloads or sensitive data.',
+          'validate_description' => 'Enter your license key below to verify its status and validity. ' \
+                                    'This tool only shows basic license information and does not provide ' \
+                                    'access to downloads or sensitive data.',
           'validate_license_key' => 'License Key',
           'validate_placeholder' => 'Enter your license key...',
           'validate_help_text' => 'Your license key is typically provided in your purchase confirmation email.',
@@ -330,12 +347,15 @@ class TemplateCustomizer
           'validate_invalid_message' => 'License could not be validated.',
           'validate_search_again' => 'Validate Another License',
           'validate_need_account_title' => 'Need Full Access?',
-          'validate_need_account_desc' => 'Create an account to manage all your licenses, download software, and access support.',
+          'validate_need_account_desc' => 'Create an account to manage all your licenses, download software, ' \
+                                          'and access support.',
           'validate_create_account' => 'Create Account',
           'validate_have_account_title' => 'Already Have Account?',
-          'validate_have_account_desc' => 'Log in to access your complete license dashboard with downloads and support.',
+          'validate_have_account_desc' => 'Log in to access your complete license dashboard with ' \
+                                          'downloads and support.',
           'validate_sign_in' => 'Sign In',
-          'validate_footer_text' => 'This validation tool only shows basic license information. For downloads and full license management, please sign in or create an account.',
+          'validate_footer_text' => 'This validation tool only shows basic license information. For ' \
+                                    'downloads and full license management, please sign in or create an account.',
           # User dashboard text
           'dashboard_welcome' => 'Welcome back',
           'dashboard_subtitle' => 'Manage your licenses and account settings',
@@ -348,7 +368,8 @@ class TemplateCustomizer
           'dashboard_edit_profile' => 'Edit Profile',
           'dashboard_your_licenses' => 'Your Licenses',
           'dashboard_no_licenses_title' => 'No Licenses Found',
-          'dashboard_no_licenses_message' => 'You don\'t have any licenses yet. When you purchase software, your licenses will appear here.',
+          'dashboard_no_licenses_message' => 'You don\'t have any licenses yet. When you purchase software, ' \
+                                             'your licenses will appear here.',
           'dashboard_browse_products' => 'Browse Products',
           'dashboard_view_all_licenses' => 'View All Licenses',
           # User login page text
@@ -358,7 +379,8 @@ class TemplateCustomizer
           'login_button' => 'Sign In',
           'login_create_account' => 'Create Account',
           'login_forgot_password' => 'Forgot Password',
-          'login_transfer_note' => 'Don\'t have an account? Existing licenses will be automatically transferred when you create an account with the same email address.',
+          'login_transfer_note' => 'Don\'t have an account? Existing licenses will be automatically ' \
+                                   'transferred when you create an account with the same email address.',
           'login_validate_link' => 'Just need to validate a license?',
         },
         'layout' => {

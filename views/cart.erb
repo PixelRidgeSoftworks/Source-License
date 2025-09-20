@@ -13,12 +13,12 @@
                     <%= custom_text('cart_clear_button', 'Clear Cart') %>
                 </button>
             </div>
-            
+
             <!-- Cart Items Container -->
             <div id="cart-items-container">
                 <!-- Cart items will be loaded here via JavaScript -->
             </div>
-            
+
             <!-- Empty Cart Message -->
             <div id="empty-cart-message" class="text-center py-5" style="display: none;">
                 <div class="card">
@@ -26,7 +26,8 @@
                         <i class="fas fa-shopping-cart text-muted mb-3" style="font-size: 4rem;"></i>
                         <h4 class="text-muted"><%= custom_text('cart_empty_title', 'Your Cart is Empty') %></h4>
                         <p class="text-muted mb-4">
-                            <%= custom_text('cart_empty_message', 'Browse our products and add items to your cart to get started.') %>
+                            <%= custom_text('cart_empty_message',
+                            'Browse our products and add items to your cart to get started.') %>
                         </p>
                         <a href="/#products" class="btn btn-primary">
                             <i class="fas fa-boxes me-2"></i>
@@ -36,7 +37,7 @@
                 </div>
             </div>
         </div>
-        
+
         <!-- Order Summary Sidebar -->
         <div class="col-lg-4">
             <div class="card sticky-top" style="top: 100px;">
@@ -50,7 +51,7 @@
                     <div id="order-summary">
                         <!-- Order summary will be populated via JavaScript -->
                     </div>
-                    
+
                     <!-- Checkout Button -->
                     <div class="d-grid">
                         <button id="checkout-btn" class="btn btn-primary btn-lg" onclick="proceedToCheckout()" disabled>
@@ -58,7 +59,7 @@
                             <%= custom_text('cart_proceed_checkout', 'Proceed to Checkout') %>
                         </button>
                     </div>
-                    
+
                     <!-- Security Badges -->
                     <div class="row text-center mt-3">
                         <div class="col-4">
@@ -112,7 +113,7 @@
                                 <button class="btn btn-outline-secondary quantity-decrease" type="button">
                                     <i class="fas fa-minus"></i>
                                 </button>
-                                <input type="number" class="form-control text-center quantity-input" value="1" min="1" max="10">
+                                <input type="number" class="form-control text-center quantity-input" value="1" min="1" max="10" autocomplete="off">
                                 <button class="btn btn-outline-secondary quantity-increase" type="button">
                                     <i class="fas fa-plus"></i>
                                 </button>
@@ -140,7 +141,7 @@ class EnhancedShoppingCart {
         this.products = {}; // Cache for product data
         this.loadProducts();
     }
-    
+
     async loadProducts() {
         try {
             const response = await fetch('/api/products');
@@ -154,25 +155,25 @@ class EnhancedShoppingCart {
         } catch (error) {
             console.error('Failed to load products:', error);
         }
-        
+
         this.renderCart();
     }
-    
+
     addItem(productId, quantity = 1) {
         const existingItem = this.items.find(item => item.productId === productId);
-        
+
         if (existingItem) {
             existingItem.quantity += quantity;
         } else {
             this.items.push({ productId, quantity });
         }
-        
+
         this.saveCart();
         this.updateCartBadge();
         this.renderCart();
         this.showNotification('Item added to cart!', 'success');
     }
-    
+
     removeItem(productId) {
         this.items = this.items.filter(item => item.productId !== productId);
         this.saveCart();
@@ -180,7 +181,7 @@ class EnhancedShoppingCart {
         this.renderCart();
         this.showNotification('Item removed from cart', 'info');
     }
-    
+
     updateQuantity(productId, quantity) {
         const item = this.items.find(item => item.productId === productId);
         if (item) {
@@ -190,10 +191,10 @@ class EnhancedShoppingCart {
             this.renderCart();
         }
     }
-    
+
     clearCart() {
         if (this.items.length === 0) return;
-        
+
         if (confirm('Are you sure you want to clear your cart?')) {
             this.items = [];
             this.saveCart();
@@ -202,26 +203,26 @@ class EnhancedShoppingCart {
             this.showNotification('Cart cleared', 'info');
         }
     }
-    
+
     saveCart() {
         localStorage.setItem('cart', JSON.stringify(this.items));
     }
-    
+
     updateCartBadge() {
         const badge = document.querySelector('.cart-badge');
         const totalItems = this.items.reduce((sum, item) => sum + item.quantity, 0);
-        
+
         if (badge) {
             badge.textContent = totalItems;
             badge.style.display = totalItems > 0 ? 'block' : 'none';
         }
     }
-    
+
     renderCart() {
         const container = document.getElementById('cart-items-container');
         const emptyMessage = document.getElementById('empty-cart-message');
         const checkoutBtn = document.getElementById('checkout-btn');
-        
+
         if (this.items.length === 0) {
             container.innerHTML = '';
             emptyMessage.style.display = 'block';
@@ -229,88 +230,88 @@ class EnhancedShoppingCart {
             this.renderOrderSummary();
             return;
         }
-        
+
         emptyMessage.style.display = 'none';
         checkoutBtn.disabled = false;
-        
+
         container.innerHTML = '';
-        
+
         this.items.forEach(item => {
             const product = this.products[item.productId];
             if (!product) return;
-            
+
             const cartItem = this.createCartItemElement(product, item);
             container.appendChild(cartItem);
         });
-        
+
         this.renderOrderSummary();
     }
-    
+
     createCartItemElement(product, item) {
         const template = document.getElementById('cart-item-template');
         const element = template.content.cloneNode(true);
         const container = element.querySelector('.cart-item');
-        
+
         container.dataset.productId = product.id;
-        
+
         // Populate product details
         element.querySelector('.product-name').textContent = product.name;
         element.querySelector('.product-description').textContent = product.description || '';
         element.querySelector('.product-type').textContent = product.license_type === 'subscription' ? 'Subscription' : 'One-time';
         element.querySelector('.product-version').textContent = product.version || 'N/A';
         element.querySelector('.product-activations').textContent = product.max_activations;
-        
+
         // Price and billing
         const price = parseFloat(product.price) * item.quantity;
         element.querySelector('.product-price').textContent = window.SourceLicense.formatCurrency(price);
-        
+
         const billing = product.license_type === 'subscription' ? '/month' : '';
         element.querySelector('.product-billing').textContent = billing;
-        
+
         // Quantity controls
         const quantityInput = element.querySelector('.quantity-input');
         quantityInput.value = item.quantity;
-        
+
         element.querySelector('.quantity-decrease').addEventListener('click', () => {
             this.updateQuantity(product.id, item.quantity - 1);
         });
-        
+
         element.querySelector('.quantity-increase').addEventListener('click', () => {
             this.updateQuantity(product.id, item.quantity + 1);
         });
-        
+
         quantityInput.addEventListener('change', (e) => {
             this.updateQuantity(product.id, parseInt(e.target.value));
         });
-        
+
         // Remove button
         element.querySelector('.remove-item').addEventListener('click', () => {
             this.removeItem(product.id);
         });
-        
+
         return element;
     }
-    
+
     renderOrderSummary() {
         const container = document.getElementById('order-summary');
-        
+
         if (this.items.length === 0) {
             container.innerHTML = '<p class="text-muted">No items in cart</p>';
             return;
         }
-        
+
         let subtotal = 0;
         let setupFees = 0;
         const itemsHtml = this.items.map(item => {
             const product = this.products[item.productId];
             if (!product) return '';
-            
+
             const itemTotal = parseFloat(product.price) * item.quantity;
             const itemSetupFee = parseFloat(product.setup_fee || 0) * item.quantity;
-            
+
             subtotal += itemTotal;
             setupFees += itemSetupFee;
-            
+
             return `
                 <div class="d-flex justify-content-between mb-2">
                     <span>${product.name} × ${item.quantity}</span>
@@ -318,9 +319,9 @@ class EnhancedShoppingCart {
                 </div>
             `;
         }).join('');
-        
+
         const total = subtotal + setupFees;
-        
+
         container.innerHTML = `
             ${itemsHtml}
             <hr>
@@ -341,15 +342,15 @@ class EnhancedShoppingCart {
             </div>
         `;
     }
-    
+
     showNotification(message, type = 'info') {
         const notification = document.createElement('div');
         notification.className = `alert alert-${type} flash-message position-fixed`;
         notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; max-width: 300px;';
         notification.textContent = message;
-        
+
         document.body.appendChild(notification);
-        
+
         setTimeout(() => {
             notification.style.transition = 'opacity 0.5s ease';
             notification.style.opacity = '0';
@@ -369,7 +370,7 @@ function proceedToCheckout() {
         window.cart.showNotification('Your cart is empty', 'warning');
         return;
     }
-    
+
     // Store cart data for checkout
     sessionStorage.setItem('checkout_cart', JSON.stringify(window.cart.items));
     window.location.href = '/checkout';

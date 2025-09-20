@@ -31,7 +31,7 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Active Licenses -->
     <div class="col-xl-3 col-md-6">
         <div class="stat-card">
@@ -51,7 +51,7 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Total Revenue -->
     <div class="col-xl-3 col-md-6">
         <div class="stat-card">
@@ -73,7 +73,7 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Recent Orders -->
     <div class="col-xl-3 col-md-6">
         <div class="stat-card">
@@ -103,7 +103,7 @@
                 <i class="fas fa-shopping-cart me-2"></i>
                 Recent Orders
             </h5>
-            
+
             <div class="table-responsive">
                 <% if @stats[:recent_orders] && @stats[:recent_orders].any? %>
                 <table class="table table-hover mb-0" data-auto-refresh="true">
@@ -144,13 +144,13 @@
                             </td>
                             <td>
                                 <div class="btn-group btn-group-sm">
-                                    <a href="/admin/orders/<%= order.id %>" 
+                                    <a href="/admin/orders/<%= order.id %>"
                                        class="btn btn-outline-primary btn-sm"
                                        title="View Details">
                                         <i class="fas fa-eye"></i>
                                     </a>
                                     <% if order.completed? %>
-                                    <a href="/admin/licenses?order_id=<%= order.id %>" 
+                                    <a href="/admin/licenses?order_id=<%= order.id %>"
                                        class="btn btn-outline-success btn-sm"
                                        title="View Licenses">
                                         <i class="fas fa-key"></i>
@@ -170,7 +170,7 @@
                 </div>
                 <% end %>
             </div>
-            
+
             <div class="card-footer bg-light">
                 <div class="d-flex justify-content-between align-items-center">
                     <small class="text-muted">
@@ -184,7 +184,7 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Quick Actions -->
     <div class="col-lg-4">
         <div class="admin-card">
@@ -213,7 +213,7 @@
                 </div>
             </div>
         </div>
-        
+
         <!-- System Status -->
         <div class="admin-card mt-4">
             <div class="admin-card-header">
@@ -227,14 +227,14 @@
                         <i class="fas fa-check me-1"></i>Online
                     </span>
                 </div>
-                
+
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <span>API Endpoints</span>
                     <span class="badge bg-success">
                         <i class="fas fa-check me-1"></i>Active
                     </span>
                 </div>
-                
+
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <span>Payment Processing</span>
                     <% if stripe_enabled? || paypal_enabled? %>
@@ -247,7 +247,7 @@
                         </span>
                     <% end %>
                 </div>
-                
+
                 <div class="d-flex justify-content-between align-items-center">
                     <span>Email Service</span>
                     <% if ENV['SMTP_HOST'] %>
@@ -260,9 +260,9 @@
                         </span>
                     <% end %>
                 </div>
-                
+
                 <hr>
-                
+
                 <div class="text-center">
                     <small class="text-muted">
                         <i class="fas fa-clock me-1"></i>
@@ -271,7 +271,7 @@
                 </div>
             </div>
         </div>
-        
+
         <!-- Recent Activity -->
         <div class="admin-card mt-4">
             <div class="admin-card-header">
@@ -287,7 +287,7 @@
                             <div>Admin logged in</div>
                         </div>
                     </div>
-                    
+
                     <% if @stats[:recent_orders].any? %>
                     <div class="timeline-item">
                         <div class="timeline-marker bg-primary"></div>
@@ -297,7 +297,7 @@
                         </div>
                     </div>
                     <% end %>
-                    
+
                     <div class="timeline-item">
                         <div class="timeline-marker bg-info"></div>
                         <div class="timeline-content">
@@ -306,7 +306,7 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="text-center mt-3">
                     <a href="/admin/logs" class="btn btn-outline-secondary btn-sm">
                         View All Activity
@@ -323,7 +323,7 @@
         position: relative;
         padding-left: 1.5rem;
     }
-    
+
     .timeline::before {
         content: '';
         position: absolute;
@@ -333,12 +333,12 @@
         width: 2px;
         background: #dee2e6;
     }
-    
+
     .timeline-item {
         position: relative;
         margin-bottom: 1rem;
     }
-    
+
     .timeline-marker {
         position: absolute;
         left: -1rem;
@@ -349,7 +349,7 @@
         border: 2px solid #fff;
         box-shadow: 0 0 0 2px #dee2e6;
     }
-    
+
     .timeline-content {
         font-size: 0.875rem;
     }
@@ -367,13 +367,13 @@ document.addEventListener('DOMContentLoaded', function() {
             timestampElement.textContent = 'Last updated: ' + now.toLocaleTimeString();
         }
     }, 30000);
-    
+
     // Add click handlers for stat cards
     document.querySelectorAll('.stat-card').forEach(card => {
         card.style.cursor = 'pointer';
         card.addEventListener('click', function() {
             const label = this.querySelector('.stat-label').textContent.toLowerCase();
-            
+
             switch(label) {
                 case 'total licenses':
                 case 'active licenses':

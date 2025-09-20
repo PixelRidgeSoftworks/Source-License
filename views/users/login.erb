@@ -19,22 +19,24 @@
           <form method="POST" action="/login">
             <div class="mb-3">
               <label for="email" class="form-label"><%= custom_text('login_email', 'Email Address') %></label>
-              <input type="email" 
-                     class="form-control" 
-                     id="email" 
-                     name="email" 
-                     required 
+              <input type="email"
+                     class="form-control"
+                     id="email"
+                     name="email"
+                     required
                      autofocus
+                     autocomplete="email"
                      value="<%= h(params[:email] || '') %>">
             </div>
 
             <div class="mb-3">
               <label for="password" class="form-label"><%= custom_text('login_password', 'Password') %></label>
-              <input type="password" 
-                     class="form-control" 
-                     id="password" 
-                     name="password" 
-                     required>
+              <input type="password"
+                     class="form-control"
+                     id="password"
+                     name="password"
+                     required
+                     autocomplete="current-password">
             </div>
 
             <div class="d-grid">
@@ -68,7 +70,8 @@
         <div class="small text-muted">
           <p>
             <i class="fas fa-info-circle me-1"></i>
-            <%= custom_text('login_transfer_note', 'Don\'t have an account? Existing licenses will be automatically transferred when you create an account with the same email address.') %>
+            <%= custom_text('login_transfer_note',
+            'Don\'t have an account? Existing licenses will be automatically transferred when you create an account with the same email address.') %>
           </p>
           <p class="mt-2">
             <a href="/validate-license"><%= custom_text('login_validate_link', 'Just need to validate a license?') %></a>

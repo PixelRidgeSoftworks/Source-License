@@ -277,7 +277,7 @@ module ApiController
       begin
         # Single optimized JOIN query
         license_data = DB[:licenses]
-          .select(Sequel[:licenses][:id].as(:id), :license_key, :status, :expires_at, :activation_count, 
+          .select(Sequel[:licenses][:id].as(:id), :license_key, :status, :expires_at, :activation_count,
                   Sequel[:licenses][:max_activations].as(:max_activations),
                   :custom_max_activations, :custom_expires_at, :product_id)
           .join(:products, id: :product_id)

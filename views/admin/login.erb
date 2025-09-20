@@ -13,7 +13,7 @@
                         <h2 class="login-title mb-2"><%= ENV['APP_NAME'] || 'Source License' %></h2>
                         <p class="login-subtitle">Administrator Login</p>
                     </div>
-                    
+
                     <!-- Error Alert -->
                     <% if @error %>
                     <div class="alert alert-danger alert-dismissible fade show">
@@ -22,47 +22,47 @@
                         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                     </div>
                     <% end %>
-                    
+
                     <!-- Login Form -->
                     <form method="post" action="/admin/login" class="login-form">
                         <input type="hidden" name="_token" value="<%= csrf_token %>">
-                        
+
                         <div class="form-group mb-3">
                             <label for="email" class="form-label">
                                 <i class="fas fa-envelope me-2"></i>Email Address
                             </label>
-                            <input type="email" 
-                                   class="form-control" 
-                                   id="email" 
-                                   name="email" 
+                            <input type="email"
+                                   class="form-control"
+                                   id="email"
+                                   name="email"
                                    placeholder="Enter your admin email"
                                    value="<%= h(params[:email] || '') %>"
                                    autocomplete="email"
                                    maxlength="254"
                                    required>
                         </div>
-                        
+
                         <div class="form-group mb-4">
                             <label for="password" class="form-label">
                                 <i class="fas fa-lock me-2"></i>Password
                             </label>
                             <div class="input-group">
-                                <input type="password" 
-                                       class="form-control" 
-                                       id="password" 
-                                       name="password" 
+                                <input type="password"
+                                       class="form-control"
+                                       id="password"
+                                       name="password"
                                        placeholder="Enter your password"
                                        autocomplete="current-password"
                                        minlength="8"
                                        maxlength="128"
                                        required>
-                                <button type="button" class="btn btn-outline-secondary" 
+                                <button type="button" class="btn btn-outline-secondary"
                                         onclick="togglePassword()" id="toggleBtn">
                                     <i class="fas fa-eye" id="toggleIcon"></i>
                                 </button>
                             </div>
                         </div>
-                        
+
                         <!-- Security Notice -->
                         <div class="security-notice mb-4">
                             <div class="d-flex align-items-start">
@@ -75,13 +75,13 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <!-- Login Button -->
                         <button type="submit" class="btn btn-primary btn-lg w-100 mb-3" id="loginButton">
                             <i class="fas fa-sign-in-alt me-2"></i>
                             Sign In to Admin Panel
                         </button>
-                        
+
                         <!-- Back Link -->
                         <div class="text-center">
                             <a href="/" class="btn btn-outline-secondary btn-sm">
@@ -89,7 +89,7 @@
                             </a>
                         </div>
                     </form>
-                    
+
                     <!-- Footer Info -->
                     <div class="login-footer">
                         <div class="row text-center">
@@ -108,7 +108,7 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <!-- Development Helper -->
                 <% if development? %>
                 <div class="dev-helper mt-4">
@@ -154,7 +154,7 @@
     --bs-info: #0969da;
     --bs-warning: #fb8500;
     --bs-danger: #da3633;
-    
+
     /* Custom Variables */
     --surface-primary: #161b22;
     --surface-secondary: #21262d;
@@ -165,11 +165,11 @@
     --text-primary: #e6edf3;
     --text-secondary: #7d8590;
     --text-muted: #656d76;
-    
+
     /* Shadows */
     --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.4), 0 1px 2px 0 rgba(0, 0, 0, 0.3);
     --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
-    
+
     /* Gradients */
     --gradient-primary: linear-gradient(135deg, #238636 0%, #2ea043 100%);
 }
@@ -366,17 +366,17 @@ body {
     .login-container {
         padding: 1rem;
     }
-    
+
     .login-card {
         padding: 1.5rem;
     }
-    
+
     .login-icon {
         width: 60px;
         height: 60px;
         font-size: 1.5rem;
     }
-    
+
     .login-title {
         font-size: 1.25rem;
     }
@@ -403,12 +403,12 @@ body {
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('email').focus();
-    
+
     // Password visibility toggle
     window.togglePassword = function() {
         const passwordInput = document.getElementById('password');
         const toggleIcon = document.getElementById('toggleIcon');
-        
+
         if (passwordInput.type === 'password') {
             passwordInput.type = 'text';
             toggleIcon.className = 'fas fa-eye-slash';
@@ -417,25 +417,25 @@ document.addEventListener('DOMContentLoaded', function() {
             toggleIcon.className = 'fas fa-eye';
         }
     };
-    
+
     // Add form validation feedback
     const form = document.querySelector('form');
     form.addEventListener('submit', function(e) {
         const email = document.getElementById('email').value;
         const password = document.getElementById('password').value;
-        
+
         if (!email || !password) {
             e.preventDefault();
             alert('Please fill in all fields');
             return;
         }
-        
+
         // Show loading state
         const submitBtn = form.querySelector('button[type="submit"]');
         const originalText = submitBtn.innerHTML;
         submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Signing In...';
         submitBtn.disabled = true;
-        
+
         // Re-enable button after 5 seconds (in case of error)
         setTimeout(() => {
             submitBtn.innerHTML = originalText;

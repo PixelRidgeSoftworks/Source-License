@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><%= @page_title ? "#{h(@page_title)} - Source License" : "Source License" %></title>
-    
+    <title><%= @page_title ? "#{h(@page_title)} - Source License" : 'Source License' %></title>
+
     <!-- Bootstrap CSS (Dark Theme) -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap Icons -->
@@ -13,7 +13,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
+
     <!-- Custom Dark Theme CSS -->
     <style>
         :root {
@@ -28,7 +28,7 @@
             --bs-danger: #da3633;
             --bs-light: #f0f6fc;
             --bs-dark: #161b22;
-            
+
             /* Custom Variables */
             --surface-primary: #161b22;
             --surface-secondary: #21262d;
@@ -40,23 +40,23 @@
             --text-primary: #e6edf3;
             --text-secondary: #7d8590;
             --text-muted: #656d76;
-            
+
             /* Shadows */
             --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
             --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.4), 0 1px 2px 0 rgba(0, 0, 0, 0.3);
             --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
             --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.6), 0 10px 10px -5px rgba(0, 0, 0, 0.3);
-            
+
             /* Gradients */
             --gradient-primary: linear-gradient(135deg, #238636 0%, #2ea043 100%);
             --gradient-secondary: linear-gradient(135deg, #0969da 0%, #1f6feb 100%);
             --gradient-hero: linear-gradient(135deg, #0d1117 0%, #161b22 50%, #21262d 100%);
         }
-        
+
         * {
             box-sizing: border-box;
         }
-        
+
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: var(--bs-body-bg);
@@ -66,7 +66,7 @@
             min-height: 100vh;
             overflow-x: hidden;
         }
-        
+
         /* Dark Theme Overrides */
         .navbar {
             background: var(--surface-primary) !important;
@@ -74,7 +74,7 @@
             backdrop-filter: blur(10px);
             min-height: 60px;
         }
-        
+
         .navbar-brand {
             font-weight: 700;
             font-size: 1.25rem;
@@ -83,12 +83,12 @@
             align-items: center;
             gap: 0.5rem;
         }
-        
+
         .navbar-brand i {
             color: var(--accent-primary);
             font-size: 1.25rem;
         }
-        
+
         .nav-link {
             color: var(--text-secondary) !important;
             font-weight: 500;
@@ -97,26 +97,26 @@
             padding: 0.5rem 0.75rem !important;
             font-size: 0.95rem;
         }
-        
+
         .nav-link:hover {
             color: var(--accent-primary) !important;
             transform: translateY(-1px);
         }
-        
+
         .nav-link.active {
             color: var(--accent-primary) !important;
         }
-        
+
         .dropdown-menu {
             border: 1px solid var(--border-default);
             box-shadow: var(--shadow-lg);
         }
-        
+
         .dropdown-item {
             padding: 0.25rem 1rem;
             font-size: 0.875rem;
         }
-        
+
         /* Hero Section */
         .hero-section {
             background: var(--gradient-hero);
@@ -125,7 +125,7 @@
             position: relative;
             overflow: hidden;
         }
-        
+
         .hero-section::before {
             content: '';
             position: absolute;
@@ -136,12 +136,12 @@
             background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M 10 0 L 0 0 0 10" fill="none" stroke="%23ffffff" stroke-width="0.1" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
             opacity: 0.3;
         }
-        
+
         .hero-content {
             position: relative;
             z-index: 2;
         }
-        
+
         /* Cards */
         .card {
             background: var(--surface-secondary);
@@ -151,23 +151,23 @@
             transition: all 0.3s ease;
             overflow: hidden;
         }
-        
+
         .card:hover {
             transform: translateY(-4px);
             box-shadow: var(--shadow-lg);
             border-color: var(--accent-primary);
         }
-        
+
         .card-header {
             background: var(--surface-tertiary);
             border-bottom: 1px solid var(--border-default);
             font-weight: 600;
         }
-        
+
         .card-body {
             padding: 1.5rem;
         }
-        
+
         /* Buttons */
         .btn {
             border-radius: 8px;
@@ -178,43 +178,43 @@
             position: relative;
             overflow: hidden;
         }
-        
+
         .btn-primary {
             background: var(--gradient-primary);
             color: white;
             box-shadow: var(--shadow-sm);
         }
-        
+
         .btn-primary:hover {
             transform: translateY(-2px);
             box-shadow: var(--shadow);
             background: linear-gradient(135deg, #2ea043 0%, #238636 100%);
         }
-        
+
         .btn-secondary {
             background: var(--surface-tertiary);
             color: var(--text-primary);
             border: 1px solid var(--border-default);
         }
-        
+
         .btn-secondary:hover {
             background: var(--surface-secondary);
             border-color: var(--accent-primary);
             color: var(--accent-primary);
         }
-        
+
         .btn-outline-primary {
             border: 2px solid var(--accent-primary);
             color: var(--accent-primary);
             background: transparent;
         }
-        
+
         .btn-outline-primary:hover {
             background: var(--accent-primary);
             color: white;
             transform: translateY(-2px);
         }
-        
+
         /* Forms */
         .form-control, .form-select {
             background: var(--surface-tertiary);
@@ -224,20 +224,20 @@
             padding: 0.75rem 1rem;
             transition: all 0.3s ease;
         }
-        
+
         .form-control:focus, .form-select:focus {
             background: var(--surface-secondary);
             border-color: var(--accent-primary);
             box-shadow: 0 0 0 0.2rem rgba(35, 134, 54, 0.25);
             color: var(--text-primary);
         }
-        
+
         .form-label {
             color: var(--text-primary);
             font-weight: 500;
             margin-bottom: 0.5rem;
         }
-        
+
         /* Flash Messages */
         .alert {
             border: none;
@@ -247,36 +247,36 @@
             position: relative;
             overflow: hidden;
         }
-        
+
         .alert-success {
             background: rgba(46, 160, 67, 0.15);
             color: #4ac26b;
             border-left: 4px solid #2ea043;
         }
-        
+
         .alert-danger {
             background: rgba(218, 54, 51, 0.15);
             color: #ff6b6b;
             border-left: 4px solid #da3633;
         }
-        
+
         .alert-warning {
             background: rgba(251, 133, 0, 0.15);
             color: #ffa726;
             border-left: 4px solid #fb8500;
         }
-        
+
         .alert-info {
             background: rgba(9, 105, 218, 0.15);
             color: #58a6ff;
             border-left: 4px solid #0969da;
         }
-        
+
         /* Tables */
         .table {
             color: var(--text-primary);
         }
-        
+
         .table-dark {
             --bs-table-bg: var(--surface-secondary);
             --bs-table-striped-bg: var(--surface-tertiary);
@@ -284,7 +284,7 @@
             border-radius: 8px;
             overflow: hidden;
         }
-        
+
         /* Price Display */
         .price-display {
             font-size: 2.5rem;
@@ -292,12 +292,12 @@
             color: var(--accent-primary);
             text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
         }
-        
+
         .price-currency {
             font-size: 1.5rem;
             opacity: 0.8;
         }
-        
+
         /* Cart Badge */
         .cart-badge {
             background: var(--bs-danger);
@@ -313,13 +313,13 @@
             text-align: center;
             animation: pulse 2s infinite;
         }
-        
+
         @keyframes pulse {
             0% { box-shadow: 0 0 0 0 rgba(218, 54, 51, 0.7); }
             70% { box-shadow: 0 0 0 10px rgba(218, 54, 51, 0); }
             100% { box-shadow: 0 0 0 0 rgba(218, 54, 51, 0); }
         }
-        
+
         /* Feature Cards */
         .feature-card {
             background: var(--surface-secondary);
@@ -330,13 +330,13 @@
             transition: all 0.3s ease;
             height: 100%;
         }
-        
+
         .feature-card:hover {
             transform: translateY(-8px);
             box-shadow: var(--shadow-xl);
             border-color: var(--accent-primary);
         }
-        
+
         .feature-icon {
             width: 80px;
             height: 80px;
@@ -350,14 +350,14 @@
             color: white !important;
             box-shadow: var(--shadow);
         }
-        
+
         .feature-icon i {
             color: white !important;
             font-size: 2rem !important;
             line-height: 1;
             text-align: center;
         }
-        
+
         /* License Status Badges */
         .status-badge {
             padding: 0.5rem 1rem;
@@ -367,31 +367,31 @@
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
-        
+
         .status-active {
             background: rgba(46, 160, 67, 0.2);
             color: #4ac26b;
             border: 1px solid rgba(46, 160, 67, 0.3);
         }
-        
+
         .status-expired {
             background: rgba(218, 54, 51, 0.2);
             color: #ff6b6b;
             border: 1px solid rgba(218, 54, 51, 0.3);
         }
-        
+
         .status-pending {
             background: rgba(251, 133, 0, 0.2);
             color: #ffa726;
             border: 1px solid rgba(251, 133, 0, 0.3);
         }
-        
+
         /* Loading States */
         .btn-loading {
             position: relative;
             color: transparent !important;
         }
-        
+
         .btn-loading::after {
             content: '';
             position: absolute;
@@ -406,40 +406,40 @@
             border-top-color: transparent;
             animation: spin 1s ease-in-out infinite;
         }
-        
+
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
-        
+
         /* Responsive */
         @media (max-width: 768px) {
             .hero-section {
                 padding: 3rem 0;
             }
-            
+
             .feature-card {
                 margin-bottom: 2rem;
             }
-            
+
             .price-display {
                 font-size: 2rem;
             }
         }
-        
+
         /* Scrollbar */
         ::-webkit-scrollbar {
             width: 8px;
         }
-        
+
         ::-webkit-scrollbar-track {
             background: var(--surface-primary);
         }
-        
+
         ::-webkit-scrollbar-thumb {
             background: var(--surface-tertiary);
             border-radius: 4px;
         }
-        
+
         ::-webkit-scrollbar-thumb:hover {
             background: var(--accent-primary);
         }
@@ -448,33 +448,33 @@
 <body>
     <!-- Navigation -->
     <%= partial 'navigation' %>
-    
+
     <!-- Flash Messages -->
     <div class="container mt-3">
         <%= flash_messages %>
     </div>
-    
+
     <!-- Main Content -->
     <main>
         <%= yield %>
     </main>
-    
+
     <!-- Footer -->
     <%= partial 'footer' %>
-    
+
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
+
     <!-- Stripe JS (if enabled) -->
     <% if stripe_enabled? %>
     <script src="https://js.stripe.com/v3/"></script>
     <% end %>
-    
+
     <!-- PayPal JS (if enabled) -->
     <% if paypal_enabled? %>
     <script src="https://www.paypal.com/sdk/js?client-id=<%= ENV['PAYPAL_CLIENT_ID'] %>&currency=USD"></script>
     <% end %>
-    
+
     <!-- Custom JavaScript -->
     <script>
         // Flash message auto-hide
@@ -490,56 +490,56 @@
                 }, 5000);
             });
         });
-        
+
         // Shopping cart functionality
         class ShoppingCart {
             constructor() {
                 this.items = JSON.parse(localStorage.getItem('cart') || '[]');
                 this.updateCartBadge();
             }
-            
+
             addItem(productId, quantity = 1) {
                 const existingItem = this.items.find(item => item.productId === productId);
-                
+
                 if (existingItem) {
                     existingItem.quantity += quantity;
                 } else {
                     this.items.push({ productId, quantity });
                 }
-                
+
                 this.saveCart();
                 this.updateCartBadge();
                 this.showNotification('Item added to cart!', 'success');
             }
-            
+
             removeItem(productId) {
                 this.items = this.items.filter(item => item.productId !== productId);
                 this.saveCart();
                 this.updateCartBadge();
             }
-            
+
             saveCart() {
                 localStorage.setItem('cart', JSON.stringify(this.items));
             }
-            
+
             updateCartBadge() {
                 const badge = document.querySelector('.cart-badge');
                 const totalItems = this.items.reduce((sum, item) => sum + item.quantity, 0);
-                
+
                 if (badge) {
                     badge.textContent = totalItems;
                     badge.style.display = totalItems > 0 ? 'block' : 'none';
                 }
             }
-            
+
             showNotification(message, type = 'info') {
                 const notification = document.createElement('div');
                 notification.className = `alert alert-${type} flash-message position-fixed`;
                 notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; max-width: 300px;';
                 notification.textContent = message;
-                
+
                 document.body.appendChild(notification);
-                
+
                 setTimeout(() => {
                     notification.style.transition = 'opacity 0.5s ease';
                     notification.style.opacity = '0';
@@ -547,10 +547,10 @@
                 }, 3000);
             }
         }
-        
+
         // Initialize shopping cart
         window.cart = new ShoppingCart();
-        
+
         // Utility functions for templates
         window.SourceLicense = {
             formatCurrency: function(amount, currency = 'USD') {
@@ -559,11 +559,11 @@
                     currency: currency
                 }).format(amount);
             },
-            
+
             formatDate: function(dateString) {
                 return new Date(dateString).toLocaleDateString();
             },
-            
+
             copyToClipboard: function(text) {
                 navigator.clipboard.writeText(text).then(() => {
                     window.cart.showNotification('Copied to clipboard!', 'success');

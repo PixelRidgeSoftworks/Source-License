@@ -26,7 +26,7 @@
             </div>
         </div>
     </div>
-    
+
     <div class="col-xl-3 col-md-6">
         <div class="stat-card">
             <div class="d-flex justify-content-between align-items-start">
@@ -43,7 +43,7 @@
             </div>
         </div>
     </div>
-    
+
     <div class="col-xl-3 col-md-6">
         <div class="stat-card">
             <div class="d-flex justify-content-between align-items-start">
@@ -57,7 +57,7 @@
             </div>
         </div>
     </div>
-    
+
     <div class="col-xl-3 col-md-6">
         <div class="stat-card">
             <div class="d-flex justify-content-between align-items-start">
@@ -79,7 +79,7 @@
         <i class="fas fa-ban me-2"></i>
         Active Account Bans
     </h5>
-    
+
     <div class="table-responsive">
         <% if @active_bans.any? %>
         <table class="table table-hover table-dark mb-0">
@@ -141,7 +141,7 @@
                     <td>
                         <div class="time-remaining" data-until="<%= ban[:banned_until].to_i %>">
                             <div class="progress mb-1" style="height: 6px;">
-                                <div class="progress-bar <%= time_remaining < 3600 ? 'bg-danger' : 'bg-warning' %>" 
+                                <div class="progress-bar <%= time_remaining < 3600 ? 'bg-danger' : 'bg-warning' %>"
                                      style="width: <%= progress_percent %>%"></div>
                             </div>
                             <small class="<%= 'text-danger fw-bold' if time_remaining < 3600 %>">
@@ -166,13 +166,13 @@
                     </td>
                     <td>
                         <div class="btn-group btn-group-sm">
-                            <button type="button" class="btn btn-outline-success" 
-                                    onclick="removeBan('<%= ban[:email] %>')" 
+                            <button type="button" class="btn btn-outline-success"
+                                    onclick="removeBan('<%= ban[:email] %>')"
                                     title="Remove Ban">
                                 <i class="fas fa-unlock"></i>
                             </button>
                             <div class="dropdown">
-                                <button class="btn btn-outline-secondary dropdown-toggle" 
+                                <button class="btn btn-outline-secondary dropdown-toggle"
                                         data-bs-toggle="dropdown">
                                     <i class="fas fa-ellipsis-v"></i>
                                 </button>
@@ -208,7 +208,7 @@
         </div>
         <% end %>
     </div>
-    
+
     <% if @active_bans.any? %>
     <div class="card-footer" style="background: var(--surface-tertiary); border-top: 1px solid var(--border-default);">
         <div class="d-flex justify-content-between align-items-center">
@@ -239,8 +239,8 @@
                 <form onsubmit="searchAccount(event)">
                     <div class="mb-3">
                         <label for="search-email" class="form-label">Email Address</label>
-                        <input type="email" id="search-email" name="email" class="form-control" required 
-                               placeholder="Enter email address to check ban status">
+                        <input type="email" id="search-email" name="email" class="form-control" required
+                               placeholder="Enter email address to check ban status" autocomplete="email">
                     </div>
                     <div class="d-flex gap-2">
                         <button type="submit" class="btn btn-primary">
@@ -251,7 +251,7 @@
                         </button>
                     </div>
                 </form>
-                
+
                 <div id="search-results" class="mt-4" style="display: none;"></div>
             </div>
         </div>
@@ -320,7 +320,7 @@
         height: 30px;
         font-size: 1rem;
     }
-    
+
     .btn-group-sm .btn {
         padding: 0.25rem 0.4rem;
     }
@@ -352,13 +352,13 @@ function hideSearchModal() {
 
 function searchAccount(event) {
     event.preventDefault();
-    
+
     const email = document.getElementById('search-email').value;
     const resultsDiv = document.getElementById('search-results');
-    
+
     resultsDiv.innerHTML = '<p><i class="fas fa-spinner fa-spin"></i> Searching...</p>';
     resultsDiv.style.display = 'block';
-    
+
     fetch(`/admin/bans/search?email=${encodeURIComponent(email)}`)
         .then(response => response.json())
         .then(data => {
@@ -425,7 +425,7 @@ function searchAccount(event) {
 
 function removeBan(email) {
     if (!confirm(`Are you sure you want to remove the ban for ${email}?`)) return;
-    
+
     fetch(`/admin/bans/${encodeURIComponent(email)}/remove`, {
         method: 'POST',
         headers: {
@@ -443,7 +443,7 @@ function removeBan(email) {
             if (row) {
                 row.remove();
             }
-            
+
             showAlert('success', `Ban removed successfully for ${email}`);
             setTimeout(() => location.reload(), 2000);
         } else {
@@ -457,7 +457,7 @@ function removeBan(email) {
 
 function resetBanCount(email) {
     if (!confirm(`Are you sure you want to reset the ban count for ${email}?`)) return;
-    
+
     fetch(`/admin/bans/${encodeURIComponent(email)}/reset-count`, {
         method: 'POST',
         headers: {
@@ -491,7 +491,7 @@ function updateTimeRemaining() {
         const until = parseInt(element.dataset.until);
         const now = Math.floor(Date.now() / 1000);
         const remaining = until - now;
-        
+
         if (remaining <= 0) {
             element.querySelector('small').innerHTML = '<span class="text-success">Expired</span>';
             element.querySelector('.progress-bar').style.width = '100%';
@@ -500,7 +500,7 @@ function updateTimeRemaining() {
         } else {
             const hours = Math.floor(remaining / 3600);
             const minutes = Math.floor((remaining % 3600) / 60);
-            
+
             let text;
             if (hours > 24) {
                 const days = Math.floor(hours / 24);
@@ -510,7 +510,7 @@ function updateTimeRemaining() {
             } else {
                 text = `${minutes} min`;
             }
-            
+
             const small = element.querySelector('small');
             small.innerHTML = text;
             small.className = remaining < 3600 ? 'text-danger fw-bold' : '';
@@ -526,10 +526,10 @@ function showAlert(type, message) {
         ${message}
         <button type="button" class="btn-close" onclick="this.parentElement.remove()"></button>
     `;
-    
+
     const header = document.querySelector('.d-flex.justify-content-between.align-items-center.mb-4');
     header.parentNode.insertBefore(alertDiv, header.nextSibling);
-    
+
     setTimeout(() => alertDiv.remove(), 5000);
 }
 

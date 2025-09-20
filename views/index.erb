@@ -1,5 +1,5 @@
 <head>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
 </head>
 <!-- Hero Section -->
 <section class="hero-section">
@@ -12,9 +12,10 @@
                             <%= custom('text.hero_title', 'Professional Software Licensing Made Simple') %>
                         </h1>
                         <p class="lead mb-4 text-secondary fs-4">
-                            <%= custom('text.hero_subtitle', 'Secure, reliable, and easy-to-manage software licenses for developers and businesses. Support for both one-time purchases and subscriptions with integrated payment processing.') %>
+                            <%= custom('text.hero_subtitle',
+                            'Secure, reliable, and easy-to-manage software licenses for developers and businesses. Support for both one-time purchases and subscriptions with integrated payment processing.') %>
                         </p>
-                        
+
                         <!-- CTA Buttons -->
                         <div class="d-flex gap-3 mb-5">
                             <a href="#products" class="btn btn-primary btn-lg px-4 py-3">
@@ -33,7 +34,7 @@
                                 </a>
                             <% end %>
                         </div>
-                        
+
                         <!-- Quick Access for Non-Users -->
                         <% unless user_logged_in? %>
                         <div class="mb-4">
@@ -43,7 +44,7 @@
                             </a>
                         </div>
                         <% end %>
-                        
+
                         <!-- Trust Indicators -->
                         <div class="row g-4 text-center">
                             <div class="col-4">
@@ -67,7 +68,7 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="col-lg-6">
                     <div class="hero-visual text-center position-relative">
                         <!-- Floating License Card -->
@@ -88,7 +89,7 @@
                                         <span class="status-badge status-active">Active</span>
                                     </div>
                                 </div>
-                                
+
                                 <div class="mb-3">
                                     <label class="form-label small text-muted">License Key</label>
                                     <div class="d-flex align-items-center gap-2">
@@ -100,7 +101,7 @@
                                         </button>
                                     </div>
                                 </div>
-                                
+
                                 <div class="row text-center">
                                     <div class="col-6">
                                         <div class="border-end">
@@ -115,7 +116,7 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <!-- Background Elements -->
                         <div class="position-absolute top-0 start-0 w-100 h-100" style="z-index: -1;">
                             <div class="position-absolute" style="top: 20%; left: 10%; animation: float 6s ease-in-out infinite;">
@@ -152,14 +153,15 @@
         <div class="row text-center mb-5">
             <div class="col-lg-8 mx-auto">
                 <h2 class="fw-bold mb-3">
-                    <%= custom('text.features_title', 'Why Choose Source License?') %>
+                    <%= custom('features_title', 'Why Choose Source License?') %>
                 </h2>
                 <p class="lead text-secondary">
-                    <%= custom('text.features_subtitle', 'Built with modern technology and security best practices to ensure your software licensing is handled professionally.') %>
+                    <%= custom('features_subtitle',
+                    'Built with modern technology and security best practices to ensure your software licensing is handled professionally.') %>
                 </p>
             </div>
         </div>
-        
+
         <div class="row g-4">
             <!-- Feature 1: Secure -->
             <div class="col-lg-4 col-md-6">
@@ -169,12 +171,12 @@
                     </div>
                     <h5 class="fw-bold mb-3">Ultra Secure</h5>
                     <p class="text-secondary">
-                        Military-grade encryption, secure API endpoints, and comprehensive license validation 
+                        Military-grade encryption, secure API endpoints, and comprehensive license validation
                         protect your intellectual property.
                     </p>
                 </div>
             </div>
-            
+
             <!-- Feature 2: Easy Integration -->
             <div class="col-lg-4 col-md-6">
                 <div class="feature-card">
@@ -183,12 +185,12 @@
                     </div>
                     <h5 class="fw-bold mb-3">Easy Integration</h5>
                     <p class="text-secondary">
-                        RESTful API with comprehensive documentation makes it simple to integrate 
+                        RESTful API with comprehensive documentation makes it simple to integrate
                         license validation into your software.
                     </p>
                 </div>
             </div>
-            
+
             <!-- Feature 3: Payment Processing -->
             <div class="col-lg-4 col-md-6">
                 <div class="feature-card">
@@ -197,12 +199,12 @@
                     </div>
                     <h5 class="fw-bold mb-3">Payment Processing</h5>
                     <p class="text-secondary">
-                        Integrated Stripe and PayPal support for seamless payment processing 
+                        Integrated Stripe and PayPal support for seamless payment processing
                         and automatic license generation.
                     </p>
                 </div>
             </div>
-            
+
             <!-- Feature 4: Real-time Management -->
             <div class="col-lg-4 col-md-6">
                 <div class="feature-card">
@@ -211,12 +213,12 @@
                     </div>
                     <h5 class="fw-bold mb-3">Real-time Management</h5>
                     <p class="text-secondary">
-                        Instantly activate, suspend, or revoke licenses. Monitor usage and 
+                        Instantly activate, suspend, or revoke licenses. Monitor usage and
                         activations in real-time through the admin dashboard.
                     </p>
                 </div>
             </div>
-            
+
             <!-- Feature 5: Subscription Support -->
             <div class="col-lg-4 col-md-6">
                 <div class="feature-card">
@@ -225,12 +227,12 @@
                     </div>
                     <h5 class="fw-bold mb-3">Subscription Support</h5>
                     <p class="text-secondary">
-                        Support for both one-time purchases and recurring subscriptions 
+                        Support for both one-time purchases and recurring subscriptions
                         with automatic renewal and billing management.
                     </p>
                 </div>
             </div>
-            
+
             <!-- Feature 6: Multi-Platform -->
             <div class="col-lg-4 col-md-6">
                 <div class="feature-card">
@@ -239,7 +241,7 @@
                     </div>
                     <h5 class="fw-bold mb-3">Multi-Platform</h5>
                     <p class="text-secondary">
-                        Cross-platform support with activation tracking across Windows, 
+                        Cross-platform support with activation tracking across Windows,
                         macOS, and Linux environments.
                     </p>
                 </div>
@@ -257,11 +259,12 @@
                     <%= custom('text.products_title', 'Available Software Products') %>
                 </h2>
                 <p class="lead text-secondary">
-                    <%= custom('text.products_subtitle', 'Choose from our selection of professional software solutions. All products include secure licensing and instant delivery.') %>
+                    <%= custom('text.products_subtitle',
+                    'Choose from our selection of professional software solutions. All products include secure licensing and instant delivery.') %>
                 </p>
             </div>
         </div>
-        
+
         <% if @products && @products.any? %>
         <div class="row g-4">
             <% @products.each do |product| %>
@@ -277,7 +280,7 @@
                             <% end %>
                         </div>
                     </div>
-                    
+
                     <div class="card-body">
                         <div class="price-display mb-3">
                             <%= product.formatted_price %>
@@ -285,11 +288,11 @@
                                 <small class="text-muted">/month</small>
                             <% end %>
                         </div>
-                        
+
                         <p class="text-secondary mb-3">
                             <%= h(product.description) %>
                         </p>
-                        
+
                         <!-- License Info -->
                         <div class="small text-muted mb-3">
                             <div class="d-flex justify-content-between">
@@ -304,20 +307,20 @@
                             <% end %>
                         </div>
                     </div>
-                    
+
                     <div class="card-footer border-0">
                         <div class="d-grid gap-2">
-<% if user_logged_in? %>
-<button class="btn btn-primary" onclick="window.cart.addItem(<%= product.id %>)">
-    <i class="fas fa-cart-plus me-2"></i>
-    Add to Cart
-</button>
-<% else %>
-<a href="/register" class="btn btn-primary">
-    <i class="fas fa-user-plus me-2"></i>
-    Sign Up to Purchase
-</a>
-<% end %>
+                            <% if user_logged_in? %>
+                                <button class="btn btn-primary" onclick="window.cart.addItem(<%= product.id %>)">
+                                    <i class="fas fa-cart-plus me-2"></i>
+                                    Add to Cart
+                                </button>
+                            <% else %>
+                                <a href="/register" class="btn btn-primary">
+                                    <i class="fas fa-user-plus me-2"></i>
+                                    Sign Up to Purchase
+                                </a>
+                            <% end %>
                             <a href="/product/<%= product.id %>" class="btn btn-outline-secondary">
                                 <i class="fas fa-info-circle me-2"></i>
                                 View Details
@@ -366,7 +369,7 @@
                 </p>
             </div>
         </div>
-        
+
         <div class="row g-4">
             <!-- Step 1 -->
             <div class="col-lg-4 text-center">
@@ -380,11 +383,11 @@
                 </div>
                 <h5 class="fw-bold mb-3">Choose & Purchase</h5>
                 <p class="text-secondary">
-                    Select your desired software product and complete the secure checkout process 
+                    Select your desired software product and complete the secure checkout process
                     using your preferred payment method.
                 </p>
             </div>
-            
+
             <!-- Step 2 -->
             <div class="col-lg-4 text-center">
                 <div class="position-relative mb-4">
@@ -397,11 +400,11 @@
                 </div>
                 <h5 class="fw-bold mb-3">Receive License</h5>
                 <p class="text-secondary">
-                    Get your license key instantly via email with download instructions 
+                    Get your license key instantly via email with download instructions
                     and activation guidelines.
                 </p>
             </div>
-            
+
             <!-- Step 3 -->
             <div class="col-lg-4 text-center">
                 <div class="position-relative mb-4">
@@ -414,7 +417,7 @@
                 </div>
                 <h5 class="fw-bold mb-3">Activate & Use</h5>
                 <p class="text-secondary">
-                    Download your software, activate it with your license key, 
+                    Download your software, activate it with your license key,
                     and start using it immediately.
                 </p>
             </div>
@@ -431,11 +434,12 @@
                     <%= custom('text.support_title', 'Need Help?') %>
                 </h2>
                 <p class="lead text-secondary">
-                    <%= custom('text.support_subtitle', 'We\'re here to help you with any questions about your licenses or our products.') %>
+                    <%= custom('text.support_subtitle',
+                    'We\'re here to help you with any questions about your licenses or our products.') %>
                 </p>
             </div>
         </div>
-        
+
         <div class="row g-4">
             <!-- License Management -->
             <div class="col-lg-6">
@@ -468,7 +472,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <!-- Contact Support -->
             <div class="col-lg-6">
                 <div class="card h-100">
@@ -480,7 +484,8 @@
                         <p class="text-secondary mb-4">
                             Get help from our support team for technical issues or licensing questions.
                         </p>
-                        <a href="mailto:<%= custom('branding.support_email', ENV['SUPPORT_EMAIL'] || 'support@example.com') %>" 
+                        <a href="mailto:<%= custom('branding.support_email',
+                           ENV['SUPPORT_EMAIL'] || 'support@example.com') %>"
                            class="btn btn-success">
                             <i class="fas fa-envelope me-2"></i>
                             Email Support

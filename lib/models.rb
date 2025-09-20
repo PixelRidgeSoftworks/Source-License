@@ -32,6 +32,7 @@ end
 # Customer/user accounts for license management
 class User < Sequel::Model
   include BaseModelMethods
+
   set_dataset :users
   one_to_many :licenses
 
@@ -138,7 +139,7 @@ class User < Sequel::Model
   def validate
     super
     errors.add(:email, 'cannot be empty') if !email || email.strip.empty?
-    unless /\A[\w+\-.]+@[a-z\d\-]+(\.[a-z\d\-]+)*\.[a-z]+\z/i.match?(email)
+    unless /\A[\w+\-.]+@[a-z\d-]+(\.[a-z\d-]+)*\.[a-z]+\z/i.match?(email)
       errors.add(:email, 'must be valid email format')
     end
     errors.add(:password_hash, 'cannot be empty') if !password_hash || password_hash.strip.empty?
@@ -191,6 +192,7 @@ end
 # Admin users for managing the system
 class Admin < Sequel::Model
   include BaseModelMethods
+
   set_dataset :admins
   # Hash password before saving
   def password=(new_password)
@@ -343,7 +345,7 @@ class Admin < Sequel::Model
   def validate
     super
     errors.add(:email, 'cannot be empty') if !email || email.strip.empty?
-    unless /\A[\w+\-.]+@[a-z\d\-]+(\.[a-z\d\-]+)*\.[a-z]+\z/i.match?(email)
+    unless /\A[\w+\-.]+@[a-z\d-]+(\.[a-z\d-]+)*\.[a-z]+\z/i.match?(email)
       errors.add(:email, 'must be valid email format')
     end
     errors.add(:password_hash, 'cannot be empty') if !password_hash || password_hash.strip.empty?
@@ -410,6 +412,7 @@ end
 # Products available for purchase
 class Product < Sequel::Model
   include BaseModelMethods
+
   set_dataset :products
   one_to_many :order_items
   one_to_many :licenses
@@ -549,6 +552,7 @@ end
 # Customer orders
 class Order < Sequel::Model
   include BaseModelMethods
+
   set_dataset :orders
   one_to_many :order_items
   one_to_many :licenses
@@ -760,7 +764,7 @@ class Order < Sequel::Model
   def validate
     super
     errors.add(:email, 'cannot be empty') if !email || email.strip.empty?
-    unless /\A[\w+\-.]+@[a-z\d\-]+(\.[a-z\d\-]+)*\.[a-z]+\z/i.match?(email)
+    unless /\A[\w+\-.]+@[a-z\d-]+(\.[a-z\d-]+)*\.[a-z]+\z/i.match?(email)
       errors.add(:email,
                  'must be valid email format')
     end
@@ -773,6 +777,7 @@ end
 # Individual items within an order
 class OrderItem < Sequel::Model
   include BaseModelMethods
+
   set_dataset :order_items
   many_to_one :order
   many_to_one :product
@@ -803,6 +808,7 @@ end
 # Software licenses
 class License < Sequel::Model
   include BaseModelMethods
+
   set_dataset :licenses
   many_to_one :order
   many_to_one :product
@@ -1046,7 +1052,7 @@ class License < Sequel::Model
     super
     errors.add(:license_key, 'cannot be empty') if !license_key || license_key.strip.empty?
     errors.add(:customer_email, 'cannot be empty') if !customer_email || customer_email.strip.empty?
-    unless /\A[\w+\-.]+@[a-z\d\-]+(\.[a-z\d\-]+)*\.[a-z]+\z/i.match?(customer_email)
+    unless /\A[\w+\-.]+@[a-z\d-]+(\.[a-z\d-]+)*\.[a-z]+\z/i.match?(customer_email)
       errors.add(:customer_email,
                  'must be valid email format')
     end
@@ -1058,6 +1064,7 @@ end
 # Subscription management for recurring licenses
 class Subscription < Sequel::Model
   include BaseModelMethods
+
   set_dataset :subscriptions
   many_to_one :license
 
@@ -1115,6 +1122,7 @@ end
 # License activation tracking
 class LicenseActivation < Sequel::Model
   include BaseModelMethods
+
   set_dataset :license_activations
   many_to_one :license
 
@@ -1147,6 +1155,7 @@ end
 # Billing cycles for subscription management
 class BillingCycle < Sequel::Model
   include BaseModelMethods
+
   set_dataset :billing_cycles
 
   # Get all active billing cycles
@@ -1186,6 +1195,7 @@ end
 # Subscription billing history tracking
 class SubscriptionBillingHistory < Sequel::Model
   include BaseModelMethods
+
   set_dataset :subscription_billing_histories
   many_to_one :subscription
 
@@ -1242,6 +1252,7 @@ end
 # Tax configurations for orders
 class Tax < Sequel::Model
   include BaseModelMethods
+
   set_dataset :taxes
   one_to_many :order_taxes
 
@@ -1298,6 +1309,7 @@ end
 # Order tax tracking
 class OrderTax < Sequel::Model
   include BaseModelMethods
+
   set_dataset :order_taxes
   many_to_one :order
   many_to_one :tax

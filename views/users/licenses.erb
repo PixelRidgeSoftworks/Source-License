@@ -109,7 +109,7 @@
                       <td>
                         <div class="d-flex align-items-center">
                           <code class="bg-light px-2 py-1 rounded me-2"><%= h(license.license_key) %></code>
-                          <button class="btn btn-sm btn-outline-secondary" 
+                          <button class="btn btn-sm btn-outline-secondary"
                                   onclick="navigator.clipboard.writeText('<%= license.license_key %>')"
                                   title="Copy to clipboard">
                             <i class="fas fa-copy"></i>
@@ -149,13 +149,13 @@
                       </td>
                       <td>
                         <div class="btn-group btn-group-sm">
-                          <a href="/licenses/<%= license.id %>" 
+                          <a href="/licenses/<%= license.id %>"
                              class="btn btn-outline-primary"
                              title="View Details">
                             <i class="fas fa-eye"></i>
                           </a>
                           <% if license.valid? && license.product.download_file %>
-                            <a href="/secure-download/<%= license.id %>/<%= license.product.download_file %>" 
+                            <a href="/secure-download/<%= license.id %>/<%= license.product.download_file %>"
                                class="btn btn-outline-success"
                                title="Download">
                               <i class="fas fa-download"></i>

@@ -53,7 +53,7 @@
                     </div>
                     <div class="admin-card-body">
                         <p>Source License uses <strong>ERB (Embedded Ruby)</strong> templates for easy customization. You can:</p>
-                        
+
                         <div class="row g-3 mb-4">
                             <div class="col-md-6">
                                 <div class="border rounded p-3 h-100">
@@ -68,12 +68,12 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div class="alert alert-info">
                             <i class="fas fa-info-circle me-2"></i>
                             <strong>Tip:</strong> Start with the visual editor for basic changes, then move to template editing for advanced customizations.
                         </div>
-                        
+
                         <h6>What You Can Customize:</h6>
                         <ul class="list-unstyled">
                             <li><i class="fas fa-check text-success me-2"></i>Page layouts and structure</li>
@@ -88,7 +88,7 @@
             </div>
         </div>
     </div>
-    
+
     <!-- File Structure Tab -->
     <div class="tab-pane fade" id="structure" role="tabpanel">
         <div class="admin-card">
@@ -102,48 +102,48 @@
                         <h6>Main Template Directory</h6>
                         <pre class="bg-light p-3 rounded"><code>views/
 ├── layouts/
-│   ├── main_layout.erb      # Public site layout
-│   └── admin_layout.erb     # Admin interface layout
+│   ├── main_layout.html.erb      # Public site layout
+│   └── admin_layout.html.erb     # Admin interface layout
 ├── partials/
-│   ├── _navigation.erb      # Main navigation bar
-│   └── _footer.erb          # Site footer
+│   ├── _navigation.html.erb      # Main navigation bar
+│   └── _footer.html.erb          # Site footer
 ├── admin/
-│   ├── login.erb           # Admin login page
-│   ├── dashboard.erb       # Admin dashboard
-│   ├── customize.erb       # Customization interface
-│   └── code_guide.erb      # This page
+│   ├── login.html.erb           # Admin login page
+│   ├── dashboard.html.erb       # Admin dashboard
+│   ├── customize.html.erb       # Customization interface
+│   └── code_guide.html.erb      # This page
 ├── errors/
-│   ├── 404.erb             # 404 error page
-│   └── 500.erb             # 500 error page
+│   ├── 404.html.erb             # 404 error page
+│   └── 500.html.erb             # 500 error page
 ├── licenses/
-│   └── lookup.erb          # License lookup page
-└── index.erb               # Homepage</code></pre>
+│   └── lookup.html.erb          # License lookup page
+└── index.html.erb               # Homepage</code></pre>
                     </div>
                     <div class="col-md-6">
                         <h6>Key Files to Customize</h6>
                         <div class="list-group">
                             <div class="list-group-item">
-                                <strong>views/index.erb</strong>
+                                <strong>views/index.html.erb</strong>
                                 <br><small class="text-muted">Homepage content and sections</small>
                             </div>
                             <div class="list-group-item">
-                                <strong>views/layouts/main_layout.erb</strong>
+                                <strong>views/layouts/main_layout.html.erb</strong>
                                 <br><small class="text-muted">Overall site structure and CSS</small>
                             </div>
                             <div class="list-group-item">
-                                <strong>views/partials/_navigation.erb</strong>
+                                <strong>views/partials/_navigation.html.erb</strong>
                                 <br><small class="text-muted">Main navigation menu</small>
                             </div>
                             <div class="list-group-item">
-                                <strong>views/partials/_footer.erb</strong>
+                                <strong>views/partials/_footer.html.erb</strong>
                                 <br><small class="text-muted">Site footer content</small>
                             </div>
                             <div class="list-group-item">
-                                <strong>views/layouts/admin_layout.erb</strong>
+                                <strong>views/layouts/admin_layout.html.erb</strong>
                                 <br><small class="text-muted">Admin interface styling</small>
                             </div>
                         </div>
-                        
+
                         <div class="mt-3 p-3 bg-warning bg-opacity-10 rounded">
                             <small><i class="fas fa-exclamation-triangle text-warning me-2"></i>
                             <strong>Backup Important:</strong> Always backup your template files before making changes!</small>
@@ -153,7 +153,7 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Helper Functions Tab -->
     <div class="tab-pane fade" id="helpers" role="tabpanel">
         <div class="row g-4">
@@ -193,7 +193,7 @@
                                 </tbody>
                             </table>
                         </div>
-                        
+
                         <h6 class="mt-4">UI Helpers</h6>
                         <div class="table-responsive">
                             <table class="table table-sm">
@@ -226,7 +226,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <div class="col-lg-6">
                 <div class="admin-card">
                     <div class="admin-card-header">
@@ -263,7 +263,7 @@
                                 </tbody>
                             </table>
                         </div>
-                        
+
                         <h6 class="mt-4">Layout Helpers</h6>
                         <div class="table-responsive">
                             <table class="table table-sm">
@@ -289,7 +289,7 @@
                                 </tbody>
                             </table>
                         </div>
-                        
+
                         <div class="mt-3 p-3 bg-info bg-opacity-10 rounded">
                             <small><i class="fas fa-info-circle text-info me-2"></i>
                             <strong>Pro Tip:</strong> Use <code>custom_css_variables</code> in your layout to dynamically generate CSS variables from your customizations.</small>
@@ -299,7 +299,7 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Customization Values Tab -->
     <div class="tab-pane fade" id="customization" role="tabpanel">
         <div class="admin-card">
@@ -312,7 +312,7 @@
                     <div class="col-md-6">
                         <h6>Accessing Custom Values</h6>
                         <p>Use the <code>custom()</code> helper to access values set in the customization interface:</p>
-                        
+
                         <pre class="bg-light p-3 rounded"><code>&lt;%# Get site name %&gt;
 &lt;%= custom('branding.site_name', 'Default Name') %&gt;
 
@@ -343,7 +343,7 @@
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div class="accordion-item">
                                 <h2 class="accordion-header">
                                     <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#colorKeys">
@@ -367,11 +367,11 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="col-md-6">
                         <h6>Dynamic CSS Generation</h6>
                         <p>Generate CSS custom properties from your customizations:</p>
-                        
+
                         <pre class="bg-light p-3 rounded"><code>&lt;style&gt;
 &lt;%= custom_css_variables %&gt;
 
@@ -383,7 +383,7 @@
 
                         <h6 class="mt-4">Conditional Features</h6>
                         <p>Show/hide features based on settings:</p>
-                        
+
                         <pre class="bg-light p-3 rounded"><code>&lt;% if feature_enabled?('show_help_widget') %&gt;
   &lt;div class="help-widget"&gt;
     &lt;!-- Help widget content --&gt;
@@ -392,7 +392,7 @@
 
                         <h6 class="mt-4">Custom Styling</h6>
                         <p>Apply custom styles to elements:</p>
-                        
+
                         <pre class="bg-light p-3 rounded"><code>&lt;section style="&lt;%= custom_style('hero') %&gt;"&gt;
   &lt;!-- Hero content --&gt;
 &lt;/section&gt;
@@ -405,7 +405,7 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Examples Tab -->
     <div class="tab-pane fade" id="examples" role="tabpanel">
         <div class="row g-4">
@@ -420,8 +420,8 @@
                             <div class="col-lg-6">
                                 <h6>Example 1: Custom Hero Section</h6>
                                 <p class="small text-muted">Customize the homepage hero section with custom text and colors</p>
-                                
-                                <pre class="bg-light p-3 rounded small"><code>&lt;!-- In views/index.erb --&gt;
+
+                                <pre class="bg-light p-3 rounded small"><code>&lt;!-- In views/index.html.erb --&gt;
 &lt;section class="hero-section" style="&lt;%= custom_style('hero') %&gt;"&gt;
     &lt;div class="container"&gt;
         &lt;h1 class="display-4 fw-bold"&gt;
@@ -430,7 +430,7 @@
         &lt;p class="lead"&gt;
             &lt;%= custom_text('hero_subtitle', 'Default subtitle') %&gt;
         &lt;/p&gt;
-        
+
         &lt;% if feature_enabled?('show_trust_indicators') %&gt;
         &lt;div class="trust-indicators"&gt;
             &lt;!-- Trust badges --&gt;
@@ -439,28 +439,28 @@
     &lt;/div&gt;
 &lt;/section&gt;</code></pre>
                             </div>
-                            
+
                             <div class="col-lg-6">
                                 <h6>Example 2: Custom Navigation</h6>
                                 <p class="small text-muted">Customize navigation with brand name and colors</p>
-                                
-                                <pre class="bg-light p-3 rounded small"><code>&lt;!-- In views/partials/_navigation.erb --&gt;
+
+                                <pre class="bg-light p-3 rounded small"><code>&lt;!-- In views/partials/_navigation.html.erb --&gt;
 &lt;nav class="navbar" style="background-color: &lt;%= custom_color('navbar_bg') %&gt;"&gt;
     &lt;div class="container"&gt;
         &lt;a class="navbar-brand" href="/"&gt;
             &lt;i class="fas fa-shield-alt me-2"&gt;&lt;/i&gt;
             &lt;%= custom('branding.logo_text', 'Source License') %&gt;
         &lt;/a&gt;
-        
+
         &lt;!-- Navigation links --&gt;
     &lt;/div&gt;
 &lt;/nav&gt;</code></pre>
                             </div>
-                            
+
                             <div class="col-lg-6">
                                 <h6>Example 3: Custom Card Component</h6>
                                 <p class="small text-muted">Create a reusable card with custom styling</p>
-                                
+
                                 <pre class="bg-light p-3 rounded small"><code>&lt;!-- Using the card helper --&gt;
 &lt;%= card 'Product Info', class: 'border-primary' do %&gt;
     &lt;p&gt;&lt;%= @product.description %&gt;&lt;/p&gt;
@@ -469,26 +469,26 @@
     &lt;/div&gt;
 &lt;% end %&gt;</code></pre>
                             </div>
-                            
+
                             <div class="col-lg-6">
                                 <h6>Example 4: Custom Footer</h6>
                                 <p class="small text-muted">Footer with custom colors and text</p>
-                                
-                                <pre class="bg-light p-3 rounded small"><code>&lt;!-- In views/partials/_footer.erb --&gt;
+
+                                <pre class="bg-light p-3 rounded small"><code>&lt;!-- In views/partials/_footer.html.erb --&gt;
 &lt;footer class="footer" style="background-color: &lt;%= custom_color('footer_bg') %&gt;"&gt;
     &lt;div class="container"&gt;
         &lt;p class="text-light"&gt;
             &lt;%= custom('branding.footer_text', 'Default footer text') %&gt;
         &lt;/p&gt;
         &lt;p class="mb-0"&gt;
-            © &lt;%= Date.current.year %&gt; 
+            © &lt;%= Date.current.year %&gt;
             &lt;%= custom('branding.company_name', 'Your Company') %&gt;
         &lt;/p&gt;
     &lt;/div&gt;
 &lt;/footer&gt;</code></pre>
                             </div>
                         </div>
-                        
+
                         <div class="mt-4 p-4 bg-success bg-opacity-10 rounded">
                             <h6><i class="fas fa-lightbulb text-success me-2"></i>Best Practices</h6>
                             <ul class="mb-0">

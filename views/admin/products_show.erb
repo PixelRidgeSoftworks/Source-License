@@ -49,7 +49,7 @@
                         <% end %>
                     </div>
                 </div>
-                
+
                 <% if @product.description %>
                 <div class="mt-3">
                     <h6>Description</h6>
@@ -86,7 +86,7 @@
                             <p class="text-muted mt-2">Single payment, lifetime license</p>
                         <% end %>
                     </div>
-                    
+
                     <div class="col-md-6">
                         <h6>Pricing</h6>
                         <div class="h4 text-success mb-1">
@@ -101,18 +101,18 @@
                         <p class="text-success"><i class="fas fa-gift me-1"></i>Free Product</p>
                         <% end %>
                     </div>
-                    
+
                     <div class="col-md-6">
                         <h6>License Restrictions</h6>
                         <p class="mb-1">
                             <strong>Max Activations:</strong> <%= @product.max_activations %>
                         </p>
                         <p class="text-muted small">
-                            Each license can be activated on up to <%= @product.max_activations %> 
+                            Each license can be activated on up to <%= @product.max_activations %>
                             device<%= @product.max_activations == 1 ? '' : 's' %>
                         </p>
                     </div>
-                    
+
                     <% if @product.subscription? && @product.license_duration_days %>
                     <div class="col-md-6">
                         <h6>License Duration</h6>
@@ -144,7 +144,7 @@
                         <p class="text-muted small">Hosted file for automatic delivery</p>
                     </div>
                     <% end %>
-                    
+
                     <% if @product.download_url %>
                     <div class="col-md-6">
                         <h6>Download URL</h6>
@@ -157,7 +157,7 @@
                         <p class="text-muted small">External download link</p>
                     </div>
                     <% end %>
-                    
+
                     <% if @product.file_size %>
                     <div class="col-md-6">
                         <h6>File Size</h6>
@@ -170,7 +170,7 @@
         </div>
         <% end %>
     </div>
-    
+
     <!-- Sidebar -->
     <div class="col-lg-4">
         <!-- Quick Actions Card -->
@@ -184,24 +184,24 @@
                     <a href="/admin/products/<%= @product.id %>/edit" class="btn btn-primary">
                         <i class="fas fa-edit me-2"></i>Edit Product
                     </a>
-                    
+
                     <button class="btn btn-outline-<%= @product.active ? 'warning' : 'success' %>"
                             onclick="toggleProductStatus(<%= @product.id %>, '<%= @product.active ? 'inactive' : 'active' %>')">
                         <i class="fas fa-<%= @product.active ? 'pause' : 'play' %> me-2"></i>
                         <%= @product.active ? 'Deactivate' : 'Activate' %> Product
                     </button>
-                    
+
                     <a href="/admin/licenses?product_id=<%= @product.id %>" class="btn btn-outline-info">
                         <i class="fas fa-key me-2"></i>View Licenses
                     </a>
-                    
+
                     <a href="/admin/products/<%= @product.id %>/duplicate" class="btn btn-outline-secondary">
                         <i class="fas fa-copy me-2"></i>Duplicate Product
                     </a>
-                    
+
                     <hr>
-                    
-                    <button class="btn btn-outline-danger" 
+
+                    <button class="btn btn-outline-danger"
                             onclick="deleteProduct(<%= @product.id %>, '<%= h(@product.name) %>')">
                         <i class="fas fa-trash me-2"></i>Delete Product
                     </button>
@@ -216,13 +216,13 @@
                 Product Statistics
             </div>
             <div class="admin-card-body">
-                <% 
+                <%
                 total_licenses = @product.licenses_dataset.count
                 active_licenses = @product.licenses_dataset.where(status: 'active').count
                 total_sales = @product.order_items_dataset.join(:orders, id: :order_id).where(Sequel[:orders][:status] => 'completed').sum(:price) || 0
                 units_sold = @product.order_items_dataset.join(:orders, id: :order_id).where(Sequel[:orders][:status] => 'completed').sum(:quantity) || 0
                 %>
-                
+
                 <div class="row text-center g-3">
                     <div class="col-6">
                         <div class="stat-item">
@@ -249,9 +249,9 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <hr class="my-3">
-                
+
                 <div class="small text-muted">
                     <div class="d-flex justify-content-between mb-1">
                         <span>Created:</span>

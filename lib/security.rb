@@ -12,11 +12,11 @@ module SecurityHelpers
   # This avoids conflicts and ensures consistent implementation
 
   # Input Validation & Sanitization
-  def validate_email(email)
+  def valid_email?(email)
     return false unless email.is_a?(String)
     return false if email.length > 254 # RFC 5321 limit
 
-    email_regex = /\A[\w+\-.]+@[a-z\d\-]+(\.[a-z\d\-]+)*\.[a-z]+\z/i
+    email_regex = /\A[\w+\-.]+@[a-z\d-]+(\.[a-z\d-]+)*\.[a-z]+\z/i
     email.match?(email_regex)
   end
 
@@ -28,14 +28,14 @@ module SecurityHelpers
       .slice(0, max_length)
   end
 
-  def validate_payment_amount(amount)
+  def validate_payment_amount?(amount)
     return false unless amount.is_a?(Numeric) || amount.is_a?(String)
 
     amount = amount.to_f
     amount.positive? && amount <= 999_999.99 # Reasonable limits
   end
 
-  def validate_currency(currency)
+  def validate_currency?(currency)
     valid_currencies = %w[USD EUR GBP CAD AUD JPY]
     valid_currencies.include?(currency&.upcase)
   end
@@ -212,13 +212,13 @@ module SecurityHelpers
     errors = []
 
     # Validate amount
-    errors << 'Invalid payment amount' unless validate_payment_amount(payment_data[:amount])
+    errors << 'Invalid payment amount' unless validate_payment_amount?(payment_data[:amount])
 
     # Validate currency
-    errors << 'Invalid currency' unless validate_currency(payment_data[:currency])
+    errors << 'Invalid currency' unless validate_currency?(payment_data[:currency])
 
     # Validate email
-    errors << 'Invalid email address' unless validate_email(payment_data[:email])
+    errors << 'Invalid email address' unless valid_email?(payment_data[:email])
 
     # Validate payment method
     errors << 'Invalid payment method' unless %w[stripe paypal].include?(payment_data[:payment_method])
@@ -239,7 +239,7 @@ module SecurityHelpers
   end
 
   # Order validation
-  def validate_order_integrity(order, items)
+  def validate_order_integrity?(order, items)
     calculated_total = items.sum do |item|
       product = Product[item[:product_id]]
       return false unless product&.active?
@@ -332,7 +332,7 @@ class SecurityMiddleware
     return true unless allowed_hosts_env && !allowed_hosts_env.empty?
 
     # Parse allowed hosts from environment variable
-    allowed_hosts = allowed_hosts_env.split(',').map(&:strip).map(&:downcase)
+    allowed_hosts = allowed_hosts_env.split(',').map { |x| x.strip.downcase }
 
     # Check if the request host is in the allowed hosts list
     unless allowed_hosts.include?(host.downcase)
@@ -364,10 +364,10 @@ class SecurityMiddleware
     ]
 
     query_string = request.query_string || ''
-    
+
     # Limit input length to prevent ReDoS attacks
     return true if query_string.length > 2048
-    
+
     sql_injection_patterns.any? { |pattern| query_string.match?(pattern) }
   end
 

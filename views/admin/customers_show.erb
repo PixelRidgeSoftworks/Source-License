@@ -44,7 +44,7 @@
                                 <% end %>
                             </div>
                         </div>
-                        
+
                         <div class="mb-3">
                             <label class="form-label text-muted">Email Address</label>
                             <div class="d-flex align-items-center">
@@ -61,7 +61,7 @@
                             <% end %>
                         </div>
                     </div>
-                    
+
                     <div class="col-md-6">
                         <div class="mb-3">
                             <label class="form-label text-muted">Account Status</label>
@@ -70,7 +70,7 @@
                                 <%= customer_activity_status(@customer) %>
                             </div>
                         </div>
-                        
+
                         <div class="mb-3">
                             <label class="form-label text-muted">Risk Level</label>
                             <div>
@@ -79,9 +79,9 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <hr>
-                
+
                 <!-- Account Timeline -->
                 <div class="row">
                     <div class="col-md-6">
@@ -100,7 +100,7 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="col-md-6">
                         <div class="mb-3">
                             <label class="form-label text-muted">Last Login</label>
@@ -122,7 +122,7 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <% if @customer.login_count && @customer.login_count > 0 %>
                 <div class="mb-3">
                     <label class="form-label text-muted">Login Statistics</label>
@@ -139,7 +139,7 @@
             </div>
         </div>
     </div>
-    
+
     <div class="col-md-4">
         <!-- Quick Stats Card -->
         <div class="admin-card">
@@ -155,21 +155,21 @@
                         <span class="fw-bold text-primary fs-5"><%= @customer.license_count %></span>
                     </div>
                 </div>
-                
+
                 <div class="stat-item mb-3">
                     <div class="d-flex justify-content-between align-items-center">
                         <span class="text-muted">Active Licenses</span>
                         <span class="fw-bold text-success fs-5"><%= @customer.active_licenses.count %></span>
                     </div>
                 </div>
-                
+
                 <div class="stat-item mb-3">
                     <div class="d-flex justify-content-between align-items-center">
                         <span class="text-muted">Total Orders</span>
                         <span class="fw-bold text-info fs-5"><%= customer_order_count(@customer) %></span>
                     </div>
                 </div>
-                
+
                 <div class="stat-item">
                     <div class="d-flex justify-content-between align-items-center">
                         <span class="text-muted">Lifetime Value</span>
@@ -178,7 +178,7 @@
                 </div>
             </div>
         </div>
-        
+
         <!-- Quick Actions Card -->
         <div class="admin-card mt-4">
             <div class="admin-card-header">
@@ -188,28 +188,28 @@
             </div>
             <div class="admin-card-body">
                 <div class="d-grid gap-2">
-                    <a href="mailto:<%= h(@customer.email) %>?subject=Regarding Your Account" 
+                    <a href="mailto:<%= h(@customer.email) %>?subject=Regarding Your Account"
                        class="btn btn-outline-primary btn-sm">
                         <i class="fas fa-envelope me-2"></i>Email Customer
                     </a>
-                    
-                    <a href="/admin/licenses/generate?email=<%= u(@customer.email) %>&name=<%= u(@customer.name || '') %>" 
+
+                    <a href="/admin/licenses/generate?email=<%= u(@customer.email) %>&name=<%= u(@customer.name || '') %>"
                        class="btn btn-outline-success btn-sm">
                         <i class="fas fa-key me-2"></i>Generate License
                     </a>
-                    
+
                     <% if @customer.status == 'active' %>
-                    <button class="btn btn-outline-warning btn-sm" 
+                    <button class="btn btn-outline-warning btn-sm"
                             onclick="updateCustomerStatus(<%= @customer.id %>, 'suspend')">
                         <i class="fas fa-ban me-2"></i>Suspend Account
                     </button>
                     <% elsif @customer.status == 'suspended' %>
-                    <button class="btn btn-outline-success btn-sm" 
+                    <button class="btn btn-outline-success btn-sm"
                             onclick="updateCustomerStatus(<%= @customer.id %>, 'activate')">
                         <i class="fas fa-check me-2"></i>Activate Account
                     </button>
                     <% else %>
-                    <button class="btn btn-outline-success btn-sm" 
+                    <button class="btn btn-outline-success btn-sm"
                             onclick="updateCustomerStatus(<%= @customer.id %>, 'activate')">
                         <i class="fas fa-check me-2"></i>Activate Account
                     </button>
@@ -225,26 +225,26 @@
     <div class="admin-card-header">
         <ul class="nav nav-tabs card-header-tabs" id="customerTabs" role="tablist">
             <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="licenses-tab" data-bs-toggle="tab" 
+                <button class="nav-link active" id="licenses-tab" data-bs-toggle="tab"
                         data-bs-target="#licenses" type="button" role="tab">
                     <i class="fas fa-key me-2"></i>Licenses (<%= @customer.license_count %>)
                 </button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="nav-link" id="orders-tab" data-bs-toggle="tab" 
+                <button class="nav-link" id="orders-tab" data-bs-toggle="tab"
                         data-bs-target="#orders" type="button" role="tab">
                     <i class="fas fa-shopping-cart me-2"></i>Orders (<%= customer_order_count(@customer) %>)
                 </button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="nav-link" id="activity-tab" data-bs-toggle="tab" 
+                <button class="nav-link" id="activity-tab" data-bs-toggle="tab"
                         data-bs-target="#activity" type="button" role="tab">
                     <i class="fas fa-history me-2"></i>Activity Log
                 </button>
             </li>
         </ul>
     </div>
-    
+
     <div class="tab-content">
         <!-- Licenses Tab -->
         <div class="tab-pane fade show active" id="licenses" role="tabpanel">
@@ -301,7 +301,7 @@
                                     </small>
                                 </td>
                                 <td>
-                                    <a href="/admin/licenses/<%= license.id %>" 
+                                    <a href="/admin/licenses/<%= license.id %>"
                                        class="btn btn-outline-primary btn-sm">
                                         <i class="fas fa-eye"></i>
                                     </a>
@@ -311,10 +311,10 @@
                         </tbody>
                     </table>
                 </div>
-                
+
                 <% if @customer.license_count > 10 %>
                 <div class="text-center mt-3">
-                    <a href="/admin/licenses?search=<%= u(@customer.email) %>" 
+                    <a href="/admin/licenses?search=<%= u(@customer.email) %>"
                        class="btn btn-outline-secondary">
                         View All <%= @customer.license_count %> Licenses
                     </a>
@@ -325,7 +325,7 @@
                     <i class="fas fa-key text-muted mb-3" style="font-size: 2rem;"></i>
                     <h6 class="text-muted">No Licenses</h6>
                     <p class="text-muted mb-3">This customer doesn't have any licenses yet.</p>
-                    <a href="/admin/licenses/generate?email=<%= u(@customer.email) %>&name=<%= u(@customer.name || '') %>" 
+                    <a href="/admin/licenses/generate?email=<%= u(@customer.email) %>&name=<%= u(@customer.name || '') %>"
                        class="btn btn-primary btn-sm">
                         <i class="fas fa-plus me-2"></i>Generate First License
                     </a>
@@ -333,7 +333,7 @@
                 <% end %>
             </div>
         </div>
-        
+
         <!-- Orders Tab -->
         <div class="tab-pane fade" id="orders" role="tabpanel">
             <div class="admin-card-body">
@@ -401,7 +401,7 @@
                                     </small>
                                 </td>
                                 <td>
-                                    <a href="/admin/orders/<%= order.id %>" 
+                                    <a href="/admin/orders/<%= order.id %>"
                                        class="btn btn-outline-primary btn-sm">
                                         <i class="fas fa-eye"></i>
                                     </a>
@@ -411,10 +411,10 @@
                         </tbody>
                     </table>
                 </div>
-                
+
                 <% if customer_order_count(@customer) > 10 %>
                 <div class="text-center mt-3">
-                    <a href="/admin/orders?search=<%= u(@customer.email) %>" 
+                    <a href="/admin/orders?search=<%= u(@customer.email) %>"
                        class="btn btn-outline-secondary">
                         View All <%= customer_order_count(@customer) %> Orders
                     </a>
@@ -429,7 +429,7 @@
                 <% end %>
             </div>
         </div>
-        
+
         <!-- Activity Log Tab -->
         <div class="tab-pane fade" id="activity" role="tabpanel">
             <div class="admin-card-body">
@@ -450,7 +450,7 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- Last Login -->
                     <% if @customer.last_login_at %>
                     <div class="activity-item">
@@ -472,7 +472,7 @@
                         </div>
                     </div>
                     <% end %>
-                    
+
                     <!-- Email Verification -->
                     <% if @customer.email_verified? && @customer.email_verified_at %>
                     <div class="activity-item">
@@ -491,7 +491,7 @@
                         </div>
                     </div>
                     <% end %>
-                    
+
                     <!-- Recent Orders -->
                     <% Order.where(email: @customer.email).order(Sequel.desc(:created_at)).limit(5).each do |order| %>
                     <div class="activity-item">
@@ -500,7 +500,7 @@
                         </div>
                         <div class="activity-content">
                             <div class="activity-title">
-                                Order #<%= order.id %> 
+                                Order #<%= order.id %>
                                 <span class="ms-2"><%= status_badge(order.status) %></span>
                             </div>
                             <div class="activity-description">
@@ -519,7 +519,7 @@
                         </div>
                     </div>
                     <% end %>
-                    
+
                     <!-- Recent Licenses -->
                     <% @customer.licenses_dataset.order(Sequel.desc(:created_at)).limit(3).each do |license| %>
                     <div class="activity-item">
@@ -552,12 +552,12 @@
 <script>
 // Update customer status
 function updateCustomerStatus(customerId, action) {
-    const confirmText = action === 'activate' ? 
+    const confirmText = action === 'activate' ?
         'Are you sure you want to activate this customer account?' :
-        action === 'deactivate' ? 
+        action === 'deactivate' ?
         'Are you sure you want to deactivate this customer account?' :
         'Are you sure you want to suspend this customer account? They will not be able to access their account.';
-    
+
     if (confirm(confirmText)) {
         fetch(`/admin/customers/${customerId}/toggle-status`, {
             method: 'POST',

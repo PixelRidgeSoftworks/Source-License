@@ -58,7 +58,7 @@
                 <label class="form-label text-muted">License Key</label>
                 <div class="d-flex align-items-center">
                   <code class="bg-light px-3 py-2 rounded flex-grow-1 me-2"><%= h(@license.license_key) %></code>
-                  <button class="btn btn-outline-secondary" 
+                  <button class="btn btn-outline-secondary"
                           onclick="navigator.clipboard.writeText('<%= @license.license_key %>')"
                           title="Copy to clipboard">
                     <i class="fas fa-copy"></i>
@@ -173,7 +173,7 @@
               </div>
             </div>
             <div class="col-md-4 text-end">
-              <a href="/secure-download/<%= @license.id %>/<%= @license.product.download_file %>" 
+              <a href="/secure-download/<%= @license.id %>/<%= @license.product.download_file %>"
                  class="btn btn-success">
                 <i class="fas fa-download me-2"></i>
                 Download
@@ -197,7 +197,7 @@
               <div class="text-muted">Download available from external source</div>
             </div>
             <div class="col-md-4 text-end">
-              <a href="<%= @license.product.download_url %>" 
+              <a href="<%= @license.product.download_url %>"
                  class="btn btn-primary"
                  target="_blank">
                 <i class="fas fa-external-link-alt me-2"></i>
@@ -223,13 +223,13 @@
         <div class="card-body">
           <div class="d-grid gap-2">
             <% if @license.valid? && @license.product.download_file %>
-              <a href="/secure-download/<%= @license.id %>/<%= @license.product.download_file %>" 
+              <a href="/secure-download/<%= @license.id %>/<%= @license.product.download_file %>"
                  class="btn btn-success">
                 <i class="fas fa-download me-2"></i>
                 Download Software
               </a>
             <% end %>
-            <button class="btn btn-outline-secondary" 
+            <button class="btn btn-outline-secondary"
                     onclick="navigator.clipboard.writeText('<%= @license.license_key %>')">
               <i class="fas fa-copy me-2"></i>
               Copy License Key
@@ -301,7 +301,7 @@
           <p class="card-text small text-muted">
             Contact our support team for assistance with your license.
           </p>
-          <a href="mailto:<%= custom('branding.support_email', ENV['SUPPORT_EMAIL'] || 'support@example.com') %>" 
+          <a href="mailto:<%= custom('branding.support_email', ENV['SUPPORT_EMAIL'] || 'support@example.com') %>"
              class="btn btn-outline-primary btn-sm">
             <i class="fas fa-envelope me-2"></i>
             Contact Support

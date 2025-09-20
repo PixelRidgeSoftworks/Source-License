@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><%= @page_title ? "#{h(@page_title)} - Admin - #{ENV['APP_NAME'] || 'Source License'}" : "Admin - #{ENV['APP_NAME'] || 'Source License'}" %></title>
-    
+
     <!-- Bootstrap CSS (Dark Theme) -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap Icons -->
@@ -15,7 +15,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- Chart.js for dashboard charts -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
+
     <!-- Custom Admin CSS (Dark Theme) -->
     <style>
         :root {
@@ -30,7 +30,7 @@
             --bs-danger: #da3633;
             --bs-light: #f0f6fc;
             --bs-dark: #161b22;
-            
+
             /* Custom Variables */
             --surface-primary: #161b22;
             --surface-secondary: #21262d;
@@ -42,25 +42,25 @@
             --text-primary: #e6edf3;
             --text-secondary: #7d8590;
             --text-muted: #656d76;
-            
+
             /* Admin Specific */
             --sidebar-width: 250px;
-            
+
             /* Shadows */
             --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
             --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.4), 0 1px 2px 0 rgba(0, 0, 0, 0.3);
             --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
             --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.6), 0 10px 10px -5px rgba(0, 0, 0, 0.3);
-            
+
             /* Gradients */
             --gradient-primary: linear-gradient(135deg, #238636 0%, #2ea043 100%);
             --gradient-secondary: linear-gradient(135deg, #0969da 0%, #1f6feb 100%);
         }
-        
+
         * {
             box-sizing: border-box;
         }
-        
+
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: var(--bs-body-bg);
@@ -69,12 +69,12 @@
             font-weight: 400;
             min-height: 100vh;
         }
-        
+
         .admin-wrapper {
             display: flex;
             min-height: 100vh;
         }
-        
+
         .admin-sidebar {
             width: var(--sidebar-width);
             background-color: var(--surface-primary);
@@ -85,14 +85,14 @@
             transition: transform 0.3s ease;
             border-right: 1px solid var(--border-default);
         }
-        
+
         .admin-content {
             flex: 1;
             margin-left: var(--sidebar-width);
             min-height: 100vh;
             background: var(--bs-body-bg);
         }
-        
+
         .admin-header {
             background-color: var(--surface-secondary);
             padding: 1rem 2rem;
@@ -100,26 +100,26 @@
             box-shadow: var(--shadow);
             color: var(--text-primary);
         }
-        
+
         .sidebar-brand {
             padding: 1.5rem 1rem;
             border-bottom: 1px solid var(--border-default);
             text-decoration: none;
             color: var(--text-primary);
         }
-        
+
         .sidebar-brand:hover {
             color: var(--accent-primary);
         }
-        
+
         .sidebar-nav {
             padding: 1rem 0;
         }
-        
+
         .nav-item {
             margin-bottom: 0.5rem;
         }
-        
+
         .nav-link {
             color: var(--text-secondary);
             padding: 0.75rem 1.5rem;
@@ -130,18 +130,18 @@
             border-radius: 8px;
             margin: 0 0.5rem;
         }
-        
+
         .nav-link:hover,
         .nav-link.active {
             background-color: var(--surface-tertiary);
             color: var(--accent-primary);
         }
-        
+
         .nav-link i {
             width: 20px;
             margin-right: 0.75rem;
         }
-        
+
         .stat-card {
             background: var(--surface-secondary);
             border: 1px solid var(--border-default);
@@ -151,27 +151,27 @@
             transition: all 0.3s ease;
             color: var(--text-primary);
         }
-        
+
         .stat-card:hover {
             transform: translateY(-4px);
             box-shadow: var(--shadow-lg);
             border-color: var(--accent-primary);
         }
-        
+
         .stat-number {
             font-size: 2rem;
             font-weight: bold;
             margin-bottom: 0.5rem;
             color: var(--accent-primary);
         }
-        
+
         .stat-label {
             color: var(--text-secondary);
             font-size: 0.9rem;
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
-        
+
         .data-table {
             background: var(--surface-secondary);
             border: 1px solid var(--border-default);
@@ -179,7 +179,7 @@
             overflow: hidden;
             box-shadow: var(--shadow);
         }
-        
+
         .table-header {
             background-color: var(--surface-tertiary);
             color: var(--text-primary);
@@ -188,14 +188,14 @@
             font-weight: 600;
             border-bottom: 1px solid var(--border-default);
         }
-        
+
         .btn-admin {
             border-radius: 6px;
             padding: 0.5rem 1rem;
             font-weight: 500;
             transition: all 0.3s ease;
         }
-        
+
         .mobile-toggle {
             display: none;
             background: none;
@@ -203,36 +203,36 @@
             color: var(--text-primary);
             font-size: 1.5rem;
         }
-        
+
         @media (max-width: 768px) {
             .admin-sidebar {
                 transform: translateX(-100%);
                 z-index: 1000;
             }
-            
+
             .admin-sidebar.show {
                 transform: translateX(0);
             }
-            
+
             .admin-content {
                 margin-left: 0;
             }
-            
+
             .mobile-toggle {
                 display: inline-block;
             }
         }
-        
+
         .flash-message {
             border-radius: 10px;
             border: none;
             margin-bottom: 1rem;
         }
-        
+
         .form-floating {
             margin-bottom: 1rem;
         }
-        
+
         .admin-card {
             background: var(--surface-secondary);
             border: 1px solid var(--border-default);
@@ -241,7 +241,7 @@
             overflow: hidden;
             color: var(--text-primary);
         }
-        
+
         .admin-card-header {
             background-color: var(--surface-tertiary);
             border-bottom: 1px solid var(--border-default);
@@ -249,50 +249,50 @@
             font-weight: 600;
             color: var(--text-primary);
         }
-        
+
         .admin-card-body {
             padding: 1.5rem;
         }
-        
+
         /* Additional Bootstrap Dark Theme Overrides */
         .card {
             background: var(--surface-secondary);
             border: 1px solid var(--border-default);
             color: var(--text-primary);
         }
-        
+
         .table {
             color: var(--text-primary);
         }
-        
+
         .table-dark {
             --bs-table-bg: var(--surface-secondary);
             --bs-table-striped-bg: var(--surface-tertiary);
         }
-        
+
         .btn {
             border-radius: 8px;
             font-weight: 500;
             transition: all 0.3s ease;
         }
-        
+
         .btn-primary {
             background: var(--gradient-primary);
             color: white;
             border: none;
         }
-        
+
         .btn-primary:hover {
             background: linear-gradient(135deg, #2ea043 0%, #238636 100%);
             transform: translateY(-1px);
         }
-        
+
         .form-control, .form-select {
             background: var(--surface-tertiary);
             border: 1px solid var(--border-default);
             color: var(--text-primary);
         }
-        
+
         .form-control:focus, .form-select:focus {
             background: var(--surface-secondary);
             border-color: var(--accent-primary);
@@ -309,7 +309,7 @@
                 <i class="fas fa-shield-alt me-2"></i>
                 <span><%= ENV['APP_NAME'] || 'Source License' %> Admin</span>
             </a>
-            
+
             <ul class="sidebar-nav list-unstyled">
                 <li class="nav-item">
                     <%= nav_link '<i class="fas fa-tachometer-alt"></i> Dashboard', '/admin', class: 'nav-link' %>
@@ -329,9 +329,9 @@
                 <li class="nav-item">
                     <%= nav_link '<i class="fas fa-chart-bar"></i> Reports', '/admin/reports', class: 'nav-link' %>
                 </li>
-                
+
                 <hr class="my-3" style="border-color: rgba(255,255,255,0.2);">
-                
+
                 <!-- Security Section -->
                 <li class="nav-item">
                     <%= nav_link '<i class="fas fa-users-cog"></i> Admin Management', '/admin/admins', class: 'nav-link' %>
@@ -339,9 +339,9 @@
                 <li class="nav-item">
                     <%= nav_link '<i class="fas fa-ban"></i> Ban Management', '/admin/bans', class: 'nav-link' %>
                 </li>
-                
+
                 <hr class="my-3" style="border-color: rgba(255,255,255,0.2);">
-                
+
                 <!-- Customization Section -->
                 <li class="nav-item">
                     <%= nav_link '<i class="fas fa-palette"></i> Customize Templates', '/admin/customize', class: 'nav-link' %>
@@ -349,14 +349,15 @@
                 <li class="nav-item">
                     <%= nav_link '<i class="fas fa-cog"></i> Settings', '/admin/settings', class: 'nav-link' %>
                 </li>
-                
+
                 <hr class="my-3" style="border-color: rgba(255,255,255,0.2);">
-                
+
                 <li class="nav-item">
                     <%= nav_link '<i class="fas fa-globe"></i> View Site', '/', class: 'nav-link', target: '_blank' %>
                 </li>
                 <li class="nav-item">
                     <form method="post" action="/admin/logout" class="d-inline">
+                        <input type="hidden" name="_csrf" value="<%= csrf_token %>">
                         <button type="submit" class="nav-link w-100 text-start border-0 bg-transparent" style="color: rgba(255,255,255,0.8);">
                             <i class="fas fa-sign-out-alt"></i> Logout
                         </button>
@@ -364,7 +365,7 @@
                 </li>
             </ul>
         </nav>
-        
+
         <!-- Main Content -->
         <div class="admin-content">
             <!-- Header -->
@@ -375,7 +376,7 @@
                     </button>
                     <h4 class="mb-0"><%= @page_title || 'Admin Dashboard' %></h4>
                 </div>
-                
+
                 <div class="d-flex align-items-center">
                     <span class="text-muted me-3">
                         <i class="fas fa-user-circle me-1"></i>
@@ -404,22 +405,22 @@
                     </div>
                 </div>
             </header>
-            
+
             <!-- Flash Messages -->
             <div class="container-fluid mt-3">
                 <%= flash_messages %>
             </div>
-            
+
             <!-- Page Content -->
             <div class="container-fluid py-3">
                 <%= yield %>
             </div>
         </div>
     </div>
-    
+
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
+
     <!-- Custom Admin JavaScript -->
     <script>
         // Sidebar toggle for mobile
@@ -427,19 +428,19 @@
             const sidebar = document.getElementById('adminSidebar');
             sidebar.classList.toggle('show');
         }
-        
+
         // Close sidebar when clicking outside on mobile
         document.addEventListener('click', function(event) {
             const sidebar = document.getElementById('adminSidebar');
             const toggle = document.querySelector('.mobile-toggle');
-            
-            if (window.innerWidth <= 768 && 
-                !sidebar.contains(event.target) && 
+
+            if (window.innerWidth <= 768 &&
+                !sidebar.contains(event.target) &&
                 !toggle.contains(event.target)) {
                 sidebar.classList.remove('show');
             }
         });
-        
+
         // Flash message auto-hide
         document.addEventListener('DOMContentLoaded', function() {
             const flashMessages = document.querySelectorAll('.flash-message');
@@ -453,19 +454,19 @@
                 }, 5000);
             });
         });
-        
+
         // Confirm delete actions
         document.addEventListener('click', function(event) {
-            if (event.target.classList.contains('btn-danger') && 
-                (event.target.textContent.includes('Delete') || 
+            if (event.target.classList.contains('btn-danger') &&
+                (event.target.textContent.includes('Delete') ||
                  event.target.textContent.includes('Revoke'))) {
-                
+
                 if (!confirm('Are you sure you want to perform this action? This cannot be undone.')) {
                     event.preventDefault();
                 }
             }
         });
-        
+
         // Auto-refresh data tables every 30 seconds
         function autoRefreshTables() {
             const tables = document.querySelectorAll('[data-auto-refresh="true"]');
@@ -475,10 +476,10 @@
                 }, 30000);
             }
         }
-        
+
         // Initialize auto-refresh
         document.addEventListener('DOMContentLoaded', autoRefreshTables);
-        
+
         // Admin utility functions
         window.AdminUtils = {
             formatCurrency: function(amount, currency = 'USD') {
@@ -487,36 +488,36 @@
                     currency: currency
                 }).format(amount);
             },
-            
+
             formatDate: function(dateString) {
                 return new Date(dateString).toLocaleDateString();
             },
-            
+
             formatDateTime: function(dateString) {
                 return new Date(dateString).toLocaleString();
             },
-            
+
             copyToClipboard: function(text) {
                 navigator.clipboard.writeText(text).then(() => {
                     this.showNotification('Copied to clipboard!', 'success');
                 });
             },
-            
+
             showNotification: function(message, type = 'info') {
                 const notification = document.createElement('div');
                 notification.className = `alert alert-${type} flash-message position-fixed`;
                 notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; max-width: 300px;';
                 notification.textContent = message;
-                
+
                 document.body.appendChild(notification);
-                
+
                 setTimeout(() => {
                     notification.style.transition = 'opacity 0.5s ease';
                     notification.style.opacity = '0';
                     setTimeout(() => notification.remove(), 500);
                 }, 3000);
             },
-            
+
             confirmAction: function(message = 'Are you sure?') {
                 return confirm(message);
             }

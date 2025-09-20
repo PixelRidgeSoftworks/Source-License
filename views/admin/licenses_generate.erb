@@ -21,7 +21,7 @@
             <div class="admin-card-body">
                 <form method="post" action="/admin/licenses/generate" id="generateLicenseForm">
                     <%= csrf_input %>
-                    
+
                     <!-- Product Selection -->
                     <div class="mb-4">
                         <label for="product_id" class="form-label fw-bold">
@@ -30,7 +30,7 @@
                         <select class="form-select" id="product_id" name="product_id" required>
                             <option value="">Select a product...</option>
                             <% @products.each do |product| %>
-                            <option value="<%= product.id %>" 
+                            <option value="<%= product.id %>"
                                     data-max-activations="<%= product.max_activations %>"
                                     data-license-type="<%= product.license_type %>"
                                     data-duration="<%= product.license_duration_days || '' %>"
@@ -43,14 +43,14 @@
                             Select the product for which you want to generate a license.
                         </div>
                     </div>
-                    
+
                     <!-- Customer Information -->
                     <div class="row mb-4">
                         <div class="col-md-6">
                             <label for="customer_email" class="form-label fw-bold">
                                 <i class="fas fa-envelope me-2"></i>Customer Email *
                             </label>
-                            <input type="email" class="form-control" id="customer_email" name="customer_email" required>
+                            <input type="email" class="form-control" id="customer_email" name="customer_email" required autocomplete="off">
                             <div class="form-text">
                                 The email address of the license holder.
                             </div>
@@ -59,27 +59,27 @@
                             <label for="customer_name" class="form-label fw-bold">
                                 <i class="fas fa-user me-2"></i>Customer Name
                             </label>
-                            <input type="text" class="form-control" id="customer_name" name="customer_name">
+                            <input type="text" class="form-control" id="customer_name" name="customer_name" autocomplete="off">
                             <div class="form-text">
                                 Optional: Full name of the customer.
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- Custom Configuration -->
                     <div class="mb-4">
                         <h5 class="text-primary mb-3">
                             <i class="fas fa-cogs me-2"></i>Custom Configuration
                             <small class="text-muted">(Optional)</small>
                         </h5>
-                        
+
                         <div class="row">
                             <div class="col-md-6">
                                 <label for="custom_max_activations" class="form-label">
                                     <i class="fas fa-key me-2"></i>Max Activations Override
                                 </label>
-                                <input type="number" class="form-control" id="custom_max_activations" 
-                                       name="custom_max_activations" min="1">
+                                <input type="number" class="form-control" id="custom_max_activations"
+                                       name="custom_max_activations" min="1" autocomplete="off">
                                 <div class="form-text">
                                     Override the product's default maximum activations.
                                     <span id="defaultMaxActivations" class="text-primary"></span>
@@ -89,8 +89,8 @@
                                 <label for="custom_expires_at" class="form-label">
                                     <i class="fas fa-calendar me-2"></i>Expiration Date Override
                                 </label>
-                                <input type="datetime-local" class="form-control" id="custom_expires_at" 
-                                       name="custom_expires_at">
+                                <input type="datetime-local" class="form-control" id="custom_expires_at"
+                                       name="custom_expires_at" autocomplete="off">
                                 <div class="form-text">
                                     Set a custom expiration date for this license.
                                     <span id="defaultExpiration" class="text-primary"></span>
@@ -98,7 +98,7 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- Product Information Display -->
                     <div id="productInfo" class="alert alert-info" style="display: none;">
                         <h6 class="alert-heading">
@@ -106,7 +106,7 @@
                         </h6>
                         <div id="productDetails"></div>
                     </div>
-                    
+
                     <!-- Form Actions -->
                     <div class="d-flex justify-content-between align-items-center">
                         <div class="text-muted">
@@ -142,17 +142,17 @@ document.addEventListener('DOMContentLoaded', function() {
     const customExpiresAt = document.getElementById('custom_expires_at');
     const generateBtn = document.getElementById('generateBtn');
     const form = document.getElementById('generateLicenseForm');
-    
+
     // Product selection handler
     productSelect.addEventListener('change', function() {
         const selectedOption = this.options[this.selectedIndex];
-        
+
         if (this.value) {
             const maxActivations = selectedOption.dataset.maxActivations;
             const licenseType = selectedOption.dataset.licenseType;
             const duration = selectedOption.dataset.duration;
             const price = selectedOption.dataset.price;
-            
+
             // Show product information
             let infoHTML = `
                 <div class="row">
@@ -176,13 +176,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                 </div>
             `;
-            
+
             productDetails.innerHTML = infoHTML;
             productInfo.style.display = 'block';
-            
+
             // Update helper text
             defaultMaxActivations.textContent = `(Default: ${maxActivations})`;
-            
+
             if (duration) {
                 const expirationDate = new Date();
                 expirationDate.setDate(expirationDate.getDate() + parseInt(duration));
@@ -190,7 +190,7 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 defaultExpiration.textContent = '(Default: Never expires)';
             }
-            
+
             // Clear custom values when product changes
             customMaxActivations.value = '';
             customExpiresAt.value = '';
@@ -200,13 +200,13 @@ document.addEventListener('DOMContentLoaded', function() {
             defaultExpiration.textContent = '';
         }
     });
-    
+
     // Form submission handler
     form.addEventListener('submit', function(e) {
         // Show loading state
         generateBtn.innerHTML = '<div class="spinner-border spinner-border-sm me-2"></div>Generating...';
         generateBtn.disabled = true;
-        
+
         // Validate form
         if (!productSelect.value) {
             e.preventDefault();
@@ -215,7 +215,7 @@ document.addEventListener('DOMContentLoaded', function() {
             generateBtn.disabled = false;
             return;
         }
-        
+
         const email = document.getElementById('customer_email').value;
         if (!email || !isValidEmail(email)) {
             e.preventDefault();
@@ -224,7 +224,7 @@ document.addEventListener('DOMContentLoaded', function() {
             generateBtn.disabled = false;
             return;
         }
-        
+
         // Validate custom max activations if provided
         const customMax = customMaxActivations.value;
         if (customMax && (parseInt(customMax) < 1 || parseInt(customMax) > 1000)) {
@@ -234,13 +234,13 @@ document.addEventListener('DOMContentLoaded', function() {
             generateBtn.disabled = false;
             return;
         }
-        
+
         // Validate expiration date if provided
         const customExpiry = customExpiresAt.value;
         if (customExpiry) {
             const expiryDate = new Date(customExpiry);
             const now = new Date();
-            
+
             if (expiryDate <= now) {
                 e.preventDefault();
                 alert('Expiration date must be in the future.');
@@ -248,11 +248,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 generateBtn.disabled = false;
                 return;
             }
-            
+
             // Check if expiration is too far in the future (10 years)
             const maxDate = new Date();
             maxDate.setFullYear(maxDate.getFullYear() + 10);
-            
+
             if (expiryDate > maxDate) {
                 if (!confirm('The expiration date is more than 10 years in the future. Are you sure you want to proceed?')) {
                     e.preventDefault();
@@ -263,13 +263,13 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
-    
+
     // Email validation function
     function isValidEmail(email) {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         return emailRegex.test(email);
     }
-    
+
     // Auto-fill customer name from email
     document.getElementById('customer_email').addEventListener('blur', function() {
         const nameField = document.getElementById('customer_name');
@@ -285,7 +285,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
-    
+
     // Keyboard shortcuts
     document.addEventListener('keydown', function(e) {
         // Ctrl/Cmd + Enter to submit form
@@ -294,7 +294,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 form.submit();
             }
         }
-        
+
         // Escape to cancel
         if (e.key === 'Escape') {
             if (confirm('Are you sure you want to cancel? Any entered data will be lost.')) {
@@ -375,21 +375,21 @@ document.addEventListener('DOMContentLoaded', function() {
     .col-lg-8 {
         padding: 0 1rem;
     }
-    
+
     .admin-card-body {
         padding: 1rem;
     }
-    
+
     .d-flex.justify-content-between {
         flex-direction: column;
         align-items: stretch !important;
     }
-    
+
     .d-flex.justify-content-between > div:last-child {
         margin-top: 1rem;
         text-align: center;
     }
-    
+
     .btn {
         margin-bottom: 0.5rem;
     }

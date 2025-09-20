@@ -28,51 +28,44 @@
                 <i class="fas fa-user-edit me-2"></i>
                 Administrator Information
             </h5>
-            
+
             <div class="p-4">
-                <form method="POST" action="/admin/admins/<%= @admin.id %>" class="admin-form">
+                <form action="/admin/admins/<%= @admin.id %>" method="post" class="admin-form">
                     <input type="hidden" name="_method" value="PUT">
                     <input type="hidden" name="_token" value="<%= csrf_token %>">
-                    
+
                     <!-- Admin Info Section -->
                     <div class="form-section mb-4">
                         <h6 class="section-title">
                             <i class="fas fa-user me-2"></i>Personal Information
                         </h6>
-                        
+
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label for="name" class="form-label">
                                         Full Name <span class="text-danger">*</span>
                                     </label>
-                                    <input type="text" id="name" name="name" class="form-control" 
-                                           value="<%= h(@admin.name) %>" required 
+                                    <input type="text" id="name" name="name" class="form-control"
+                                           value="<%= h(@admin.name) %>" required autocomplete="off"
                                            placeholder="Enter the admin's full name">
                                     <div class="form-text">The display name for this admin account</div>
                                 </div>
                             </div>
-                            
+
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label for="email" class="form-label">
                                         Email Address <span class="text-danger">*</span>
                                     </label>
-                                    <input type="email" id="email" name="email" class="form-control" 
-                                           value="<%= h(@admin.email) %>" required 
+                                    <input type="email" id="email" name="email" class="form-control"
+                                           value="<%= h(@admin.email) %>" required autocomplete="off"
                                            placeholder="admin@example.com">
                                     <div class="form-text">Used for login and notifications</div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                    
-                    <!-- Status Section -->
-                    <div class="form-section mb-4">
-                        <h6 class="section-title">
-                            <i class="fas fa-shield-alt me-2"></i>Account Status
-                        </h6>
-                        
+
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
@@ -96,7 +89,7 @@
                                     <div class="form-text">Controls account access and permissions</div>
                                 </div>
                             </div>
-                            
+
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label class="form-label">Account Information</label>
@@ -124,7 +117,7 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- Protection Notice -->
                     <% if is_original_admin?(@admin) %>
                     <div class="alert alert-warning">
@@ -133,7 +126,7 @@
                         Some restrictions apply to protect system access.
                     </div>
                     <% end %>
-                    
+
                     <!-- Form Actions -->
                     <div class="d-flex gap-3 justify-content-between">
                         <div>
@@ -194,7 +187,7 @@
     .d-flex.gap-3 {
         flex-direction: column;
     }
-    
+
     .d-flex.gap-3 .btn,
     .d-flex.gap-2 .btn {
         width: 100%;
@@ -207,34 +200,34 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Auto-focus first field
     document.getElementById('name').focus();
-    
+
     // Form validation
     document.querySelector('.admin-form').addEventListener('submit', function(e) {
         const name = document.getElementById('name').value.trim();
         const email = document.getElementById('email').value.trim();
         const status = document.getElementById('status').value;
-        
+
         if (!name) {
             e.preventDefault();
             alert('Please enter the admin\'s full name.');
             document.getElementById('name').focus();
             return;
         }
-        
+
         if (!email) {
             e.preventDefault();
             alert('Please enter a valid email address.');
             document.getElementById('email').focus();
             return;
         }
-        
+
         if (!status) {
             e.preventDefault();
             alert('Please select an account status.');
             document.getElementById('status').focus();
             return;
         }
-        
+
         // Show loading state
         const submitBtn = document.querySelector('button[type="submit"]');
         submitBtn.disabled = true;
@@ -246,7 +239,7 @@ document.addEventListener('DOMContentLoaded', function() {
 document.getElementById('email').addEventListener('blur', function() {
     const email = this.value;
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    
+
     if (email && !emailRegex.test(email)) {
         this.classList.add('is-invalid');
         let feedback = this.parentNode.querySelector('.invalid-feedback');
@@ -268,7 +261,7 @@ document.getElementById('email').addEventListener('blur', function() {
 // Name validation
 document.getElementById('name').addEventListener('blur', function() {
     const name = this.value.trim();
-    
+
     if (name && name.length < 2) {
         this.classList.add('is-invalid');
         let feedback = this.parentNode.querySelector('.invalid-feedback');

@@ -26,13 +26,13 @@
                         <!-- Tax Name -->
                         <div class="col-md-8">
                             <label for="name" class="form-label">Tax Name <span class="text-danger">*</span></label>
-                            <input type="text" 
-                                   class="form-control <%= @tax && @tax.errors[:name] ? 'is-invalid' : '' %>" 
-                                   id="name" 
-                                   name="name" 
+                            <input type="text"
+                                   class="form-control <%= @tax && @tax.errors[:name] ? 'is-invalid' : '' %>"
+                                   id="name"
+                                   name="name"
                                    value="<%= h(@tax&.name || SettingsManager.get('tax.default_tax_name')) %>"
                                    placeholder="e.g., Sales Tax, VAT, GST"
-                                   required>
+                                   required autocomplete="off">
                             <% if @tax && @tax.errors[:name] %>
                                 <div class="invalid-feedback">
                                     <%= @tax.errors[:name].first %>
@@ -45,16 +45,16 @@
                         <div class="col-md-4">
                             <label for="rate" class="form-label">Tax Rate (%) <span class="text-danger">*</span></label>
                             <div class="input-group">
-                                <input type="number" 
-                                       class="form-control <%= @tax && @tax.errors[:rate] ? 'is-invalid' : '' %>" 
-                                       id="rate" 
-                                       name="rate" 
+                                <input type="number"
+                                       class="form-control <%= @tax && @tax.errors[:rate] ? 'is-invalid' : '' %>"
+                                       id="rate"
+                                       name="rate"
                                        value="<%= @tax&.rate || SettingsManager.get('tax.default_tax_rate') %>"
-                                       step="0.01" 
-                                       min="0" 
-                                       max="99.99" 
+                                       step="0.01"
+                                       min="0"
+                                       max="99.99"
                                        placeholder="0.00"
-                                       required>
+                                       required autocomplete="off">
                                 <span class="input-group-text">%</span>
                                 <% if @tax && @tax.errors[:rate] %>
                                     <div class="invalid-feedback">
@@ -68,9 +68,9 @@
                         <!-- Description -->
                         <div class="col-12">
                             <label for="description" class="form-label">Description</label>
-                            <textarea class="form-control" 
-                                      id="description" 
-                                      name="description" 
+                            <textarea class="form-control"
+                                      id="description"
+                                      name="description"
                                       rows="3"
                                       placeholder="Optional description for this tax..."><%= h(@tax&.description || '') %></textarea>
                             <div class="form-text">Optional description to help identify this tax</div>

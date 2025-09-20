@@ -24,22 +24,24 @@
           <form method="POST" action="/register">
             <div class="mb-3">
               <label for="name" class="form-label">Full Name</label>
-              <input type="text" 
-                     class="form-control" 
-                     id="name" 
-                     name="name" 
-                     required 
+              <input type="text"
+                     class="form-control"
+                     id="name"
+                     name="name"
+                     required
                      autofocus
+                     autocomplete="name"
                      value="<%= h(params[:name] || '') %>">
             </div>
 
             <div class="mb-3">
               <label for="email" class="form-label">Email Address</label>
-              <input type="email" 
-                     class="form-control" 
-                     id="email" 
-                     name="email" 
+              <input type="email"
+                     class="form-control"
+                     id="email"
+                     name="email"
                      required
+                     autocomplete="email"
                      value="<%= h(params[:email] || '') %>">
               <div class="form-text">
                 Use the same email address as your license purchases for automatic transfer.
@@ -48,12 +50,13 @@
 
             <div class="mb-3">
               <label for="password" class="form-label">Password</label>
-              <input type="password" 
-                     class="form-control" 
-                     id="password" 
-                     name="password" 
+              <input type="password"
+                     class="form-control"
+                     id="password"
+                     name="password"
                      required
-                     minlength="8">
+                     minlength="8"
+                     autocomplete="new-password">
               <div class="form-text">
                 Must be at least 8 characters long.
               </div>
@@ -61,12 +64,13 @@
 
             <div class="mb-3">
               <label for="password_confirm" class="form-label">Confirm Password</label>
-              <input type="password" 
-                     class="form-control" 
-                     id="password_confirm" 
-                     name="password_confirm" 
+              <input type="password"
+                     class="form-control"
+                     id="password_confirm"
+                     name="password_confirm"
                      required
-                     minlength="8">
+                     minlength="8"
+                     autocomplete="new-password">
             </div>
 
             <div class="mb-3">
@@ -118,7 +122,7 @@
 document.addEventListener('DOMContentLoaded', function() {
   const password = document.getElementById('password');
   const passwordConfirm = document.getElementById('password_confirm');
-  
+
   function validatePasswords() {
     if (password.value !== passwordConfirm.value) {
       passwordConfirm.setCustomValidity('Passwords do not match');
@@ -126,7 +130,7 @@ document.addEventListener('DOMContentLoaded', function() {
       passwordConfirm.setCustomValidity('');
     }
   }
-  
+
   password.addEventListener('input', validatePasswords);
   passwordConfirm.addEventListener('input', validatePasswords);
 });

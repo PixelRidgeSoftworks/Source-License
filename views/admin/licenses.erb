@@ -26,7 +26,7 @@
             </div>
         </div>
     </div>
-    
+
     <div class="col-xl-3 col-md-6">
         <div class="stat-card">
             <div class="d-flex justify-content-between align-items-start">
@@ -40,7 +40,7 @@
             </div>
         </div>
     </div>
-    
+
     <div class="col-xl-3 col-md-6">
         <div class="stat-card">
             <div class="d-flex justify-content-between align-items-start">
@@ -54,7 +54,7 @@
             </div>
         </div>
     </div>
-    
+
     <div class="col-xl-3 col-md-6">
         <div class="stat-card">
             <div class="d-flex justify-content-between align-items-start">
@@ -77,8 +77,8 @@
             <span class="input-group-text">
                 <i class="fas fa-search"></i>
             </span>
-            <input type="text" class="form-control" placeholder="Search licenses, emails, names..." 
-                   id="licenseSearch" value="<%= h(params[:search] || '') %>">
+            <input type="text" class="form-control" placeholder="Search licenses, emails, names..."
+                   id="licenseSearch" value="<%= h(params[:search] || '') %>" autocomplete="off">
         </div>
     </div>
     <div class="col-md-8">
@@ -144,7 +144,7 @@
         </small>
         <% end %>
     </h5>
-    
+
     <div class="table-responsive">
         <% if @licenses.any? %>
         <table class="table table-hover table-dark mb-0" id="licensesTable">
@@ -165,12 +165,12 @@
             </thead>
             <tbody>
                 <% @licenses.each do |license| %>
-                <tr class="license-row" 
+                <tr class="license-row"
                     data-status="<%= license.status %>"
                     data-product="<%= license.product&.id || '' %>"
                     data-customer="<%= h(license.customer_email.downcase) %>">
                     <td>
-                        <input type="checkbox" class="form-check-input license-checkbox" 
+                        <input type="checkbox" class="form-check-input license-checkbox"
                                value="<%= license.id %>" data-license-key="<%= h(license.license_key) %>">
                     </td>
                     <td>
@@ -278,7 +278,7 @@
                     </td>
                     <td>
                         <div class="btn-group btn-group-sm">
-                            <a href="/admin/licenses/<%= license.id %>" 
+                            <a href="/admin/licenses/<%= license.id %>"
                                class="btn btn-outline-primary"
                                title="View Details">
                                 <i class="fas fa-eye"></i>
@@ -297,7 +297,7 @@
                             </button>
                             <% end %>
                             <div class="dropdown">
-                                <button class="btn btn-outline-secondary dropdown-toggle" 
+                                <button class="btn btn-outline-secondary dropdown-toggle"
                                         data-bs-toggle="dropdown">
                                     <i class="fas fa-ellipsis-v"></i>
                                 </button>
@@ -322,7 +322,7 @@
                                     <li><hr class="dropdown-divider"></li>
                                     <% unless license.status == 'revoked' %>
                                     <li>
-                                        <button class="dropdown-item text-danger" 
+                                        <button class="dropdown-item text-danger"
                                                 onclick="toggleLicenseStatus(<%= license.id %>, 'revoke')">
                                             <i class="fas fa-ban me-2"></i>Revoke License
                                         </button>
@@ -358,7 +358,7 @@
         </div>
         <% end %>
     </div>
-    
+
     <!-- Pagination -->
     <% if @total_pages > 1 %>
     <div class="card-footer" style="background: var(--surface-tertiary); border-top: 1px solid var(--border-default);">
@@ -366,7 +366,7 @@
             <small class="text-muted">
                 Showing <%= [(@current_page - 1) * @per_page + 1, @total_licenses].min %>-<%= [@current_page * @per_page, @total_licenses].min %> of <%= @total_licenses %> licenses
             </small>
-            
+
             <nav>
                 <ul class="pagination pagination-sm mb-0">
                     <!-- Previous button -->
@@ -379,14 +379,14 @@
                         <span class="page-link">Previous</span>
                     </li>
                     <% end %>
-                    
+
                     <!-- Page numbers -->
-                    <% 
+                    <%
                     start_page = [@current_page - 2, 1].max
                     end_page = [start_page + 4, @total_pages].min
                     start_page = [end_page - 4, 1].max if end_page - start_page < 4
                     %>
-                    
+
                     <% if start_page > 1 %>
                     <li class="page-item">
                         <a class="page-link" href="<%= build_pagination_url(1) %>">1</a>
@@ -397,7 +397,7 @@
                     </li>
                     <% end %>
                     <% end %>
-                    
+
                     <% (start_page..end_page).each do |page| %>
                     <% if page == @current_page %>
                     <li class="page-item active">
@@ -409,7 +409,7 @@
                     </li>
                     <% end %>
                     <% end %>
-                    
+
                     <% if end_page < @total_pages %>
                     <% if end_page < @total_pages - 1 %>
                     <li class="page-item disabled">
@@ -420,7 +420,7 @@
                         <a class="page-link" href="<%= build_pagination_url(@total_pages) %>"><%= @total_pages %></a>
                     </li>
                     <% end %>
-                    
+
                     <!-- Next button -->
                     <% if @current_page < @total_pages %>
                     <li class="page-item">
@@ -433,7 +433,7 @@
                     <% end %>
                 </ul>
             </nav>
-            
+
             <div class="btn-group btn-group-sm">
                 <button class="btn btn-outline-secondary" onclick="exportLicenses()">
                     <i class="fas fa-download me-1"></i>Export All
@@ -468,37 +468,37 @@ document.addEventListener('DOMContentLoaded', function() {
     const licenseCheckboxes = document.querySelectorAll('.license-checkbox');
     const bulkToolbar = document.getElementById('bulkActionsToolbar');
     const selectedCountElement = document.getElementById('selectedCount');
-    
+
     // Build pagination URL helper
     window.buildPaginationUrl = function(page) {
         const params = new URLSearchParams(window.location.search);
         params.set('page', page);
         return '?' + params.toString();
     };
-    
+
     // Filter functionality
     function applyFilters() {
         const params = new URLSearchParams();
-        
+
         const search = searchInput.value.trim();
         const status = statusFilter.value;
         const product = productFilter.value;
         const perPage = perPageFilter.value;
-        
+
         if (search) params.set('search', search);
         if (status) params.set('status', status);
         if (product) params.set('product_id', product);
         if (perPage !== '50') params.set('per_page', perPage);
-        
+
         const url = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
         window.location.href = url;
     }
-    
+
     // Clear filters
     window.clearFilters = function() {
         window.location.href = window.location.pathname;
     };
-    
+
     // Debounced search
     let searchTimeout;
     if (searchInput) {
@@ -507,16 +507,16 @@ document.addEventListener('DOMContentLoaded', function() {
             searchTimeout = setTimeout(applyFilters, 500);
         });
     }
-    
+
     // Filter change handlers
     if (statusFilter) statusFilter.addEventListener('change', applyFilters);
     if (productFilter) productFilter.addEventListener('change', applyFilters);
     if (perPageFilter) perPageFilter.addEventListener('change', applyFilters);
-    
+
     // Bulk selection functionality
     function updateBulkSelection() {
         const checkedBoxes = Array.from(licenseCheckboxes).filter(cb => cb.checked);
-        
+
         // Update select all checkbox state
         if (checkedBoxes.length === 0) {
             selectAllCheckbox.indeterminate = false;
@@ -528,7 +528,7 @@ document.addEventListener('DOMContentLoaded', function() {
             selectAllCheckbox.indeterminate = true;
             selectAllCheckbox.checked = false;
         }
-        
+
         // Show/hide bulk actions toolbar
         if (checkedBoxes.length > 0) {
             bulkToolbar.style.display = 'block';
@@ -537,7 +537,7 @@ document.addEventListener('DOMContentLoaded', function() {
             bulkToolbar.style.display = 'none';
         }
     }
-    
+
     // Select all checkbox handler
     if (selectAllCheckbox) {
         selectAllCheckbox.addEventListener('change', function() {
@@ -547,7 +547,7 @@ document.addEventListener('DOMContentLoaded', function() {
             updateBulkSelection();
         });
     }
-    
+
     // Individual checkbox handlers
     licenseCheckboxes.forEach(checkbox => {
         checkbox.addEventListener('change', updateBulkSelection);
@@ -577,12 +577,12 @@ function clearSelection() {
 function bulkActivate() {
     const licenseIds = getSelectedLicenseIds();
     const licenseKeys = getSelectedLicenseKeys();
-    
+
     if (licenseIds.length === 0) {
         alert('Please select licenses to activate.');
         return;
     }
-    
+
     if (confirm(`Are you sure you want to activate ${licenseIds.length} selected licenses?\n\n${licenseKeys.slice(0, 5).join(', ')}${licenseKeys.length > 5 ? '...' : ''}`)) {
         performBulkAction('activate', licenseIds);
     }
@@ -592,12 +592,12 @@ function bulkActivate() {
 function bulkSuspend() {
     const licenseIds = getSelectedLicenseIds();
     const licenseKeys = getSelectedLicenseKeys();
-    
+
     if (licenseIds.length === 0) {
         alert('Please select licenses to suspend.');
         return;
     }
-    
+
     if (confirm(`Are you sure you want to suspend ${licenseIds.length} selected licenses?\n\n${licenseKeys.slice(0, 5).join(', ')}${licenseKeys.length > 5 ? '...' : ''}\n\nThis will prevent the licenses from being used until reactivated.`)) {
         performBulkAction('suspend', licenseIds);
     }
@@ -607,12 +607,12 @@ function bulkSuspend() {
 function bulkRevoke() {
     const licenseIds = getSelectedLicenseIds();
     const licenseKeys = getSelectedLicenseKeys();
-    
+
     if (licenseIds.length === 0) {
         alert('Please select licenses to revoke.');
         return;
     }
-    
+
     if (confirm(`⚠️ WARNING: Are you sure you want to REVOKE ${licenseIds.length} selected licenses?\n\n${licenseKeys.slice(0, 5).join(', ')}${licenseKeys.length > 5 ? '...' : ''}\n\nThis will permanently disable the licenses and deactivate all activations!\nThis action CANNOT be undone!`)) {
         performBulkAction('revoke', licenseIds);
     }
@@ -621,26 +621,26 @@ function bulkRevoke() {
 // Bulk export licenses
 function bulkExport() {
     const licenseIds = getSelectedLicenseIds();
-    
+
     if (licenseIds.length === 0) {
         alert('Please select licenses to export.');
         return;
     }
-    
+
     const params = new URLSearchParams({ license_ids: licenseIds.join(',') });
     window.location.href = `/admin/licenses/export?${params.toString()}`;
 }
 
 // Perform bulk action
 function performBulkAction(action, licenseIds) {
-    const loadingText = action === 'revoke' ? 'Revoking...' : 
+    const loadingText = action === 'revoke' ? 'Revoking...' :
                        action === 'activate' ? 'Activating...' : 'Suspending...';
-    
+
     // Show loading state
     const toolbar = document.getElementById('bulkActionsToolbar');
     const originalHTML = toolbar.innerHTML;
     toolbar.innerHTML = `<div class="d-flex align-items-center"><div class="spinner-border spinner-border-sm me-2"></div>${loadingText}</div>`;
-    
+
     fetch('/admin/licenses/bulk-action', {
         method: 'POST',
         headers: {
@@ -684,17 +684,17 @@ function performBulkAction(action, licenseIds) {
 
 // Toggle license status
 function toggleLicenseStatus(licenseId, action) {
-    const actionText = action === 'revoke' ? 'revoke' : 
+    const actionText = action === 'revoke' ? 'revoke' :
                       action === 'suspend' ? 'suspend' : 'activate';
-    const confirmText = action === 'revoke' ? 
+    const confirmText = action === 'revoke' ?
         'Are you sure you want to REVOKE this license? This will permanently disable it and deactivate all activations. This action CANNOT be undone!' :
         `Are you sure you want to ${actionText} this license?`;
-    
+
     if (confirm(confirmText)) {
         // Create form data to send the action parameter
         const formData = new FormData();
         formData.append('action', action);
-        
+
         fetch(`/admin/licenses/${licenseId}/toggle-status`, {
             method: 'POST',
             headers: {
@@ -741,7 +741,7 @@ function fallbackCopyTextToClipboard(text) {
     document.body.appendChild(textArea);
     textArea.focus();
     textArea.select();
-    
+
     try {
         const successful = document.execCommand('copy');
         if (successful) {
@@ -752,7 +752,7 @@ function fallbackCopyTextToClipboard(text) {
     } catch (err) {
         AdminUtils.showNotification('Failed to copy license key', 'error');
     }
-    
+
     document.body.removeChild(textArea);
 }
 
@@ -767,10 +767,10 @@ document.querySelectorAll('.stat-card').forEach(card => {
     card.addEventListener('click', function() {
         const label = this.querySelector('.stat-label').textContent.toLowerCase();
         const statusFilter = document.getElementById('statusFilter');
-        
+
         // Reset filters
         statusFilter.value = '';
-        
+
         switch(label) {
             case 'active licenses':
                 statusFilter.value = 'active';
@@ -782,7 +782,7 @@ document.querySelectorAll('.stat-card').forEach(card => {
                 statusFilter.value = 'revoked';
                 break;
         }
-        
+
         // Trigger filter
         if (statusFilter.value) {
             statusFilter.dispatchEvent(new Event('change'));
@@ -923,25 +923,25 @@ document.querySelectorAll('.stat-card').forEach(card => {
         flex-direction: column;
         align-items: stretch !important;
     }
-    
+
     .bulk-actions-buttons {
         margin-top: 1rem;
         justify-content: center;
     }
-    
+
     .bulk-actions-buttons .btn {
         flex: 1;
         min-width: 120px;
     }
-    
+
     .table-responsive {
         font-size: 0.875rem;
     }
-    
+
     .license-row .fw-bold {
         font-size: 0.8rem;
     }
-    
+
     .license-row small {
         font-size: 0.7rem;
     }
@@ -960,11 +960,11 @@ def build_pagination_url(page)
   params_copy = params.dup
   params_copy['page'] = page.to_s
   params_copy.delete('page') if page == 1
-  
+
   query_string = params_copy.reject { |k, v| v.nil? || v.empty? }
                            .map { |k, v| "#{k}=#{CGI.escape(v.to_s)}" }
                            .join('&')
-  
+
   query_string.empty? ? request.path : "#{request.path}?#{query_string}"
 end
 %>

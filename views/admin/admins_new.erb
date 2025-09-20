@@ -28,50 +28,50 @@
                 <i class="fas fa-user-plus me-2"></i>
                 Administrator Information
             </h5>
-            
+
             <div class="p-4">
                 <form method="POST" action="/admin/admins" class="admin-form">
                     <input type="hidden" name="_token" value="<%= session[:csrf_token] %>">
-                    
+
                     <!-- Personal Information Section -->
                     <div class="form-section mb-4">
                         <h6 class="section-title">
                             <i class="fas fa-user me-2"></i>Personal Information
                         </h6>
-                        
+
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label for="name" class="form-label">
                                         Full Name <span class="text-danger">*</span>
                                     </label>
-                                    <input type="text" id="name" name="name" class="form-control" 
-                                           value="<%= h(params[:name]) %>" required 
+                                    <input type="text" id="name" name="name" class="form-control"
+                                           value="<%= h(params[:name]) %>" required autocomplete="off"
                                            placeholder="Enter the admin's full name">
                                     <div class="form-text">The display name for this admin account</div>
                                 </div>
                             </div>
-                            
+
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label for="email" class="form-label">
                                         Email Address <span class="text-danger">*</span>
                                     </label>
-                                    <input type="email" id="email" name="email" class="form-control" 
-                                           value="<%= h(params[:email]) %>" required 
+                                    <input type="email" id="email" name="email" class="form-control"
+                                           value="<%= h(params[:email]) %>" required autocomplete="off"
                                            placeholder="admin@example.com">
                                     <div class="form-text">This will be used as the login username</div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- Security Section -->
                     <div class="form-section mb-4">
                         <h6 class="section-title">
                             <i class="fas fa-lock me-2"></i>Security Credentials
                         </h6>
-                        
+
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
@@ -79,9 +79,9 @@
                                         Password <span class="text-danger">*</span>
                                     </label>
                                     <div class="input-group">
-                                        <input type="password" id="password" name="password" class="form-control" 
-                                               required placeholder="Enter a secure password">
-                                        <button type="button" class="btn btn-outline-secondary" 
+                                        <input type="password" id="password" name="password" class="form-control"
+                                               required placeholder="Enter a secure password" autocomplete="off">
+                                        <button type="button" class="btn btn-outline-secondary"
                                                 onclick="togglePasswordVisibility('password')">
                                             <i class="fas fa-eye" id="password-toggle-icon"></i>
                                         </button>
@@ -89,16 +89,16 @@
                                     <div class="form-text">Must meet all security requirements below</div>
                                 </div>
                             </div>
-                            
+
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label for="confirm_password" class="form-label">
                                         Confirm Password <span class="text-danger">*</span>
                                     </label>
                                     <div class="input-group">
-                                        <input type="password" id="confirm_password" name="confirm_password" 
-                                               class="form-control" required placeholder="Re-enter the password">
-                                        <button type="button" class="btn btn-outline-secondary" 
+                                        <input type="password" id="confirm_password" name="confirm_password"
+                                               class="form-control" required placeholder="Re-enter the password" autocomplete="off">
+                                        <button type="button" class="btn btn-outline-secondary"
                                                 onclick="togglePasswordVisibility('confirm_password')">
                                             <i class="fas fa-eye" id="confirm_password-toggle-icon"></i>
                                         </button>
@@ -108,7 +108,7 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- Password Requirements -->
                     <div class="password-requirements mb-4">
                         <div class="card">
@@ -155,7 +155,7 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- Form Actions -->
                     <div class="d-flex gap-3 justify-content-end">
                         <a href="/admin/admins" class="btn btn-secondary">
@@ -237,7 +237,7 @@
     .d-flex.gap-3 {
         flex-direction: column;
     }
-    
+
     .d-flex.gap-3 .btn {
         width: 100%;
     }
@@ -250,7 +250,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const passwordInput = document.getElementById('password');
     const confirmInput = document.getElementById('confirm_password');
     const submitBtn = document.getElementById('submit-btn');
-    
+
     const requirements = {
         length: /^.{12,}$/,
         upper: /[A-Z]/,
@@ -258,34 +258,34 @@ document.addEventListener('DOMContentLoaded', function() {
         number: /\d/,
         special: /[!@#$%^&*(),.?":{}|<>]/
     };
-    
+
     function checkRequirements() {
         const password = passwordInput.value;
         const confirm = confirmInput.value;
-        
+
         // Check each requirement
         Object.keys(requirements).forEach(req => {
             const element = document.getElementById(`req-${req}`);
             const isValid = requirements[req].test(password);
-            
+
             element.classList.toggle('valid', isValid);
             const icon = element.querySelector('i');
             icon.className = isValid ? 'fas fa-check text-success me-2' : 'fas fa-times text-danger me-2';
         });
-        
+
         // Check password match
         const matchElement = document.getElementById('req-match');
         const passwordsMatch = password && confirm && password === confirm;
-        
+
         matchElement.classList.toggle('valid', passwordsMatch);
         const matchIcon = matchElement.querySelector('i');
         matchIcon.className = passwordsMatch ? 'fas fa-check text-success me-2' : 'fas fa-times text-danger me-2';
-        
+
         // Check if all requirements are met
         const allValid = Object.keys(requirements).every(req => requirements[req].test(password)) && passwordsMatch && password.length > 0;
-        
+
         submitBtn.disabled = !allValid;
-        
+
         if (allValid) {
             submitBtn.classList.remove('btn-secondary');
             submitBtn.classList.add('btn-primary');
@@ -294,12 +294,12 @@ document.addEventListener('DOMContentLoaded', function() {
             submitBtn.classList.add('btn-secondary');
         }
     }
-    
+
     // Password visibility toggle
     window.togglePasswordVisibility = function(inputId) {
         const input = document.getElementById(inputId);
         const icon = document.getElementById(inputId + '-toggle-icon');
-        
+
         if (input.type === 'password') {
             input.type = 'text';
             icon.className = 'fas fa-eye-slash';
@@ -308,42 +308,42 @@ document.addEventListener('DOMContentLoaded', function() {
             icon.className = 'fas fa-eye';
         }
     };
-    
+
     // Event listeners
     passwordInput.addEventListener('input', checkRequirements);
     confirmInput.addEventListener('input', checkRequirements);
-    
+
     // Form validation
     document.querySelector('.admin-form').addEventListener('submit', function(e) {
         const email = document.getElementById('email').value;
         const name = document.getElementById('name').value;
-        
+
         if (!name.trim()) {
             e.preventDefault();
             alert('Please enter the admin\'s full name.');
             return;
         }
-        
+
         if (!email.trim()) {
             e.preventDefault();
             alert('Please enter a valid email address.');
             return;
         }
-        
+
         if (submitBtn.disabled) {
             e.preventDefault();
             alert('Please ensure all password requirements are met.');
             return;
         }
-        
+
         // Show loading state
         submitBtn.disabled = true;
         submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Creating Admin...';
     });
-    
+
     // Initial check
     checkRequirements();
-    
+
     // Auto-focus first field
     document.getElementById('name').focus();
 });
@@ -352,7 +352,7 @@ document.addEventListener('DOMContentLoaded', function() {
 document.getElementById('email').addEventListener('blur', function() {
     const email = this.value;
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    
+
     if (email && !emailRegex.test(email)) {
         this.classList.add('is-invalid');
         let feedback = this.parentNode.querySelector('.invalid-feedback');
@@ -374,7 +374,7 @@ document.getElementById('email').addEventListener('blur', function() {
 // Name validation
 document.getElementById('name').addEventListener('blur', function() {
     const name = this.value.trim();
-    
+
     if (name && name.length < 2) {
         this.classList.add('is-invalid');
         let feedback = this.parentNode.querySelector('.invalid-feedback');

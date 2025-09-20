@@ -12,7 +12,7 @@
                     <%= custom_text('checkout_title', 'Checkout') %>
                 </h2>
             </div>
-            
+
             <!-- Checkout Steps -->
             <div class="card mb-4">
                 <div class="card-body">
@@ -36,7 +36,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <!-- Customer Information Form -->
             <div class="card mb-4" id="customer-info-section">
                 <div class="card-header">
@@ -50,21 +50,21 @@
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="customer-name" class="form-label">Full Name *</label>
-                                <input type="text" class="form-control" id="customer-name" required>
+                                <input type="text" class="form-control" id="customer-name" required autocomplete="name">
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label for="customer-email" class="form-label">Email Address *</label>
-                                <input type="email" class="form-control" id="customer-email" required>
+                                <input type="email" class="form-control" id="customer-email" required autocomplete="email">
                             </div>
                         </div>
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="company-name" class="form-label">Company Name</label>
-                                <input type="text" class="form-control" id="company-name">
+                                <input type="text" class="form-control" id="company-name" autocomplete="organization">
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label for="phone-number" class="form-label">Phone Number</label>
-                                <input type="tel" class="form-control" id="phone-number">
+                                <input type="tel" class="form-control" id="phone-number" autocomplete="tel">
                             </div>
                         </div>
                         <div class="mb-3">
@@ -84,7 +84,7 @@
                     </form>
                 </div>
             </div>
-            
+
             <!-- Payment Method Selection -->
             <div class="card mb-4" id="payment-method-section" style="display: none;">
                 <div class="card-header">
@@ -114,7 +114,7 @@
                             </label>
                         </div>
                         <% end %>
-                        
+
                         <% if paypal_enabled? %>
                         <div class="payment-method-option">
                             <input type="radio" class="form-check-input" name="payment-method" id="paypal-payment" value="paypal">
@@ -135,7 +135,7 @@
                         </div>
                         <% end %>
                     </div>
-                    
+
                     <!-- Stripe Card Element -->
                     <div id="stripe-card-section" class="payment-form-section">
                         <div class="mb-3">
@@ -146,12 +146,12 @@
                             <div id="card-errors" class="text-danger mt-2"></div>
                         </div>
                     </div>
-                    
+
                     <!-- PayPal Section -->
                     <div id="paypal-section" class="payment-form-section" style="display: none;">
                         <div id="paypal-button-container"></div>
                     </div>
-                    
+
                     <div class="d-flex justify-content-between">
                         <button type="button" class="btn btn-outline-secondary" onclick="backToCustomerInfo()">
                             <i class="fas fa-arrow-left me-2"></i>
@@ -165,7 +165,7 @@
                 </div>
             </div>
         </div>
-        
+
         <!-- Order Summary Sidebar -->
         <div class="col-lg-4">
             <div class="card sticky-top" style="top: 100px;">
@@ -179,7 +179,7 @@
                     <div id="checkout-order-summary">
                         <!-- Order summary will be populated via JavaScript -->
                     </div>
-                    
+
                     <!-- Security Information -->
                     <hr>
                     <div class="security-info">
@@ -354,17 +354,17 @@ class CheckoutManager {
         this.stripe = null;
         this.cardElement = null;
         this.currentStep = 1;
-        
+
         this.loadProducts();
         this.initializePaymentMethods();
         this.renderOrderSummary();
-        
+
         // Setup payment method change handlers
         document.querySelectorAll('input[name="payment-method"]').forEach(radio => {
             radio.addEventListener('change', () => this.handlePaymentMethodChange());
         });
     }
-    
+
     async loadProducts() {
         try {
             const response = await fetch('/api/products');
@@ -380,7 +380,7 @@ class CheckoutManager {
             console.error('Failed to load products:', error);
         }
     }
-    
+
     initializePaymentMethods() {
         <% if stripe_enabled? %>
         // Initialize Stripe
@@ -397,10 +397,10 @@ class CheckoutManager {
                 }
             }
         });
-        
+
         this.cardElement = elements.create('card');
         this.cardElement.mount('#card-element');
-        
+
         this.cardElement.on('change', (event) => {
             const displayError = document.getElementById('card-errors');
             if (event.error) {
@@ -410,20 +410,20 @@ class CheckoutManager {
             }
         });
         <% end %>
-        
+
         <% if paypal_enabled? %>
         // Initialize PayPal (will be loaded when PayPal method is selected)
         <% end %>
     }
-    
+
     handlePaymentMethodChange() {
         const selectedMethod = document.querySelector('input[name="payment-method"]:checked').value;
-        
+
         // Hide all payment sections
         document.querySelectorAll('.payment-form-section').forEach(section => {
             section.style.display = 'none';
         });
-        
+
         // Show selected payment section
         if (selectedMethod === 'stripe') {
             document.getElementById('stripe-card-section').style.display = 'block';
@@ -432,12 +432,12 @@ class CheckoutManager {
             this.initializePayPal();
         }
     }
-    
+
     <% if paypal_enabled? %>
     initializePayPal() {
         // Clear existing PayPal buttons
         document.getElementById('paypal-button-container').innerHTML = '';
-        
+
         paypal.Buttons({
             createOrder: (data, actions) => {
                 return this.createPayPalOrder();
@@ -452,27 +452,27 @@ class CheckoutManager {
         }).render('#paypal-button-container');
     }
     <% end %>
-    
+
     renderOrderSummary() {
         const container = document.getElementById('checkout-order-summary');
-        
+
         if (this.cartItems.length === 0) {
             container.innerHTML = '<p class="text-muted">No items to checkout</p>';
             return;
         }
-        
+
         let subtotal = 0;
         let setupFees = 0;
         const itemsHtml = this.cartItems.map(item => {
             const product = this.products[item.productId];
             if (!product) return '';
-            
+
             const itemTotal = parseFloat(product.price) * item.quantity;
             const itemSetupFee = parseFloat(product.setup_fee || 0) * item.quantity;
-            
+
             subtotal += itemTotal;
             setupFees += itemSetupFee;
-            
+
             return `
                 <div class="d-flex justify-content-between align-items-start mb-3">
                     <div class="flex-grow-1">
@@ -487,9 +487,9 @@ class CheckoutManager {
                 </div>
             `;
         }).join('');
-        
+
         const total = subtotal + setupFees;
-        
+
         container.innerHTML = `
             ${itemsHtml}
             <hr>
@@ -509,15 +509,15 @@ class CheckoutManager {
                 <span class="text-success">${window.SourceLicense.formatCurrency(total)}</span>
             </div>
         `;
-        
+
         // Update button text based on total
         this.updateContinueButton(total);
     }
-    
+
     updateContinueButton(total) {
         const continueText = document.getElementById('continue-text');
         const continueBtn = document.getElementById('continue-btn');
-        
+
         if (total === 0) {
             continueText.textContent = 'Complete Free Order';
             continueBtn.className = continueBtn.className.replace('btn-primary', 'btn-success');
@@ -526,7 +526,7 @@ class CheckoutManager {
             continueBtn.className = continueBtn.className.replace('btn-success', 'btn-primary');
         }
     }
-    
+
     calculateTotal() {
         let total = 0;
         this.cartItems.forEach(item => {
@@ -537,22 +537,22 @@ class CheckoutManager {
         });
         return total;
     }
-    
+
     showNotification(message, type = 'info') {
         const notification = document.createElement('div');
         notification.className = `alert alert-${type} flash-message position-fixed`;
         notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; max-width: 300px;';
         notification.textContent = message;
-        
+
         document.body.appendChild(notification);
-        
+
         setTimeout(() => {
             notification.style.transition = 'opacity 0.5s ease';
             notification.style.opacity = '0';
             setTimeout(() => notification.remove(), 500);
         }, 3000);
     }
-    
+
     async createOrder() {
         const customerData = {
             name: document.getElementById('customer-name').value,
@@ -560,10 +560,10 @@ class CheckoutManager {
             company: document.getElementById('company-name').value,
             phone: document.getElementById('phone-number').value
         };
-        
+
         // Get selected payment method
         const selectedPaymentMethod = document.querySelector('input[name="payment-method"]:checked')?.value || 'stripe';
-        
+
         const orderData = {
             customer: customerData,
             items: this.cartItems,
@@ -571,7 +571,7 @@ class CheckoutManager {
             currency: 'USD',
             payment_method: selectedPaymentMethod
         };
-        
+
         try {
             const response = await fetch('/api/orders', {
                 method: 'POST',
@@ -580,7 +580,7 @@ class CheckoutManager {
                 },
                 body: JSON.stringify(orderData)
             });
-            
+
             if (response.ok) {
                 return await response.json();
             } else {
@@ -591,7 +591,7 @@ class CheckoutManager {
             throw error;
         }
     }
-    
+
     async createPayPalOrder() {
         try {
             const order = await this.createOrder();
@@ -601,7 +601,7 @@ class CheckoutManager {
             this.showNotification('Failed to create order. Please try again.', 'danger');
         }
     }
-    
+
     async handlePayPalApproval(orderID) {
         try {
             const response = await fetch('/api/payment/paypal/capture', {
@@ -611,7 +611,7 @@ class CheckoutManager {
                 },
                 body: JSON.stringify({ order_id: orderID })
             });
-            
+
             if (response.ok) {
                 const result = await response.json();
                 if (result.success) {
@@ -623,12 +623,12 @@ class CheckoutManager {
             this.showNotification('Payment processing failed. Please try again.', 'danger');
         }
     }
-    
+
     handlePaymentSuccess(result) {
         // Clear cart
         localStorage.removeItem('cart');
         sessionStorage.removeItem('checkout_cart');
-        
+
         // Redirect to success page
         window.location.href = `/success?order_id=${result.order_id}`;
     }
@@ -647,10 +647,10 @@ function proceedToNext() {
         form.reportValidity();
         return;
     }
-    
+
     // Check if order total is free
     const total = checkout.calculateTotal();
-    
+
     if (total === 0) {
         // Free order - skip payment and complete directly
         completeFreeOrder();
@@ -664,10 +664,10 @@ function proceedToPayment() {
     // Hide customer info, show payment
     document.getElementById('customer-info-section').style.display = 'none';
     document.getElementById('payment-method-section').style.display = 'block';
-    
+
     // Update step indicator
     document.querySelectorAll('.step')[1].classList.add('active');
-    
+
     // Show default payment method
     checkout.handlePaymentMethodChange();
 }
@@ -676,7 +676,7 @@ async function completeFreeOrder() {
     const continueBtn = document.getElementById('continue-btn');
     continueBtn.classList.add('btn-loading');
     continueBtn.disabled = true;
-    
+
     try {
         // Create the order for free products
         const customerData = {
@@ -685,7 +685,7 @@ async function completeFreeOrder() {
             company: document.getElementById('company-name').value,
             phone: document.getElementById('phone-number').value
         };
-        
+
         const orderData = {
             customer: customerData,
             items: checkout.cartItems,
@@ -693,7 +693,7 @@ async function completeFreeOrder() {
             currency: 'USD',
             payment_method: 'free'
         };
-        
+
         const response = await fetch('/api/orders/free', {
             method: 'POST',
             headers: {
@@ -701,14 +701,14 @@ async function completeFreeOrder() {
             },
             body: JSON.stringify(orderData)
         });
-        
+
         if (response.ok) {
             const result = await response.json();
             checkout.handlePaymentSuccess(result);
         } else {
             throw new Error('Failed to process free order');
         }
-        
+
     } catch (error) {
         console.error('Free order error:', error);
         checkout.showNotification('Failed to process order. Please try again.', 'danger');
@@ -721,7 +721,7 @@ async function completeFreeOrder() {
 function backToCustomerInfo() {
     document.getElementById('payment-method-section').style.display = 'none';
     document.getElementById('customer-info-section').style.display = 'block';
-    
+
     // Update step indicator
     document.querySelectorAll('.step')[1].classList.remove('active');
 }
@@ -729,10 +729,10 @@ function backToCustomerInfo() {
 async function completePayment() {
     const selectedMethod = document.querySelector('input[name="payment-method"]:checked').value;
     const paymentBtn = document.getElementById('complete-payment-btn');
-    
+
     paymentBtn.classList.add('btn-loading');
     paymentBtn.disabled = true;
-    
+
     try {
         if (selectedMethod === 'stripe') {
             await processStripePayment();
@@ -752,7 +752,7 @@ async function processStripePayment() {
     try {
         // Create order first
         const order = await checkout.createOrder();
-        
+
         // Confirm payment with Stripe
         const {error, paymentIntent} = await checkout.stripe.confirmCardPayment(
             order.client_secret,
@@ -766,7 +766,7 @@ async function processStripePayment() {
                 }
             }
         );
-        
+
         if (error) {
             throw new Error(error.message);
         } else if (paymentIntent.status === 'succeeded') {

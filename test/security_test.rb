@@ -42,7 +42,7 @@ class SecurityTest < Minitest::Test
     ]
 
     invalid_emails.each do |email|
-      refute validate_email(email), "Email #{email} should be invalid"
+      refute valid_email?(email), "Email #{email} should be invalid"
     end
 
     valid_emails = [
@@ -52,7 +52,7 @@ class SecurityTest < Minitest::Test
     ]
 
     valid_emails.each do |email|
-      assert validate_email(email), "Email #{email} should be valid"
+      assert valid_email?(email), "Email #{email} should be valid"
     end
   end
 
@@ -66,30 +66,30 @@ class SecurityTest < Minitest::Test
 
   def test_payment_amount_validation
     # Valid amounts
-    assert validate_payment_amount(10.50)
-    assert validate_payment_amount('25.99')
-    assert validate_payment_amount(1)
+    assert validate_payment_amount?(10.50)
+    assert validate_payment_amount?('25.99')
+    assert validate_payment_amount?(1)
 
     # Invalid amounts
-    refute validate_payment_amount(0)
-    refute validate_payment_amount(-10)
-    refute validate_payment_amount(1_000_000) # Too large
-    refute validate_payment_amount('invalid')
-    refute validate_payment_amount(nil)
+    refute validate_payment_amount?(0)
+    refute validate_payment_amount?(-10)
+    refute validate_payment_amount?(1_000_000) # Too large
+    refute validate_payment_amount?('invalid')
+    refute validate_payment_amount?(nil)
   end
 
   def test_currency_validation
     # Valid currencies
     %w[USD EUR GBP CAD AUD JPY].each do |currency|
-      assert validate_currency(currency)
-      assert validate_currency(currency.downcase)
+      assert validate_currency?(currency)
+      assert validate_currency?(currency.downcase)
     end
 
     # Invalid currencies
-    refute validate_currency('INVALID')
-    refute validate_currency('US')
-    refute validate_currency(nil)
-    refute validate_currency('')
+    refute validate_currency?('INVALID')
+    refute validate_currency?('US')
+    refute validate_currency?(nil)
+    refute validate_currency?('')
   end
 
   def test_webhook_signature_verification_stripe
@@ -143,12 +143,12 @@ class SecurityTest < Minitest::Test
     order.add_order_item(create(:order_item, order: order, product: product, quantity: 2, price: 50.00))
 
     # Valid order - amount matches items
-    assert validate_order_integrity(order, [
+    assert validate_order_integrity?(order, [
       { product_id: product.id, quantity: 2 },
     ])
 
     # Invalid order - amount doesn't match
-    refute validate_order_integrity(order, [
+    refute validate_order_integrity?(order, [
       { product_id: product.id, quantity: 1 },
     ])
   end
@@ -282,11 +282,11 @@ class SecurityTest < Minitest::Test
 
   private
 
-  def validate_email(email)
+  def valid_email?(email)
     return false unless email.is_a?(String)
     return false if email.length > 254
 
-    email_regex = /\A[\w+\-.]+@[a-z\d\-]+(\.[a-z\d\-]+)*\.[a-z]+\z/i
+    email_regex = /\A[\w+\-.]+@[a-z\d-]+(\.[a-z\d-]+)*\.[a-z]+\z/i
     email.match?(email_regex)
   end
 
@@ -298,14 +298,14 @@ class SecurityTest < Minitest::Test
       .slice(0, max_length)
   end
 
-  def validate_payment_amount(amount)
+  def validate_payment_amount?(amount)
     return false unless amount.is_a?(Numeric) || amount.is_a?(String)
 
     amount = amount.to_f
     amount.positive? && amount <= 999_999.99
   end
 
-  def validate_currency(currency)
+  def validate_currency?(currency)
     valid_currencies = %w[USD EUR GBP CAD AUD JPY]
     valid_currencies.include?(currency&.upcase)
   end
@@ -337,7 +337,7 @@ class SecurityTest < Minitest::Test
     Digest::SHA256.hexdigest(data)[0, 32]
   end
 
-  def validate_order_integrity(order, items)
+  def validate_order_integrity?(order, items)
     calculated_total = items.sum do |item|
       product = Product[item[:product_id]]
       return false unless product&.active?
@@ -351,11 +351,11 @@ class SecurityTest < Minitest::Test
   def validate_payment_data(payment_data)
     errors = []
 
-    errors << 'Invalid payment amount' unless validate_payment_amount(payment_data[:amount])
+    errors << 'Invalid payment amount' unless validate_payment_amount?(payment_data[:amount])
 
-    errors << 'Invalid currency' unless validate_currency(payment_data[:currency])
+    errors << 'Invalid currency' unless validate_currency?(payment_data[:currency])
 
-    errors << 'Invalid email address' unless validate_email(payment_data[:email])
+    errors << 'Invalid email address' unless valid_email?(payment_data[:email])
 
     errors << 'Invalid payment method' unless %w[stripe paypal].include?(payment_data[:payment_method])
 

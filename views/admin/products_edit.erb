@@ -30,7 +30,7 @@
         <form action="/admin/products/<%= @product.id %>" method="post" id="productForm" enctype="multipart/form-data">
             <input type="hidden" name="_method" value="put">
             <%= csrf_input %>
-            
+
             <!-- Basic Information Card -->
             <div class="admin-card mb-4">
                 <div class="admin-card-header">
@@ -41,21 +41,21 @@
                     <div class="row g-3">
                         <div class="col-md-8">
                             <div class="form-floating">
-                                <input type="text" class="form-control" id="name" name="name" 
-                                       placeholder="Product Name" required maxlength="255" value="<%= @product.name %>">
+                                <input type="text" class="form-control" id="name" name="name"
+                                       placeholder="Product Name" required maxlength="255" value="<%= @product.name %>" autocomplete="off">
                                 <label for="name">Product Name *</label>
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="form-floating">
-                                <input type="text" class="form-control" id="version" name="version" 
-                                       placeholder="1.0.0" maxlength="50" value="<%= @product.version || '' %>">
+                                <input type="text" class="form-control" id="version" name="version"
+                                       placeholder="1.0.0" maxlength="50" value="<%= @product.version || '' %>" autocomplete="off">
                                 <label for="version">Version</label>
                             </div>
                         </div>
                         <div class="col-12">
                             <div class="form-floating">
-                                <textarea class="form-control" id="description" name="description" 
+                                <textarea class="form-control" id="description" name="description"
                                           placeholder="Product Description" style="height: 120px;" maxlength="1000"><%= @product.description || '' %></textarea>
                                 <label for="description">Description</label>
                             </div>
@@ -66,7 +66,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <!-- Pricing and License Type Card -->
             <div class="admin-card mb-4">
                 <div class="admin-card-header">
@@ -78,7 +78,7 @@
                         <div class="col-md-6">
                             <label class="form-label">License Type *</label>
                             <div class="form-check">
-                                <input class="form-check-input" type="radio" name="license_type" 
+                                <input class="form-check-input" type="radio" name="license_type"
                                        id="one_time" value="one_time" <%= @product.license_type == 'one_time' ? 'checked' : '' %>>
                                 <label class="form-check-label" for="one_time">
                                     <strong>One-time Purchase</strong>
@@ -86,7 +86,7 @@
                                 </label>
                             </div>
                             <div class="form-check mt-2">
-                                <input class="form-check-input" type="radio" name="license_type" 
+                                <input class="form-check-input" type="radio" name="license_type"
                                        id="subscription" value="subscription" <%= @product.license_type == 'subscription' ? 'checked' : '' %>>
                                 <label class="form-check-label" for="subscription">
                                     <strong>Subscription</strong>
@@ -96,8 +96,8 @@
                         </div>
                         <div class="col-md-6">
                             <div class="form-floating">
-                                <input type="number" class="form-control" id="price" name="price" 
-                                       placeholder="0.00" step="0.01" min="0" required value="<%= @product.price %>">
+                                <input type="number" class="form-control" id="price" name="price"
+                                       placeholder="0.00" step="0.01" min="0" required value="<%= @product.price %>" autocomplete="off">
                                 <label for="price">Price (USD) *</label>
                             </div>
                             <div class="form-text">
@@ -106,8 +106,8 @@
                         </div>
                         <div class="col-md-6" id="setupFeeGroup" style="display: <%= @product.license_type == 'subscription' ? 'block' : 'none' %>;">
                             <div class="form-floating">
-                                <input type="number" class="form-control" id="setup_fee" name="setup_fee" 
-                                       placeholder="0.00" step="0.01" min="0" value="<%= @product.setup_fee || 0 %>">
+                                <input type="number" class="form-control" id="setup_fee" name="setup_fee"
+                                       placeholder="0.00" step="0.01" min="0" value="<%= @product.setup_fee || 0 %>" autocomplete="off">
                                 <label for="setup_fee">Setup Fee (USD)</label>
                             </div>
                             <div class="form-text">
@@ -115,7 +115,7 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- Subscription Options -->
                     <div id="subscriptionOptions" style="display: <%= @product.license_type == 'subscription' ? 'block' : 'none' %>;">
                         <hr class="my-4">
@@ -133,8 +133,8 @@
                             </div>
                             <div class="col-md-6">
                                 <div class="form-floating">
-                                    <input type="number" class="form-control" id="billing_interval" name="billing_interval" 
-                                           value="<%= @product.billing_interval || 1 %>" min="1" max="12">
+                                    <input type="number" class="form-control" id="billing_interval" name="billing_interval"
+                                           value="<%= @product.billing_interval || 1 %>" min="1" max="12" autocomplete="off">
                                     <label for="billing_interval">Billing Interval</label>
                                 </div>
                                 <div class="form-text">
@@ -143,8 +143,8 @@
                             </div>
                             <div class="col-md-6">
                                 <div class="form-floating">
-                                    <input type="number" class="form-control" id="license_duration_days" name="license_duration_days" 
-                                           placeholder="30" min="1" value="<%= @product.license_duration_days || '' %>">
+                                    <input type="number" class="form-control" id="license_duration_days" name="license_duration_days"
+                                           placeholder="30" min="1" value="<%= @product.license_duration_days || '' %>" autocomplete="off">
                                     <label for="license_duration_days">License Duration (Days)</label>
                                 </div>
                                 <div class="form-text">
@@ -153,8 +153,8 @@
                             </div>
                             <div class="col-md-6">
                                 <div class="form-floating">
-                                    <input type="number" class="form-control" id="trial_period_days" name="trial_period_days" 
-                                           placeholder="0" min="0" max="365" value="<%= @product.trial_period_days || 0 %>">
+                                    <input type="number" class="form-control" id="trial_period_days" name="trial_period_days"
+                                           placeholder="0" min="0" max="365" value="<%= @product.trial_period_days || 0 %>" autocomplete="off">
                                     <label for="trial_period_days">Trial Period (Days)</label>
                                 </div>
                                 <div class="form-text">
@@ -165,7 +165,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <!-- License Settings Card -->
             <div class="admin-card mb-4">
                 <div class="admin-card-header">
@@ -176,8 +176,8 @@
                     <div class="row g-3">
                         <div class="col-md-6">
                             <div class="form-floating">
-                                <input type="number" class="form-control" id="max_activations" name="max_activations" 
-                                       value="<%= @product.max_activations %>" min="1" max="1000" required>
+                                <input type="number" class="form-control" id="max_activations" name="max_activations"
+                                       value="<%= @product.max_activations %>" min="1" max="1000" required autocomplete="off">
                                 <label for="max_activations">Max Activations *</label>
                             </div>
                             <div class="form-text">
@@ -186,8 +186,8 @@
                         </div>
                         <div class="col-md-6">
                             <div class="form-floating">
-                                <input type="text" class="form-control" id="license_key_pattern" name="license_key_pattern" 
-                                       value="XXXX-XXXX-XXXX-XXXX" readonly>
+                                <input type="text" class="form-control" id="license_key_pattern" name="license_key_pattern"
+                                       value="XXXX-XXXX-XXXX-XXXX" readonly autocomplete="off">
                                 <label for="license_key_pattern">License Key Format</label>
                             </div>
                             <div class="form-text">
@@ -197,7 +197,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <!-- Download & Files Card -->
             <div class="admin-card mb-4">
                 <div class="admin-card-header">
@@ -217,7 +217,7 @@
                         <% end %>
                         <div class="col-12">
                             <label for="download_file" class="form-label">Product Download File</label>
-                            <input type="file" class="form-control" id="download_file" name="download_file" 
+                            <input type="file" class="form-control" id="download_file" name="download_file"
                                    accept=".zip,.exe,.dmg,.pkg,.deb,.rpm,.tar.gz">
                             <div class="form-text">
                                 Upload the software file that customers will download. Supported formats: ZIP, EXE, DMG, PKG, DEB, RPM, TAR.GZ
@@ -225,8 +225,8 @@
                         </div>
                         <div class="col-md-6">
                             <div class="form-floating">
-                                <input type="text" class="form-control" id="download_url" name="download_url" 
-                                       placeholder="https://example.com/download" value="<%= @product.download_url || '' %>">
+                                <input type="text" class="form-control" id="download_url" name="download_url"
+                                       placeholder="https://example.com/download" value="<%= @product.download_url || '' %>" autocomplete="off">
                                 <label for="download_url">External Download URL</label>
                             </div>
                             <div class="form-text">
@@ -235,8 +235,8 @@
                         </div>
                         <div class="col-md-6">
                             <div class="form-floating">
-                                <input type="text" class="form-control" id="file_size" name="file_size" 
-                                       placeholder="e.g., 25.5 MB" value="<%= @product.file_size || '' %>">
+                                <input type="text" class="form-control" id="file_size" name="file_size"
+                                       placeholder="e.g., 25.5 MB" value="<%= @product.file_size || '' %>" autocomplete="off">
                                 <label for="file_size">File Size</label>
                             </div>
                             <div class="form-text">
@@ -246,7 +246,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <!-- Product Status Card -->
             <div class="admin-card mb-4">
                 <div class="admin-card-header">
@@ -276,7 +276,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <!-- Form Actions -->
             <div class="d-flex gap-3 mb-4">
                 <button type="submit" class="btn btn-primary">
@@ -288,7 +288,7 @@
             </div>
         </form>
     </div>
-    
+
     <!-- Help Sidebar -->
     <div class="col-lg-4">
         <div class="admin-card">
@@ -300,19 +300,19 @@
                 <div class="mb-3">
                     <h6><i class="fas fa-exclamation-triangle text-warning me-2"></i>Important Notes</h6>
                     <p class="small text-muted">
-                        Changing license type or pricing may affect existing customers. 
+                        Changing license type or pricing may affect existing customers.
                         Consider creating a new product version instead of major changes.
                     </p>
                 </div>
-                
+
                 <div class="mb-3">
                     <h6><i class="fas fa-file-alt text-info me-2"></i>File Updates</h6>
                     <p class="small text-muted">
-                        Uploading a new file will replace the current download. Ensure 
+                        Uploading a new file will replace the current download. Ensure
                         compatibility with existing licenses before updating.
                     </p>
                 </div>
-                
+
                 <div class="mb-3">
                     <h6><i class="fas fa-users text-success me-2"></i>Active Customers</h6>
                     <p class="small text-muted">
@@ -323,9 +323,9 @@
                         <% end %>
                     </p>
                 </div>
-                
+
                 <hr>
-                
+
                 <div class="text-center">
                     <a href="/admin/customize/code-guide" class="btn btn-outline-info btn-sm">
                         <i class="fas fa-book me-2"></i>View Documentation
@@ -333,7 +333,7 @@
                 </div>
             </div>
         </div>
-        
+
         <!-- Product Info Card -->
         <div class="admin-card mt-4">
             <div class="admin-card-header">
@@ -344,13 +344,13 @@
                 <div class="row g-2 small">
                     <div class="col-6"><strong>Product ID:</strong></div>
                     <div class="col-6"><%= @product.id %></div>
-                    
+
                     <div class="col-6"><strong>Created:</strong></div>
                     <div class="col-6"><%= @product.created_at.strftime('%m/%d/%Y') %></div>
-                    
+
                     <div class="col-6"><strong>Updated:</strong></div>
                     <div class="col-6"><%= @product.updated_at.strftime('%m/%d/%Y') %></div>
-                    
+
                     <div class="col-6"><strong>Status:</strong></div>
                     <div class="col-6">
                         <span class="badge bg-<%= @product.active ? 'success' : 'secondary' %>">
@@ -360,7 +360,7 @@
                 </div>
             </div>
         </div>
-        
+
         <!-- Preview Card -->
         <div class="admin-card mt-4">
             <div class="admin-card-header">
@@ -400,7 +400,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const subscriptionOptions = document.getElementById('subscriptionOptions');
     const setupFeeGroup = document.getElementById('setupFeeGroup');
     const form = document.getElementById('productForm');
-    
+
     // Handle license type changes
     licenseTypeRadios.forEach(radio => {
         radio.addEventListener('change', function() {
@@ -416,7 +416,7 @@ document.addEventListener('DOMContentLoaded', function() {
             updatePreview();
         });
     });
-    
+
     // Real-time preview updates
     const previewFields = ['name', 'price', 'description', 'max_activations'];
     previewFields.forEach(fieldId => {
@@ -425,26 +425,26 @@ document.addEventListener('DOMContentLoaded', function() {
             field.addEventListener('input', updatePreview);
         }
     });
-    
+
     licenseTypeRadios.forEach(radio => {
         radio.addEventListener('change', updatePreview);
     });
-    
+
     function updatePreview() {
         const name = document.getElementById('name').value || 'Product Name';
         const price = document.getElementById('price').value || '0.00';
         const description = document.getElementById('description').value || 'Product description will appear here...';
         const maxActivations = document.getElementById('max_activations').value || '1';
         const licenseType = document.querySelector('input[name="license_type"]:checked').value;
-        
+
         document.getElementById('previewName').textContent = name;
         document.getElementById('previewPrice').textContent = parseFloat(price).toFixed(2);
         document.getElementById('previewDescription').textContent = description;
         document.getElementById('previewActivations').textContent = maxActivations;
-        
+
         const typeSpan = document.getElementById('previewType');
         const cycleSpan = document.getElementById('previewCycle');
-        
+
         if (licenseType === 'subscription') {
             typeSpan.textContent = 'Subscription';
             typeSpan.className = 'badge bg-info';
@@ -455,34 +455,34 @@ document.addEventListener('DOMContentLoaded', function() {
             cycleSpan.textContent = '';
         }
     }
-    
+
     // Form validation
     form.addEventListener('submit', function(e) {
         const name = document.getElementById('name').value.trim();
         const price = parseFloat(document.getElementById('price').value);
         const maxActivations = parseInt(document.getElementById('max_activations').value);
-        
+
         if (!name) {
             e.preventDefault();
             alert('Product name is required.');
             document.getElementById('name').focus();
             return;
         }
-        
+
         if (isNaN(price) || price < 0) {
             e.preventDefault();
             alert('Please enter a valid price (0 or greater).');
             document.getElementById('price').focus();
             return;
         }
-        
+
         if (isNaN(maxActivations) || maxActivations <= 0) {
             e.preventDefault();
             alert('Please enter a valid number of max activations.');
             document.getElementById('max_activations').focus();
             return;
         }
-        
+
         // Check if subscription has required fields
         const licenseType = document.querySelector('input[name="license_type"]:checked').value;
         if (licenseType === 'subscription') {
@@ -495,7 +495,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
-    
+
     // Initialize preview
     updatePreview();
 });

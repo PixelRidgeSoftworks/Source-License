@@ -33,22 +33,22 @@
               <div class="col-md-6">
                 <div class="mb-3">
                   <label for="name" class="form-label">Full Name</label>
-                  <input type="text" 
-                         class="form-control" 
-                         id="name" 
-                         name="name" 
+                  <input type="text"
+                         class="form-control"
+                         id="name"
+                         name="name"
                          value="<%= h(@user.name || '') %>"
-                         required>
+                         required autocomplete="name">
                 </div>
               </div>
               <div class="col-md-6">
                 <div class="mb-3">
                   <label for="email" class="form-label">Email Address</label>
-                  <input type="email" 
-                         class="form-control" 
-                         id="email" 
+                  <input type="email"
+                         class="form-control"
+                         id="email"
                          value="<%= h(@user.email) %>"
-                         disabled>
+                         disabled autocomplete="off">
                   <div class="form-text">
                     Email address cannot be changed. Contact support if needed.
                   </div>
@@ -63,33 +63,36 @@
               <div class="col-md-4">
                 <div class="mb-3">
                   <label for="current_password" class="form-label">Current Password</label>
-                  <input type="password" 
-                         class="form-control" 
-                         id="current_password" 
+                  <input type="password"
+                         class="form-control"
+                         id="current_password"
                          name="current_password"
-                         placeholder="Enter current password">
+                         placeholder="Enter current password"
+                         autocomplete="current-password">
                 </div>
               </div>
               <div class="col-md-4">
                 <div class="mb-3">
                   <label for="new_password" class="form-label">New Password</label>
-                  <input type="password" 
-                         class="form-control" 
-                         id="new_password" 
+                  <input type="password"
+                         class="form-control"
+                         id="new_password"
                          name="new_password"
                          minlength="8"
-                         placeholder="Enter new password">
+                         placeholder="Enter new password"
+                         autocomplete="new-password">
                 </div>
               </div>
               <div class="col-md-4">
                 <div class="mb-3">
                   <label for="confirm_password" class="form-label">Confirm New Password</label>
-                  <input type="password" 
-                         class="form-control" 
-                         id="confirm_password" 
+                  <input type="password"
+                         class="form-control"
+                         id="confirm_password"
                          name="confirm_password"
                          minlength="8"
-                         placeholder="Confirm new password">
+                         placeholder="Confirm new password"
+                         autocomplete="new-password">
                 </div>
               </div>
             </div>
@@ -207,7 +210,7 @@ document.addEventListener('DOMContentLoaded', function() {
   const newPassword = document.getElementById('new_password');
   const confirmPassword = document.getElementById('confirm_password');
   const currentPassword = document.getElementById('current_password');
-  
+
   function validatePasswords() {
     if (newPassword.value && confirmPassword.value) {
       if (newPassword.value !== confirmPassword.value) {
@@ -218,7 +221,7 @@ document.addEventListener('DOMContentLoaded', function() {
     } else {
       confirmPassword.setCustomValidity('');
     }
-    
+
     // If any password field is filled, require current password
     if ((newPassword.value || confirmPassword.value) && !currentPassword.value) {
       currentPassword.setCustomValidity('Current password is required to change password');
@@ -226,7 +229,7 @@ document.addEventListener('DOMContentLoaded', function() {
       currentPassword.setCustomValidity('');
     }
   }
-  
+
   newPassword.addEventListener('input', validatePasswords);
   confirmPassword.addEventListener('input', validatePasswords);
   currentPassword.addEventListener('input', validatePasswords);

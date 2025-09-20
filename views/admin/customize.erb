@@ -128,17 +128,17 @@ function openCategory(categoryId) {
     currentCategory = categoryId;
     const category = window.categories[categoryId];
     const categoryData = window.customizations[categoryId] || {};
-    
+
     document.getElementById('modalTitle').textContent = category.title;
-    
+
     // Generate form fields based on category
     const formHtml = generateCategoryForm(categoryId, categoryData);
     document.getElementById('customizationForm').innerHTML = formHtml;
-    
+
     // Show modal
     const modal = new bootstrap.Modal(document.getElementById('customizationModal'));
     modal.show();
-    
+
     // Initialize color pickers and other widgets
     initializeFormWidgets();
 }
@@ -146,7 +146,7 @@ function openCategory(categoryId) {
 // Generate form HTML for a category
 function generateCategoryForm(categoryId, data) {
     let html = '';
-    
+
     switch(categoryId) {
         case 'branding':
             html = `
@@ -178,7 +178,7 @@ function generateCategoryForm(categoryId, data) {
                 </div>
             `;
             break;
-            
+
         case 'colors':
             html = `
                 <div class="row g-3">
@@ -225,7 +225,7 @@ function generateCategoryForm(categoryId, data) {
                 </div>
             `;
             break;
-            
+
         case 'text':
             html = `
                 <div class="row g-3">
@@ -264,7 +264,7 @@ function generateCategoryForm(categoryId, data) {
                         <label class="form-label">Support Section Title</label>
                         <input type="text" class="form-control" name="support_title" value="${data.support_title || ''}" placeholder="Need Help?">
                     </div>
-                    
+
                     <hr class="my-4">
                     <div class="col-12">
                         <h6 class="text-primary mb-3">Cart & Checkout Text</h6>
@@ -313,7 +313,7 @@ function generateCategoryForm(categoryId, data) {
                         <label class="form-label">Secure Checkout</label>
                         <input type="text" class="form-control" name="checkout_secure_title" value="${data.checkout_secure_title || ''}" placeholder="Secure Checkout">
                     </div>
-                    
+
                     <hr class="my-4">
                     <div class="col-12">
                         <h6 class="text-primary mb-3">License Validation Text</h6>
@@ -346,7 +346,7 @@ function generateCategoryForm(categoryId, data) {
                         <label class="form-label">Invalid License Title</label>
                         <input type="text" class="form-control" name="validate_invalid_title" value="${data.validate_invalid_title || ''}" placeholder="Invalid License">
                     </div>
-                    
+
                     <hr class="my-4">
                     <div class="col-12">
                         <h6 class="text-primary mb-3">User Dashboard Text</h6>
@@ -387,7 +387,7 @@ function generateCategoryForm(categoryId, data) {
                         <label class="form-label">Browse Products</label>
                         <input type="text" class="form-control" name="dashboard_browse_products" value="${data.dashboard_browse_products || ''}" placeholder="Browse Products">
                     </div>
-                    
+
                     <hr class="my-4">
                     <div class="col-12">
                         <h6 class="text-primary mb-3">Login Page Text</h6>
@@ -415,7 +415,7 @@ function generateCategoryForm(categoryId, data) {
                 </div>
             `;
             break;
-            
+
         case 'layout':
             html = `
                 <div class="row g-3">
@@ -446,7 +446,7 @@ function generateCategoryForm(categoryId, data) {
                 </div>
             `;
             break;
-            
+
         case 'hero_section':
             html = `
                 <div class="row g-3">
@@ -480,10 +480,10 @@ function generateCategoryForm(categoryId, data) {
                         <label class="form-label">Secondary Button Link</label>
                         <input type="text" class="form-control" name="cta_secondary_link" value="${data.cta_secondary_link || ''}" placeholder="/register">
                     </div>
-                    
+
                     <hr class="my-4">
                     <h6 class="text-primary mb-3">Trust Indicators</h6>
-                    
+
                     <div class="col-12">
                         <div class="form-check form-switch mb-3">
                             <input class="form-check-input" type="checkbox" name="show_trust_indicators" ${data.show_trust_indicators ? 'checked' : ''}>
@@ -514,10 +514,10 @@ function generateCategoryForm(categoryId, data) {
                         <label class="form-label">Indicator 3 Text</label>
                         <input type="text" class="form-control" name="trust_indicator_3_text" value="${data.trust_indicator_3_text || ''}" placeholder="24/7 Support">
                     </div>
-                    
+
                     <hr class="my-4">
                     <h6 class="text-primary mb-3">Visual Elements</h6>
-                    
+
                     <div class="col-md-4">
                         <div class="form-check form-switch">
                             <input class="form-check-input" type="checkbox" name="show_license_card" ${data.show_license_card ? 'checked' : ''}>
@@ -539,7 +539,7 @@ function generateCategoryForm(categoryId, data) {
                 </div>
             `;
             break;
-            
+
         case 'features_section':
             html = `
                 <div class="row g-3">
@@ -565,10 +565,10 @@ function generateCategoryForm(categoryId, data) {
                         <label class="form-label">Section Subtitle</label>
                         <textarea class="form-control" name="subtitle" rows="2" placeholder="Built with modern technology...">${data.subtitle || ''}</textarea>
                     </div>
-                    
+
                     <hr class="my-4">
                     <h6 class="text-primary mb-3">Features (Configure up to 6 features)</h6>
-                    
+
                     ${[1,2,3,4,5,6].map(i => `
                         <div class="col-12">
                             <div class="card mb-3">
@@ -600,7 +600,7 @@ function generateCategoryForm(categoryId, data) {
                 </div>
             `;
             break;
-            
+
         case 'products_section':
             html = `
                 <div class="row g-3">
@@ -626,10 +626,10 @@ function generateCategoryForm(categoryId, data) {
                         <label class="form-label">Section Subtitle</label>
                         <textarea class="form-control" name="subtitle" rows="2" placeholder="Choose from our selection...">${data.subtitle || ''}</textarea>
                     </div>
-                    
+
                     <hr class="my-4">
                     <h6 class="text-primary mb-3">No Products Display</h6>
-                    
+
                     <div class="col-12">
                         <div class="form-check form-switch mb-3">
                             <input class="form-check-input" type="checkbox" name="show_when_no_products" ${data.show_when_no_products ? 'checked' : ''}>
@@ -647,7 +647,7 @@ function generateCategoryForm(categoryId, data) {
                 </div>
             `;
             break;
-            
+
         case 'how_it_works':
             html = `
                 <div class="row g-3">
@@ -665,10 +665,10 @@ function generateCategoryForm(categoryId, data) {
                         <label class="form-label">Section Subtitle</label>
                         <input type="text" class="form-control" name="subtitle" value="${data.subtitle || ''}" placeholder="Get your software license in three simple steps.">
                     </div>
-                    
+
                     <hr class="my-4">
                     <h6 class="text-primary mb-3">Steps</h6>
-                    
+
                     ${[1,2,3].map(i => `
                         <div class="col-12">
                             <div class="card mb-3">
@@ -700,7 +700,7 @@ function generateCategoryForm(categoryId, data) {
                 </div>
             `;
             break;
-            
+
         case 'support_section':
             html = `
                 <div class="row g-3">
@@ -718,10 +718,10 @@ function generateCategoryForm(categoryId, data) {
                         <label class="form-label">Section Subtitle</label>
                         <input type="text" class="form-control" name="subtitle" value="${data.subtitle || ''}" placeholder="We're here to help you...">
                     </div>
-                    
+
                     <hr class="my-4">
                     <h6 class="text-primary mb-3">Support Cards</h6>
-                    
+
                     ${[1,2].map(i => `
                         <div class="col-12">
                             <div class="card mb-3">
@@ -780,7 +780,7 @@ function generateCategoryForm(categoryId, data) {
                 </div>
             `;
             break;
-            
+
         case 'page_structure':
             html = `
                 <div class="row g-3">
@@ -788,7 +788,7 @@ function generateCategoryForm(categoryId, data) {
                         <h6 class="text-primary mb-3">Section Visibility</h6>
                         <p class="text-muted mb-3">Control which sections appear on the homepage</p>
                     </div>
-                    
+
                     <div class="col-md-6">
                         <div class="form-check form-switch">
                             <input class="form-check-input" type="checkbox" name="hero_enabled" ${data.hero_enabled ? 'checked' : ''}>
@@ -819,7 +819,7 @@ function generateCategoryForm(categoryId, data) {
                             <label class="form-check-label">Support Section</label>
                         </div>
                     </div>
-                    
+
                     <hr class="my-4">
                     <div class="col-12">
                         <h6 class="text-primary mb-3">Section Order</h6>
@@ -832,7 +832,7 @@ function generateCategoryForm(categoryId, data) {
                 </div>
             `;
             break;
-            
+
         case 'advanced':
             html = `
                 <div class="row g-3">
@@ -876,7 +876,7 @@ function generateCategoryForm(categoryId, data) {
             `;
             break;
     }
-    
+
     return html;
 }
 
@@ -897,13 +897,13 @@ function saveCustomizations() {
         AdminUtils.showNotification('No changes to save', 'info');
         return;
     }
-    
+
     // Prepare updates with category prefix
     const updates = {};
     Object.keys(modifiedFields).forEach(field => {
         updates[`${currentCategory}.${field}`] = modifiedFields[field];
     });
-    
+
     // Send to server
     fetch('/admin/customize', {
         method: 'POST',
@@ -916,7 +916,7 @@ function saveCustomizations() {
     .then(data => {
         if (data.success) {
             AdminUtils.showNotification(data.message, 'success');
-            
+
             // Update local data
             Object.keys(modifiedFields).forEach(field => {
                 if (!window.customizations[currentCategory]) {
@@ -924,10 +924,10 @@ function saveCustomizations() {
                 }
                 window.customizations[currentCategory][field] = modifiedFields[field];
             });
-            
+
             // Reset modified fields
             modifiedFields = {};
-            
+
             // Close modal
             const modal = bootstrap.Modal.getInstance(document.getElementById('customizationModal'));
             modal.hide();
@@ -954,7 +954,7 @@ function showImportModal() {
 // Import customizations
 function importCustomizations() {
     const formData = new FormData(document.getElementById('importForm'));
-    
+
     fetch('/admin/customize/import', {
         method: 'POST',
         body: formData
@@ -963,11 +963,11 @@ function importCustomizations() {
     .then(data => {
         if (data.success) {
             AdminUtils.showNotification(data.message, 'success');
-            
+
             // Close modal and reload page
             const modal = bootstrap.Modal.getInstance(document.getElementById('importModal'));
             modal.hide();
-            
+
             setTimeout(() => {
                 window.location.reload();
             }, 1500);
@@ -985,7 +985,7 @@ function resetToDefaults() {
     if (!AdminUtils.confirmAction('Are you sure you want to reset all customizations to defaults? This cannot be undone.')) {
         return;
     }
-    
+
     fetch('/admin/customize/reset', {
         method: 'POST'
     })

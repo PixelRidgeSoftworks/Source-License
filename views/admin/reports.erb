@@ -7,19 +7,19 @@
     <div class="d-flex gap-2">
         <!-- Date Range Selector -->
         <form method="get" class="d-flex gap-2 align-items-center">
-            <input type="date" name="start_date" value="<%= @date_range[:start] %>" 
-                   class="form-control form-control-sm" style="width: auto;">
+            <input type="date" name="start_date" value="<%= @date_range[:start] %>"
+                   class="form-control form-control-sm" style="width: auto;" autocomplete="off">
             <span class="text-muted">to</span>
-            <input type="date" name="end_date" value="<%= @date_range[:end] %>" 
-                   class="form-control form-control-sm" style="width: auto;">
+            <input type="date" name="end_date" value="<%= @date_range[:end] %>"
+                   class="form-control form-control-sm" style="width: auto;" autocomplete="off">
             <button type="submit" class="btn btn-primary btn-sm">
                 <i class="fas fa-filter me-1"></i>Apply
             </button>
         </form>
-        
+
         <!-- Export Dropdown -->
         <div class="dropdown">
-            <button class="btn btn-outline-success dropdown-toggle btn-sm" type="button" 
+            <button class="btn btn-outline-success dropdown-toggle btn-sm" type="button"
                     data-bs-toggle="dropdown" aria-expanded="false">
                 <i class="fas fa-download me-1"></i>Export
             </button>
@@ -81,7 +81,7 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Orders Card -->
     <div class="col-xl-3 col-md-6">
         <div class="stat-card">
@@ -104,7 +104,7 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Licenses Card -->
     <div class="col-xl-3 col-md-6">
         <div class="stat-card">
@@ -127,7 +127,7 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Customers Card -->
     <div class="col-xl-3 col-md-6">
         <div class="stat-card">
@@ -166,7 +166,7 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Order Status Distribution -->
     <div class="col-lg-4">
         <div class="data-table">
@@ -228,7 +228,7 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <!-- Payment Methods Breakdown -->
                 <% if @order_stats[:payment_methods].any? %>
                 <hr>
@@ -246,7 +246,7 @@
             </div>
         </div>
     </div>
-    
+
     <!-- License Statistics -->
     <div class="col-lg-6">
         <div class="admin-card">
@@ -292,20 +292,20 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <!-- License Health Progress Bar -->
                 <hr>
                 <h6 class="mb-2">License Health</h6>
                 <% health_percentage = @license_stats[:overall_total] > 0 ? (@license_stats[:overall_active].to_f / @license_stats[:overall_total] * 100) : 0 %>
                 <div class="progress mb-2" style="height: 10px;">
-                    <div class="progress-bar bg-success" role="progressbar" 
-                         style="width: <%= health_percentage %>%" 
-                         aria-valuenow="<%= health_percentage %>" 
+                    <div class="progress-bar bg-success" role="progressbar"
+                         style="width: <%= health_percentage %>%"
+                         aria-valuenow="<%= health_percentage %>"
                          aria-valuemin="0" aria-valuemax="100">
                     </div>
                 </div>
                 <small class="text-muted">
-                    <%= @license_stats[:overall_active] %> of <%= @license_stats[:overall_total] %> licenses active 
+                    <%= @license_stats[:overall_active] %> of <%= @license_stats[:overall_total] %> licenses active
                     (<%= format('%.1f', health_percentage) %>%)
                 </small>
             </div>
@@ -321,7 +321,7 @@
                 <i class="fas fa-trophy me-2"></i>
                 Top Performing Products
             </h5>
-            
+
             <div class="table-responsive">
                 <% if @product_performance.any? %>
                 <table class="table table-hover mb-0">
@@ -412,7 +412,7 @@
             </div>
         </div>
     </div>
-    
+
     <div class="col-lg-6">
         <div class="admin-card">
             <div class="admin-card-header">
@@ -432,11 +432,11 @@ document.addEventListener('DOMContentLoaded', function() {
     // Chart.js configuration
     Chart.defaults.color = '#e6edf3';
     Chart.defaults.borderColor = 'rgba(255, 255, 255, 0.1)';
-    
+
     // Revenue Trend Chart
     const revenueTrendCtx = document.getElementById('revenueTrendChart').getContext('2d');
     const revenueTrendData = <%= json_for_js(@chart_data[:revenue_trend]) %>;
-    
+
     new Chart(revenueTrendCtx, {
         type: 'line',
         data: {
@@ -493,11 +493,11 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
-    
+
     // Order Status Chart
     const orderStatusCtx = document.getElementById('orderStatusChart').getContext('2d');
     const orderStatusData = <%= json_for_js(@chart_data[:order_status_distribution]) %>;
-    
+
     new Chart(orderStatusCtx, {
         type: 'doughnut',
         data: {
@@ -522,11 +522,11 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
-    
+
     // License Distribution Chart
     const licenseDistCtx = document.getElementById('licenseDistributionChart').getContext('2d');
     const licenseDistData = <%= json_for_js(@chart_data[:license_distribution]) %>;
-    
+
     new Chart(licenseDistCtx, {
         type: 'pie',
         data: {
@@ -560,44 +560,44 @@ document.addEventListener('DOMContentLoaded', function() {
         transition: all 0.3s ease;
         cursor: default;
     }
-    
+
     .stat-card:hover {
         transform: translateY(-2px);
         box-shadow: var(--shadow-lg);
     }
-    
+
     .progress {
         background-color: var(--surface-tertiary);
     }
-    
+
     .table th {
         border-bottom: 1px solid var(--border-default);
         background-color: var(--surface-tertiary);
         color: var(--text-primary);
     }
-    
+
     .table td {
         border-bottom: 1px solid var(--border-muted);
     }
-    
+
     .badge {
         font-size: 0.75rem;
     }
-    
+
     .dropdown-header {
         color: var(--text-secondary);
         font-weight: 600;
     }
-    
+
     .dropdown-item {
         color: var(--text-primary);
     }
-    
+
     .dropdown-item:hover {
         background-color: var(--surface-tertiary);
         color: var(--accent-primary);
     }
-    
+
     canvas {
         max-height: 400px;
     }

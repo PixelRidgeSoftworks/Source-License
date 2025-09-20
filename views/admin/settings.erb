@@ -36,7 +36,7 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Main Settings Content -->
     <div class="col-xl-9 col-lg-8">
         <div id="settingsContent">
@@ -73,7 +73,7 @@
                         <input type="file" class="form-control" id="importFile" name="file" accept=".yml,.yaml" required>
                         <div class="form-text">Upload a YAML file containing settings configuration</div>
                     </div>
-                    
+
                     <div class="alert alert-warning">
                         <i class="fas fa-exclamation-triangle me-2"></i>
                         <strong>Warning:</strong> Importing settings will overwrite existing values. Make sure to export current settings first.
@@ -104,7 +104,6 @@
         </div>
     </div>
 </div>
-
 
 <!-- Quick Actions Section -->
 <div class="mt-5">
@@ -146,7 +145,7 @@
             </div>
             <div class="modal-body">
                 <p class="text-muted">Configure payment gateway settings in your <code>.env</code> file:</p>
-                
+
                 <div class="row g-4">
                     <div class="col-md-6">
                         <h6>Stripe Configuration</h6>
@@ -161,7 +160,7 @@ PAYPAL_CLIENT_SECRET=your_secret
 PAYPAL_ENVIRONMENT=sandbox</code></pre>
                     </div>
                 </div>
-                
+
                 <div class="alert alert-warning mt-3">
                     <i class="fas fa-exclamation-triangle me-2"></i>
                     <strong>Important:</strong> Restart the application after updating environment variables.
@@ -183,13 +182,13 @@ PAYPAL_ENVIRONMENT=sandbox</code></pre>
             </div>
             <div class="modal-body">
                 <p class="text-muted">Configure SMTP settings in your <code>.env</code> file:</p>
-                
+
                 <pre class="bg-light p-3 rounded small"><code>SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_USERNAME=your_email@gmail.com
 SMTP_PASSWORD=your_app_password
 SMTP_TLS=true</code></pre>
-                
+
                 <div class="alert alert-info mt-3">
                     <i class="fas fa-info-circle me-2"></i>
                     <strong>Gmail Users:</strong> Use an App Password instead of your regular password.
@@ -382,7 +381,7 @@ SMTP_TLS=true</code></pre>
     .sticky-top {
         position: static !important;
     }
-    
+
     .settings-nav-card {
         margin-bottom: 2rem;
     }
@@ -416,7 +415,7 @@ async function loadSettings() {
     try {
         const response = await fetch('/api/settings/categories');
         const data = await response.json();
-        
+
         if (data.success) {
             settingsData = data.categories;
             renderSettingsNavigation();
@@ -433,27 +432,27 @@ async function loadSettings() {
 function renderSettingsNavigation() {
     const nav = document.getElementById('settingsNav');
     nav.innerHTML = '';
-    
+
     settingsData.forEach(category => {
         const categoryName = category.name;
         const categoryTitle = categoryName.charAt(0).toUpperCase() + categoryName.slice(1);
         const settingsCount = category.settings.length;
-        
+
         const categoryIcon = getCategoryIcon(categoryName);
-        
+
         const navItem = document.createElement('a');
         navItem.href = '#';
         navItem.className = 'nav-link';
         navItem.onclick = (event) => loadCategory(categoryName, event.target);
         navItem.setAttribute('data-category', categoryName);
-        
+
         navItem.innerHTML = `
             <div class="d-flex align-items-center">
                 <i class="${categoryIcon} me-2"></i>
                 <span class="flex-grow-1">${categoryTitle}</span>
             </div>
         `;
-        
+
         nav.appendChild(navItem);
     });
 }
@@ -478,12 +477,12 @@ function getCategoryIcon(category) {
 // Load category settings
 function loadCategory(categoryName, targetElement) {
     currentCategory = categoryName;
-    
+
     // Update navigation
     document.querySelectorAll('#settingsNav .nav-link').forEach(item => {
         item.classList.remove('active');
     });
-    
+
     // Only try to set active if we have a target element (from click event)
     if (targetElement) {
         const navLink = targetElement.closest('.nav-link');
@@ -500,11 +499,11 @@ function loadCategory(categoryName, targetElement) {
             }
         });
     }
-    
+
     // Find category data
     const categoryData = settingsData.find(cat => cat.name === categoryName);
     if (!categoryData) return;
-    
+
     renderCategorySettings(categoryData);
 }
 
@@ -512,7 +511,7 @@ function loadCategory(categoryName, targetElement) {
 function renderCategorySettings(categoryData) {
     const content = document.getElementById('settingsContent');
     const categoryTitle = categoryData.name.charAt(0).toUpperCase() + categoryData.name.slice(1);
-    
+
     content.innerHTML = `
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
@@ -543,7 +542,7 @@ function renderSettingsForm(settings) {
     return settings.map(setting => {
         const schema = setting.schema;
         const fieldId = setting.key.replace(/\./g, '_');
-        
+
         return `
             <div class="mb-4">
                 <div class="d-flex justify-content-between align-items-center mb-2">
@@ -553,11 +552,11 @@ function renderSettingsForm(settings) {
                     </label>
                     ${!schema.web_editable ? '<span class="badge bg-secondary">Read-only</span>' : ''}
                 </div>
-                
+
                 <div class="mb-2">
                     ${renderSettingInput(setting, fieldId)}
                 </div>
-                
+
                 <div class="form-text">
                     ${schema.description}
                     ${schema.default !== undefined ? `<br><small class="text-muted">Default: ${schema.default}</small>` : ''}
@@ -572,12 +571,12 @@ function renderSettingInput(setting, fieldId) {
     const schema = setting.schema;
     const value = setting.value || '';
     const disabled = !schema.web_editable ? 'disabled' : '';
-    
+
     switch (schema.type) {
         case 'boolean':
             return `
                 <div class="form-check form-switch">
-                    <input class="form-check-input" type="checkbox" id="${fieldId}" 
+                    <input class="form-check-input" type="checkbox" id="${fieldId}"
                            ${value ? 'checked' : ''} ${disabled}
                            data-key="${setting.key}">
                     <label class="form-check-label" for="${fieldId}">
@@ -585,9 +584,9 @@ function renderSettingInput(setting, fieldId) {
                     </label>
                 </div>
             `;
-            
+
         case 'select':
-            const options = schema.options.map(option => 
+            const options = schema.options.map(option =>
                 `<option value="${option}" ${value === option ? 'selected' : ''}>${option}</option>`
             ).join('');
             return `
@@ -595,11 +594,11 @@ function renderSettingInput(setting, fieldId) {
                     ${options}
                 </select>
             `;
-            
+
         case 'password':
             return `
                 <div class="input-group">
-                    <input type="password" class="form-control" id="${fieldId}" 
+                    <input type="password" class="form-control" id="${fieldId}"
                            value="${schema.sensitive ? (value ? '••••••••' : '') : value}"
                            data-key="${setting.key}" ${disabled}
                            placeholder="${schema.sensitive && value ? 'Enter new value to change' : ''}">
@@ -608,22 +607,22 @@ function renderSettingInput(setting, fieldId) {
                     </button>
                 </div>
             `;
-            
+
         case 'text':
             return `
-                <textarea class="form-control" id="${fieldId}" rows="3" 
+                <textarea class="form-control" id="${fieldId}" rows="3"
                           data-key="${setting.key}" ${disabled}>${value}</textarea>
             `;
-            
+
         case 'number':
             return `
-                <input type="number" class="form-control" id="${fieldId}" 
+                <input type="number" class="form-control" id="${fieldId}"
                        value="${value}" data-key="${setting.key}" ${disabled}>
             `;
-            
+
         default:
             return `
-                <input type="text" class="form-control" id="${fieldId}" 
+                <input type="text" class="form-control" id="${fieldId}"
                        value="${value}" data-key="${setting.key}" ${disabled}>
             `;
     }
@@ -643,7 +642,7 @@ function togglePassword(fieldId) {
     const field = document.getElementById(fieldId);
     const button = field.nextElementSibling;
     const icon = button.querySelector('i');
-    
+
     if (field.type === 'password') {
         field.type = 'text';
         icon.className = 'fas fa-eye-slash';
@@ -658,12 +657,12 @@ async function saveCategory(categoryName) {
     const form = document.getElementById('categoryForm');
     const formData = new FormData(form);
     const settings = [];
-    
+
     // Collect all settings from form
     form.querySelectorAll('[data-key]').forEach(input => {
         const key = input.dataset.key;
         let value;
-        
+
         if (input.type === 'checkbox') {
             value = input.checked;
         } else if (input.value && input.value !== '••••••••') {
@@ -674,10 +673,10 @@ async function saveCategory(categoryName) {
         } else {
             value = input.value || '';
         }
-        
+
         settings.push({ key, value });
     });
-    
+
     try {
         const response = await fetch('/api/settings/bulk-update', {
             method: 'POST',
@@ -686,9 +685,9 @@ async function saveCategory(categoryName) {
             },
             body: JSON.stringify({ settings })
         });
-        
+
         const data = await response.json();
-        
+
         if (data.success) {
             AdminUtils.showNotification(data.message, 'success');
             loadSettings(); // Reload to reflect changes
@@ -707,9 +706,9 @@ async function testConfiguration(categoryName) {
         const response = await fetch(`/api/settings/${categoryName}/test`, {
             method: 'POST'
         });
-        
+
         const data = await response.json();
-        
+
         if (data.success) {
             showTestResults(data.test_results);
         } else {
@@ -724,14 +723,14 @@ async function testConfiguration(categoryName) {
 // Show test results
 function showTestResults(results) {
     const content = document.getElementById('testResultsContent');
-    
+
     let html = '';
     Object.entries(results).forEach(([category, result]) => {
         const statusIcon = result.status === 'ok' ? 'fas fa-check-circle text-success' :
                           result.status === 'warning' ? 'fas fa-exclamation-triangle text-warning' :
                           result.status === 'error' ? 'fas fa-times-circle text-danger' :
                           'fas fa-info-circle text-info';
-        
+
         html += `
             <div class="d-flex align-items-center mb-3">
                 <i class="${statusIcon} me-3"></i>
@@ -742,9 +741,9 @@ function showTestResults(results) {
             </div>
         `;
     });
-    
+
     content.innerHTML = html;
-    
+
     const modal = new bootstrap.Modal(document.getElementById('testResultsModal'));
     modal.show();
 }
@@ -754,7 +753,7 @@ async function exportSettings() {
     try {
         const response = await fetch('/api/settings/export');
         const blob = await response.blob();
-        
+
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.style.display = 'none';
@@ -764,7 +763,7 @@ async function exportSettings() {
         a.click();
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
-        
+
         AdminUtils.showNotification('Settings exported successfully', 'success');
     } catch (error) {
         console.error('Error exporting settings:', error);
@@ -782,23 +781,23 @@ function showImportModal() {
 async function importSettings() {
     const fileInput = document.getElementById('importFile');
     const file = fileInput.files[0];
-    
+
     if (!file) {
         AdminUtils.showNotification('Please select a file', 'warning');
         return;
     }
-    
+
     const formData = new FormData();
     formData.append('file', file);
-    
+
     try {
         const response = await fetch('/api/settings/import', {
             method: 'POST',
             body: formData
         });
-        
+
         const data = await response.json();
-        
+
         if (data.success) {
             AdminUtils.showNotification(data.message, 'success');
             bootstrap.Modal.getInstance(document.getElementById('importModal')).hide();
@@ -817,7 +816,7 @@ async function generateEnvFile() {
     try {
         const response = await fetch('/api/settings/generate-env');
         const blob = await response.blob();
-        
+
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.style.display = 'none';
@@ -827,7 +826,7 @@ async function generateEnvFile() {
         a.click();
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
-        
+
         AdminUtils.showNotification('.env file generated successfully', 'success');
     } catch (error) {
         console.error('Error generating .env file:', error);
@@ -848,19 +847,19 @@ async function backupDatabase() {
     if (!AdminUtils.confirmAction('Create a database backup? This may take a few moments.')) {
         return;
     }
-    
+
     try {
         AdminUtils.showNotification('Database backup started...', 'info');
-        
+
         const response = await fetch('/admin/database/backup', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             }
         });
-        
+
         const data = await response.json();
-        
+
         if (data.success) {
             AdminUtils.showNotification(data.message, 'success');
         } else {
@@ -875,19 +874,19 @@ async function runMigrations() {
     if (!AdminUtils.confirmAction('Run database migrations? This will update your database schema.')) {
         return;
     }
-    
+
     try {
         AdminUtils.showNotification('Running migrations...', 'info');
-        
+
         const response = await fetch('/admin/database/migrate', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             }
         });
-        
+
         const data = await response.json();
-        
+
         if (data.success) {
             AdminUtils.showNotification(data.message, 'success');
         } else {
@@ -906,7 +905,7 @@ async function regenerateApiKeys() {
     if (!AdminUtils.confirmAction('Regenerate API keys? This will invalidate existing tokens.')) {
         return;
     }
-    
+
     try {
         const response = await fetch('/admin/security/regenerate-keys', {
             method: 'POST',
@@ -914,9 +913,9 @@ async function regenerateApiKeys() {
                 'Content-Type': 'application/json'
             }
         });
-        
+
         const data = await response.json();
-        
+
         if (data.success) {
             AdminUtils.showNotification(data.message, 'success');
         } else {
@@ -934,9 +933,9 @@ function showSystemInfo() {
 async function downloadLogs() {
     try {
         AdminUtils.showNotification('Preparing log files for download...', 'info');
-        
+
         const response = await fetch('/admin/logs/download');
-        
+
         if (response.ok) {
             const blob = await response.blob();
             const url = window.URL.createObjectURL(blob);
@@ -948,7 +947,7 @@ async function downloadLogs() {
             a.click();
             window.URL.revokeObjectURL(url);
             document.body.removeChild(a);
-            
+
             AdminUtils.showNotification('Log files downloaded!', 'success');
         } else {
             AdminUtils.showNotification('Log files not found', 'warning');
@@ -962,19 +961,19 @@ async function exportData() {
     if (!AdminUtils.confirmAction('Export all system data? This will create a comprehensive backup.')) {
         return;
     }
-    
+
     try {
         AdminUtils.showNotification('Preparing data export...', 'info');
-        
+
         const response = await fetch('/admin/data/export', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             }
         });
-        
+
         const data = await response.json();
-        
+
         if (data.success) {
             AdminUtils.showNotification(data.message, 'success');
         } else {

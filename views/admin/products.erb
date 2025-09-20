@@ -26,7 +26,7 @@
             </div>
         </div>
     </div>
-    
+
     <div class="col-xl-3 col-md-6">
         <div class="stat-card">
             <div class="d-flex justify-content-between align-items-start">
@@ -40,7 +40,7 @@
             </div>
         </div>
     </div>
-    
+
     <div class="col-xl-3 col-md-6">
         <div class="stat-card">
             <div class="d-flex justify-content-between align-items-start">
@@ -54,7 +54,7 @@
             </div>
         </div>
     </div>
-    
+
     <div class="col-xl-3 col-md-6">
         <div class="stat-card">
             <div class="d-flex justify-content-between align-items-start">
@@ -77,7 +77,7 @@
             <span class="input-group-text">
                 <i class="fas fa-search"></i>
             </span>
-            <input type="text" class="form-control" placeholder="Search products..." id="productSearch">
+            <input type="text" class="form-control" placeholder="Search products..." id="productSearch" autocomplete="off">
         </div>
     </div>
     <div class="col-md-6">
@@ -128,7 +128,7 @@
         <i class="fas fa-box me-2"></i>
         Products
     </h5>
-    
+
     <div class="table-responsive">
         <% if @products.any? %>
         <table class="table table-hover table-dark mb-0" id="productsTable">
@@ -148,12 +148,12 @@
             </thead>
             <tbody>
                 <% @products.each do |product| %>
-                <tr class="product-row" 
+                <tr class="product-row"
                     data-status="<%= product.active ? 'active' : 'inactive' %>"
                     data-type="<%= product.license_type %>"
                     data-name="<%= h(product.name.downcase) %>">
                     <td>
-                        <input type="checkbox" class="form-check-input product-checkbox" 
+                        <input type="checkbox" class="form-check-input product-checkbox"
                                value="<%= product.id %>" data-product-name="<%= h(product.name) %>">
                     </td>
                     <td>
@@ -233,12 +233,12 @@
                     </td>
                     <td>
                         <div class="btn-group btn-group-sm">
-                            <a href="/admin/products/<%= product.id %>" 
+                            <a href="/admin/products/<%= product.id %>"
                                class="btn btn-outline-primary"
                                title="View Details">
                                 <i class="fas fa-eye"></i>
                             </a>
-                            <a href="/admin/products/<%= product.id %>/edit" 
+                            <a href="/admin/products/<%= product.id %>/edit"
                                class="btn btn-outline-secondary"
                                title="Edit">
                                 <i class="fas fa-edit"></i>
@@ -249,7 +249,7 @@
                                 <i class="fas fa-<%= product.active ? 'pause' : 'play' %>"></i>
                             </button>
                             <div class="dropdown">
-                                <button class="btn btn-outline-secondary dropdown-toggle" 
+                                <button class="btn btn-outline-secondary dropdown-toggle"
                                         data-bs-toggle="dropdown">
                                     <i class="fas fa-ellipsis-v"></i>
                                 </button>
@@ -266,7 +266,7 @@
                                     </li>
                                     <li><hr class="dropdown-divider"></li>
                                     <li>
-                                        <button class="dropdown-item text-danger" 
+                                        <button class="dropdown-item text-danger"
                                                 onclick="deleteProduct(<%= product.id %>, '<%= h(product.name) %>')">
                                             <i class="fas fa-trash me-2"></i>Delete
                                         </button>
@@ -292,7 +292,7 @@
         </div>
         <% end %>
     </div>
-    
+
     <% if @products.any? %>
     <div class="card-footer" style="background: var(--surface-tertiary); border-top: 1px solid var(--border-default);">
         <div class="d-flex justify-content-between align-items-center">
@@ -320,37 +320,37 @@ document.addEventListener('DOMContentLoaded', function() {
     const productCheckboxes = document.querySelectorAll('.product-checkbox');
     const bulkToolbar = document.getElementById('bulkActionsToolbar');
     const selectedCountElement = document.getElementById('selectedCount');
-    
+
     // Search and filter functionality
     function filterProducts() {
         const searchTerm = searchInput.value.toLowerCase();
         const statusValue = statusFilter.value;
         const typeValue = typeFilter.value;
         const rows = document.querySelectorAll('.product-row');
-        
+
         rows.forEach(row => {
             const name = row.dataset.name;
             const status = row.dataset.status;
             const type = row.dataset.type;
-            
+
             const matchesSearch = !searchTerm || name.includes(searchTerm);
             const matchesStatus = !statusValue || status === statusValue;
             const matchesType = !typeValue || type === typeValue;
-            
+
             row.style.display = (matchesSearch && matchesStatus && matchesType) ? '' : 'none';
         });
-        
+
         // Update bulk selection after filtering
         updateBulkSelection();
     }
-    
+
     // Bulk selection functionality
     function updateBulkSelection() {
-        const visibleCheckboxes = Array.from(productCheckboxes).filter(cb => 
+        const visibleCheckboxes = Array.from(productCheckboxes).filter(cb =>
             cb.closest('.product-row').style.display !== 'none'
         );
         const checkedBoxes = visibleCheckboxes.filter(cb => cb.checked);
-        
+
         // Update select all checkbox state
         if (checkedBoxes.length === 0) {
             selectAllCheckbox.indeterminate = false;
@@ -362,7 +362,7 @@ document.addEventListener('DOMContentLoaded', function() {
             selectAllCheckbox.indeterminate = true;
             selectAllCheckbox.checked = false;
         }
-        
+
         // Show/hide bulk actions toolbar
         if (checkedBoxes.length > 0) {
             bulkToolbar.style.display = 'block';
@@ -371,27 +371,27 @@ document.addEventListener('DOMContentLoaded', function() {
             bulkToolbar.style.display = 'none';
         }
     }
-    
+
     // Select all checkbox handler
     if (selectAllCheckbox) {
         selectAllCheckbox.addEventListener('change', function() {
-            const visibleCheckboxes = Array.from(productCheckboxes).filter(cb => 
+            const visibleCheckboxes = Array.from(productCheckboxes).filter(cb =>
                 cb.closest('.product-row').style.display !== 'none'
             );
-            
+
             visibleCheckboxes.forEach(checkbox => {
                 checkbox.checked = this.checked;
             });
-            
+
             updateBulkSelection();
         });
     }
-    
+
     // Individual checkbox handlers
     productCheckboxes.forEach(checkbox => {
         checkbox.addEventListener('change', updateBulkSelection);
     });
-    
+
     // Search and filter event listeners
     if (searchInput) searchInput.addEventListener('input', filterProducts);
     if (statusFilter) statusFilter.addEventListener('change', filterProducts);
@@ -421,12 +421,12 @@ function clearSelection() {
 function bulkActivate() {
     const productIds = getSelectedProductIds();
     const productNames = getSelectedProductNames();
-    
+
     if (productIds.length === 0) {
         alert('Please select products to activate.');
         return;
     }
-    
+
     if (confirm(`Are you sure you want to activate ${productIds.length} selected products?\n\n${productNames.slice(0, 5).join(', ')}${productNames.length > 5 ? '...' : ''}`)) {
         performBulkAction('activate', productIds);
     }
@@ -436,12 +436,12 @@ function bulkActivate() {
 function bulkDeactivate() {
     const productIds = getSelectedProductIds();
     const productNames = getSelectedProductNames();
-    
+
     if (productIds.length === 0) {
         alert('Please select products to deactivate.');
         return;
     }
-    
+
     if (confirm(`Are you sure you want to deactivate ${productIds.length} selected products?\n\n${productNames.slice(0, 5).join(', ')}${productNames.length > 5 ? '...' : ''}`)) {
         performBulkAction('deactivate', productIds);
     }
@@ -451,12 +451,12 @@ function bulkDeactivate() {
 function bulkDelete() {
     const productIds = getSelectedProductIds();
     const productNames = getSelectedProductNames();
-    
+
     if (productIds.length === 0) {
         alert('Please select products to delete.');
         return;
     }
-    
+
     if (confirm(`⚠️ WARNING: Are you sure you want to DELETE ${productIds.length} selected products?\n\n${productNames.slice(0, 5).join(', ')}${productNames.length > 5 ? '...' : ''}\n\nThis action CANNOT be undone and will affect all associated licenses!`)) {
         performBulkAction('delete', productIds);
     }
@@ -465,26 +465,26 @@ function bulkDelete() {
 // Bulk export products
 function bulkExport() {
     const productIds = getSelectedProductIds();
-    
+
     if (productIds.length === 0) {
         alert('Please select products to export.');
         return;
     }
-    
+
     const params = new URLSearchParams({ product_ids: productIds.join(',') });
     window.location.href = `/admin/products/export?${params.toString()}`;
 }
 
 // Perform bulk action
 function performBulkAction(action, productIds) {
-    const loadingText = action === 'delete' ? 'Deleting...' : 
+    const loadingText = action === 'delete' ? 'Deleting...' :
                        action === 'activate' ? 'Activating...' : 'Deactivating...';
-    
+
     // Show loading state
     const toolbar = document.getElementById('bulkActionsToolbar');
     const originalHTML = toolbar.innerHTML;
     toolbar.innerHTML = `<div class="d-flex align-items-center"><div class="spinner-border spinner-border-sm me-2"></div>${loadingText}</div>`;
-    
+
     fetch('/admin/products/bulk-action', {
         method: 'POST',
         headers: {
@@ -586,14 +586,14 @@ document.querySelectorAll('.stat-card').forEach(card => {
     card.style.cursor = 'pointer';
     card.addEventListener('click', function() {
         const label = this.querySelector('.stat-label').textContent.toLowerCase();
-        
+
         const statusFilter = document.getElementById('statusFilter');
         const typeFilter = document.getElementById('typeFilter');
-        
+
         // Reset filters
         statusFilter.value = '';
         typeFilter.value = '';
-        
+
         switch(label) {
             case 'active products':
                 statusFilter.value = 'active';
@@ -605,7 +605,7 @@ document.querySelectorAll('.stat-card').forEach(card => {
                 typeFilter.value = 'one_time';
                 break;
         }
-        
+
         // Trigger filter
         statusFilter.dispatchEvent(new Event('change'));
         typeFilter.dispatchEvent(new Event('change'));
@@ -713,12 +713,12 @@ document.querySelectorAll('.stat-card').forEach(card => {
         flex-direction: column;
         align-items: stretch !important;
     }
-    
+
     .bulk-actions-buttons {
         margin-top: 1rem;
         justify-content: center;
     }
-    
+
     .bulk-actions-buttons .btn {
         flex: 1;
         min-width: 120px;

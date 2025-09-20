@@ -349,7 +349,7 @@ class AuthTest < Minitest::Test
 
     return { success: false, message: 'Missing credentials' } if !email || email.strip.empty?
 
-    unless email.match?(/\A[\w+\-.]+@[a-z\d\-]+(\.[a-z\d\-]+)*\.[a-z]+\z/i)
+    unless email.match?(/\A[\w+\-.]+@[a-z\d-]+(\.[a-z\d-]+)*\.[a-z]+\z/i)
       return { success: false, message: 'Invalid email format' }
     end
 

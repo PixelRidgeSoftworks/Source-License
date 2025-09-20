@@ -3,7 +3,7 @@
     <div>
         <h1 class="h3 mb-1">Order #<%= @order.id %></h1>
         <p class="text-muted mb-0">
-            Created <%= format_date(@order.created_at, :datetime) %> 
+            Created <%= format_date(@order.created_at, :datetime) %>
             <span class="mx-2">•</span>
             <%= time_ago(@order.created_at) %>
         </p>
@@ -381,17 +381,17 @@
                         <i class="fas fa-undo me-2"></i>Refund Order
                     </button>
                     <% end %>
-                    
+
                     <a href="mailto:<%= h(@order.email) %>?subject=Regarding Order #<%= @order.id %>" class="btn btn-outline-primary">
                         <i class="fas fa-envelope me-2"></i>Email Customer
                     </a>
-                    
+
                     <% if @order.licenses.any? %>
                     <a href="/admin/licenses?search=<%= u(@order.email) %>" class="btn btn-outline-secondary">
                         <i class="fas fa-key me-2"></i>View All Licenses
                     </a>
                     <% end %>
-                    
+
                     <% if @order.pending? || @order.failed? %>
                     <button class="btn btn-outline-danger" onclick="deleteOrder()">
                         <i class="fas fa-trash me-2"></i>Delete Order
@@ -426,14 +426,14 @@
 <script>
 // Update order status
 function updateOrderStatus(newStatus) {
-    const confirmText = newStatus === 'completed' ? 
+    const confirmText = newStatus === 'completed' ?
         'Are you sure you want to mark this order as completed? This will generate licenses if not already done.' :
-        newStatus === 'refunded' ? 
+        newStatus === 'refunded' ?
         'Are you sure you want to refund this order? This will revoke any associated licenses.' :
         newStatus === 'failed' ?
         'Are you sure you want to mark this order as failed?' :
         `Are you sure you want to update this order status to ${newStatus}?`;
-    
+
     if (confirm(confirmText)) {
         fetch(`/admin/orders/<%= @order.id %>/update-status`, {
             method: 'POST',
@@ -537,7 +537,7 @@ function fallbackCopyTextToClipboard(text) {
     document.body.appendChild(textArea);
     textArea.focus();
     textArea.select();
-    
+
     try {
         const successful = document.execCommand('copy');
         if (successful) {
@@ -548,7 +548,7 @@ function fallbackCopyTextToClipboard(text) {
     } catch (err) {
         AdminUtils.showNotification('Failed to copy license key', 'error');
     }
-    
+
     document.body.removeChild(textArea);
 }
 </script>
@@ -669,17 +669,17 @@ function fallbackCopyTextToClipboard(text) {
     .admin-card-body {
         padding: 1rem;
     }
-    
+
     .table-responsive {
         font-size: 0.875rem;
     }
-    
+
     .d-flex.justify-content-between {
         flex-direction: column;
         align-items: flex-start !important;
         gap: 0.5rem;
     }
-    
+
     .d-flex.justify-content-between > span:last-child {
         margin-left: auto;
     }

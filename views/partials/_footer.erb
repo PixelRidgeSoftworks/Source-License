@@ -1,3 +1,4 @@
+<%# locals: () %>
 <!-- Footer -->
 <footer class="footer mt-auto">
     <div class="container py-5">
@@ -63,7 +64,7 @@
                     <% end %>
                 </div>
             </div>
-            
+
             <!-- Quick Links -->
             <div class="col-lg-2 col-md-6">
                 <div class="footer-section">
@@ -77,22 +78,22 @@
                     </ul>
                 </div>
             </div>
-            
+
             <!-- Support -->
             <div class="col-lg-3 col-md-6">
                 <div class="footer-section">
                     <h6 class="footer-title">Support & Resources</h6>
                     <ul class="footer-links">
-                        <li><a href="https://github.com/PixelRidge-Softworks/Source-License/wiki" target="_blank" rel="noopener"><i class="fas fa-book me-2"></i>Documentation</a></li>
-                        <li><a href="https://github.com/PixelRidge-Softworks/Source-License/issues" target="_blank" rel="noopener"><i class="fas fa-bug me-2"></i>Report Issue</a></li>
+                        <li><a href="https://github.com/PixelRidgeSoftworks/Source-License/wiki" target="_blank" rel="noopener"><i class="fas fa-book me-2"></i>Documentation</a></li>
+                        <li><a href="https://github.com/PixelRidgeSoftworks/Source-License/issues" target="_blank" rel="noopener"><i class="fas fa-bug me-2"></i>Report Issue</a></li>
                         <% if SettingsManager.get('app.support_email') && !SettingsManager.get('app.support_email').empty? %>
                         <li><a href="mailto:<%= SettingsManager.get('app.support_email') %>"><i class="fas fa-envelope me-2"></i>Contact Support</a></li>
                         <% end %>
-                        <li><a href="https://github.com/PixelRidge-Softworks/Source-License" target="_blank" rel="noopener"><i class="fas fa-download me-2"></i>Downloads</a></li>
+                        <li><a href="https://github.com/PixelRidgeSoftworks/Source-License" target="_blank" rel="noopener"><i class="fas fa-download me-2"></i>Downloads</a></li>
                     </ul>
                 </div>
             </div>
-            
+
             <!-- System Info -->
             <div class="col-lg-3 col-md-6">
                 <div class="footer-section">
@@ -112,7 +113,7 @@
                             <span>Tax System: <strong>Enabled</strong></span>
                         </div>
                         <% end %>
-                        
+
                         <!-- System Status Indicators -->
                         <div class="status-indicators mt-3">
                             <div class="status-item">
@@ -142,19 +143,19 @@
                 </div>
             </div>
         </div>
-        
+
         <!-- Footer Bottom -->
         <hr class="footer-divider">
         <div class="row align-items-center">
             <div class="col-md-8">
                 <div class="footer-bottom-text">
                     <p class="mb-1">
-                        &copy; <%= Date.today.year %> <%= SettingsManager.get('app.organization_name') %>. 
-                        Powered by <a href="https://github.com/PixelRidge-Softworks/Source-License" target="_blank" rel="noopener" class="footer-link">Source-License</a>.
+                        &copy; <%= Date.today.year %> <%= SettingsManager.get('app.organization_name') %>.
+                        Powered by <a href="https://github.com/PixelRidgeSoftworks/Source-License" target="_blank" rel="noopener" class="footer-link">Source-License</a>.
                     </p>
                     <p class="mb-0 small">
-                        Source-License made by <a href="https://github.com/PixelRidge-Softworks/Source-License" target="_blank" rel="noopener" class="footer-link">PixelRidge Softworks & Contributors</a> - 
-                        Licensed under <a href="https://github.com/PixelRidge-Softworks/Source-License/blob/main/LICENSE" target="_blank" rel="noopener" class="footer-link">GPL v2</a>.
+                        Source-License made by <a href="https://github.com/PixelRidgeSoftworks/Source-License" target="_blank" rel="noopener" class="footer-link">PixelRidge Softworks & Contributors</a> -
+                        Licensed under <a href="https://github.com/PixelRidgeSoftworks/Source-License/blob/main/LICENSE" target="_blank" rel="noopener" class="footer-link">GPL v2</a>.
                     </p>
                 </div>
             </div>
@@ -170,7 +171,7 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Floating Back to Top Button -->
     <button id="backToTop" class="btn-back-to-top" onclick="scrollToTop()" title="Back to top">
         <i class="fas fa-chevron-up"></i>
@@ -410,24 +411,24 @@
     .footer {
         padding-top: 2rem;
     }
-    
+
     .footer-badges {
         justify-content: flex-start;
         margin-top: 1rem;
     }
-    
+
     .status-indicators {
         justify-content: flex-start;
     }
-    
+
     .social-links {
         justify-content: flex-start;
     }
-    
+
     .footer-title {
         font-size: 0.95rem;
     }
-    
+
     .btn-back-to-top {
         bottom: 1rem;
         right: 1rem;
@@ -440,13 +441,13 @@
     .footer-section {
         margin-bottom: 2rem;
     }
-    
+
     .footer-logo {
         width: 40px;
         height: 40px;
         font-size: 1.25rem;
     }
-    
+
     .footer-brand {
         font-size: 1.1rem;
     }

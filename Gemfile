@@ -81,4 +81,4 @@ gem 'rubocop-factory_bot', '~> 2.27'
 
 gem 'rackup', '~> 2.2'
 
-gem "erb_lint", "~> 0.9.0", required: false
+gem 'erb_lint', '~> 0.9.0'

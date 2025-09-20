@@ -553,6 +553,6 @@ This project is licensed under the GNU General Public License v2.0 - see the [LI
 
 ---
 
-**Built with ❤️ using Ruby and Sinatra by the PixelRidge Softworks team**
+**Built with ❤️ using Ruby and Sinatra by the [PixelRidge Softworks team](https://pixelridgesoftworks.com)**
 
 *Source License - Empowering software vendors with professional licensing solutions*

@@ -2,7 +2,7 @@
   <img src="logo.svg" alt="Source License Logo" width="400">
 </div>
 
-[![CodeQL Security Analysis](https://github.com/PixelRidgeSoftworks/Source-License/actions/workflows/codeql.yml/badge.svg)](https://github.com/PixelRidgeSoftworks/Source-License/actions/workflows/codeql.yml)
+[![CodeQL Security Analysis](https://github.com/PixelRidgeSoftworks/Source-License/actions/workflows/codeql.yml/badge.svg)](https://github.com/PixelRidgeSoftworks/Source-License/actions/workflows/codeql.yml) [![Join our Discord](https://img.shields.io/badge/Discord-Join%20Server-7289DA?logo=discord&logoColor=white)](https://discord.gg/j6v99ZPkrQ)
 
 # Source License - Professional Software Licensing Platform
 

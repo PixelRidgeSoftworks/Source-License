@@ -11,12 +11,13 @@ gem 'rack', '~> 3.0'
 gem 'rack-cors', '~> 2.0'
 gem 'rack-protection', '~> 4.0'
 gem 'rack-ssl-enforcer', '~> 0.2'
+gem 'rackup', '~> 2.2'
 gem 'sinatra', '~> 4.0'
 gem 'sinatra-contrib', '~> 4.0'
 
 # Database
 gem 'mysql2', '~> 0.5.5' # MySQL driver
-# gem 'pg', '~> 1.5'             # PostgreSQL driver (temporarily disabled for testing)
+# gem 'pg', '~> 1.5'             # PostgreSQL driver (temporarily disabled)
 gem 'sequel', '~> 5.75'
 gem 'sqlite3', '~> 1.6' # SQLite driver for development/testing
 
@@ -45,11 +46,14 @@ gem 'redis', '~> 5.0', require: false
 
 group :development, :test do
   # Code Quality & Linting
+  gem 'erb_lint', '~> 0.9.0'
   gem 'fiddle'
   gem 'rubocop', '~> 1.57'
+  gem 'rubocop-factory_bot', '~> 2.27'
   gem 'rubocop-minitest', '~> 0.32'
   gem 'rubocop-performance', '~> 1.19'
   gem 'rubocop-sequel', '~> 0.3'
+
 
   # Testing Framework
   gem 'database_cleaner-sequel', '~> 2.0'
@@ -76,9 +80,3 @@ end
 group :test do
   # Test-specific gems
 end
-
-gem 'rubocop-factory_bot', '~> 2.27'
-
-gem 'rackup', '~> 2.2'
-
-gem 'erb_lint', '~> 0.9.0'

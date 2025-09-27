@@ -65,3 +65,4 @@ deployment-logs/*
 .env.backup
 launch.ps1
 downloads/*
+stripe.exe

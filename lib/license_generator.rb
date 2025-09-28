@@ -23,6 +23,7 @@ class LicenseGenerator
         max_activations: product.max_activations,
         activation_count: 0,
         download_count: 0,
+        license_type: product.subscription? ? 'subscription' : 'perpetual',
         created_at: Time.now,
         updated_at: Time.now
       )

@@ -1,0 +1,316 @@
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-12">
+      <div class="page-header">
+        <h1>Webhook Settings</h1>
+        <p class="text-muted">Configure automatic webhook processing for payment events. All webhooks are disabled by default for security.</p>
+      </div>
+
+      <% if flash[:success] %>
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+          <%= flash[:success] %>
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+      <% end %>
+
+      <% if flash[:error] %>
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+          <%= flash[:error] %>
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+      <% end %>
+
+      <form method="post" action="/admin/webhooks" class="needs-validation" novalidate>
+        <!-- Stripe Webhooks -->
+        <div class="card mb-4">
+          <div class="card-header">
+            <h5 class="mb-0">
+              <i class="fab fa-stripe me-2"></i>
+              Stripe Webhooks
+            </h5>
+          </div>
+          <div class="card-body">
+            <p class="text-muted mb-4">
+              Configure which Stripe webhook events should be processed automatically.
+              <strong>Webhook URL:</strong> <code><%= request.base_url %>/webhooks/stripe</code>
+            </p>
+
+            <div class="row">
+              <% @webhook_settings[:stripe].each do |event_type, config| %>
+                <div class="col-md-6 mb-3">
+                  <div class="card border-light">
+                    <div class="card-body">
+                      <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div class="form-check form-switch">
+                          <input 
+                            class="form-check-input" 
+                            type="checkbox" 
+                            id="stripe_<%= event_type.gsub('.', '_') %>"
+                            name="stripe_webhooks[<%= event_type.gsub('.', '_') %>]" 
+                            value="1"
+                            <%= 'checked' if config[:enabled] %>
+                            onchange="updateWebhookStatus(this, 'status_<%= event_type.gsub('.', '_') %>')"
+                          >
+                          <label class="form-check-label fw-bold" for="stripe_<%= event_type.gsub('.', '_') %>">
+                            <%= event_type %>
+                          </label>
+                        </div>
+                        <span class="badge <%= config[:enabled] ? 'bg-success' : 'bg-secondary' %>" id="status_<%= event_type.gsub('.', '_') %>">
+                          <%= config[:enabled] ? 'Enabled' : 'Disabled' %>
+                        </span>
+                      </div>
+                      <small class="text-muted d-block">
+                        <%= config[:description] %>
+                      </small>
+                      <small class="text-muted">
+                        <strong>Default:</strong> <%= SETTINGS_SCHEMA["webhooks.stripe.#{event_type.tr('.', '_')}"][:default] %>
+                      </small>
+                    </div>
+                  </div>
+                </div>
+              <% end %>
+            </div>
+
+            <div class="alert alert-warning mt-3" role="alert">
+              <i class="fas fa-exclamation-triangle me-2"></i>
+              <strong>Important:</strong> Make sure to configure the webhook endpoint in your Stripe dashboard and add the webhook secret to your environment variables as <code>STRIPE_WEBHOOK_SECRET</code>.
+            </div>
+          </div>
+        </div>
+
+        <!-- PayPal Webhooks -->
+        <div class="card mb-4">
+          <div class="card-header">
+            <h5 class="mb-0">
+              <i class="fab fa-paypal me-2"></i>
+              PayPal Webhooks
+            </h5>
+          </div>
+          <div class="card-body">
+            <p class="text-muted mb-3">
+              PayPal webhook integration is coming soon.
+              <strong>Webhook URL:</strong> <code><%= request.base_url %>/webhooks/paypal</code>
+            </p>
+
+            <div class="form-check form-switch">
+              <input 
+                class="form-check-input" 
+                type="checkbox" 
+                id="paypal_enabled"
+                name="paypal_webhooks[enabled]" 
+                value="1"
+                <%= 'checked' if @webhook_settings[:paypal][:enabled] %>
+                disabled
+              >
+              <label class="form-check-label" for="paypal_enabled">
+                Enable PayPal Webhooks (Coming Soon)
+              </label>
+            </div>
+            <small class="text-muted d-block mt-1">
+              <%= @webhook_settings[:paypal][:description] %>
+            </small>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="card">
+          <div class="card-body">
+            <button type="submit" class="btn btn-primary me-2">
+              <i class="fas fa-save me-1"></i>
+              Save Webhook Settings
+            </button>
+
+            <% if ENV['APP_ENV'] == 'development' %>
+              <button type="button" class="btn btn-outline-secondary me-2" data-bs-toggle="modal" data-bs-target="#testWebhookModal">
+                <i class="fas fa-vial me-1"></i>
+                Test Webhook
+              </button>
+            <% end %>
+
+            <a href="/admin/dashboard" class="btn btn-outline-secondary">
+              <i class="fas fa-arrow-left me-1"></i>
+              Back to Dashboard
+            </a>
+          </div>
+        </div>
+      </form>
+
+      <!-- Webhook Information -->
+      <div class="card mt-4">
+        <div class="card-header">
+          <h5 class="mb-0">
+            <i class="fas fa-info-circle me-2"></i>
+            Webhook Information
+          </h5>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6">
+              <h6>🔥 Critical Payment Events:</h6>
+              <ul class="list-unstyled">
+                <li><code>charge.succeeded</code> - ✅ Extend/renew/issue license</li>
+                <li><code>charge.failed</code> - ⚠️ Warn user about failed payment</li>
+                <li><code>charge.refunded</code> - ❌ Revoke license on refund</li>
+                <li><code>payment_intent.created</code> - 📊 Track payment initiation</li>
+                <li><code>payment_intent.succeeded</code> - ✅ Complete orders</li>
+              </ul>
+
+              <h6 class="mt-3">🚨 Dispute & Risk Events:</h6>
+              <ul class="list-unstyled">
+                <li><code>charge.dispute.created</code> - ⚠️ Chargeback handling</li>
+                <li><code>charge.dispute.updated</code> - 📈 Dispute progress</li>
+                <li><code>charge.dispute.closed</code> - ⚖️ Dispute resolution</li>
+              </ul>
+            </div>
+            <div class="col-md-6">
+              <h6>🔄 Subscription Events:</h6>
+              <ul class="list-unstyled">
+                <li><code>customer.subscription.created</code> - ✅ Activate new license</li>
+                <li><code>customer.subscription.deleted</code> - ❌ Cancel license</li>
+                <li><code>customer.subscription.updated</code> - 🔄 Sync billing changes</li>
+                <li><code>customer.subscription.trial_will_end</code> - ⏰ Trial notifications</li>
+                <li><code>customer.subscription.paused</code> - ⏸️ Suspend license</li>
+                <li><code>customer.subscription.resumed</code> - ▶️ Un-suspend license</li>
+              </ul>
+
+              <h6 class="mt-3">📄 Invoice & Billing Events:</h6>
+              <ul class="list-unstyled">
+                <li><code>invoice.payment_failed</code> - ⚠️ Grace period handling</li>
+                <li><code>invoice.payment_succeeded</code> - ✅ Subscription renewals</li>
+                <li><code>invoice.created</code> - 📊 Billing cycle tracking</li>
+              </ul>
+
+              <h6 class="mt-3">👥 Customer & Catalog Events:</h6>
+              <ul class="list-unstyled small">
+                <li><code>customer.updated</code> - 📝 Data synchronization</li>
+                <li><code>customer.created</code> - 👤 New customer tracking</li>
+                <li><code>payment_method.attached</code> - 💳 Payment methods</li>
+                <li><code>product.created</code> - 📦 Product catalog sync</li>
+                <li><code>price.created</code> - 💰 Pricing tier tracking</li>
+              </ul>
+            </div>
+          </div>
+          
+          <div class="alert alert-info mt-3" role="alert">
+            <h6 class="alert-heading">Setup Instructions:</h6>
+            <ol class="mb-0">
+              <li>Go to your Stripe Dashboard → Developers → Webhooks</li>
+              <li>Click "Add endpoint"</li>
+              <li>Set the endpoint URL to: <code><%= request.base_url %>/webhooks/stripe</code></li>
+              <li>Select the events you want to listen for</li>
+              <li>Copy the webhook secret and add it to your environment as <code>STRIPE_WEBHOOK_SECRET</code></li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<% if ENV['APP_ENV'] == 'development' %>
+<!-- Test Webhook Modal -->
+<div class="modal fade" id="testWebhookModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Test Webhook</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form id="testWebhookForm">
+          <div class="mb-3">
+            <label for="webhookType" class="form-label">Webhook Type</label>
+            <select class="form-select" id="webhookType" name="webhook_type" required>
+              <option value="">Select webhook type</option>
+              <option value="stripe">Stripe</option>
+              <option value="paypal">PayPal</option>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label for="eventType" class="form-label">Event Type</label>
+            <select class="form-select" id="eventType" name="event_type" required>
+              <option value="">Select event type</option>
+              <option value="charge.succeeded">charge.succeeded</option>
+              <option value="charge.failed">charge.failed</option>
+              <option value="charge.refunded">charge.refunded</option>
+              <option value="customer.subscription.deleted">customer.subscription.deleted</option>
+              <option value="customer.subscription.created">customer.subscription.created</option>
+              <option value="customer.subscription.paused">customer.subscription.paused</option>
+              <option value="customer.subscription.resumed">customer.subscription.resumed</option>
+            </select>
+          </div>
+
+          <div id="testResult" class="alert" style="display: none;"></div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-primary" onclick="testWebhook()">
+          <i class="fas fa-play me-1"></i>
+          Test Webhook
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Update webhook status badge when toggle is changed
+function updateWebhookStatus(checkbox, statusId) {
+  const statusBadge = document.getElementById(statusId);
+  if (checkbox.checked) {
+    statusBadge.className = 'badge bg-success';
+    statusBadge.textContent = 'Enabled';
+  } else {
+    statusBadge.className = 'badge bg-secondary';
+    statusBadge.textContent = 'Disabled';
+  }
+}
+
+function testWebhook() {
+  const form = document.getElementById('testWebhookForm');
+  const formData = new FormData(form);
+  const resultDiv = document.getElementById('testResult');
+
+  // Create test event data
+  const eventData = {
+    type: formData.get('event_type'),
+    id: 'test_' + Date.now(),
+    data: {
+      object: {
+        id: 'test_object_' + Date.now()
+      }
+    }
+  };
+
+  fetch('/admin/webhooks/test', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: new URLSearchParams({
+      webhook_type: formData.get('webhook_type'),
+      'event_data[type]': eventData.type,
+      'event_data[id]': eventData.id
+    })
+  })
+  .then(response => response.json())
+  .then(data => {
+    resultDiv.style.display = 'block';
+    if (data.success) {
+      resultDiv.className = 'alert alert-success';
+      resultDiv.innerHTML = '<i class="fas fa-check me-2"></i>' + data.message;
+    } else {
+      resultDiv.className = 'alert alert-danger';
+      resultDiv.innerHTML = '<i class="fas fa-times me-2"></i>' + data.error;
+    }
+  })
+  .catch(error => {
+    resultDiv.style.display = 'block';
+    resultDiv.className = 'alert alert-danger';
+    resultDiv.innerHTML = '<i class="fas fa-times me-2"></i>Error: ' + error.message;
+  });
+}
+</script>
+<% end %>

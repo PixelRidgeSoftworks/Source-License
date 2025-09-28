@@ -8,7 +8,14 @@ require_relative 'admin_controller'
 require_relative 'admin_namespace'
 require_relative 'admin/products_controller'
 require_relative 'admin/licenses_controller'
-require_relative 'admin/features_controller'
+require_relative 'admin/customers_controller'
+require_relative 'admin/reports_controller'
+require_relative 'admin/customization_controller'
+require_relative 'admin/webhook_settings_controller'
+require_relative 'admin/orders_controller'
+require_relative '../services/admin/order_service'
+require_relative 'webhooks_controller'
+require_relative 'subscription_controller'
 require_relative 'api_controller'
 
 class SourceLicenseApp < Sinatra::Base
@@ -100,15 +107,26 @@ class SourceLicenseApp < Sinatra::Base
   include AdminController
   include AdminControllers::ProductsController
   include AdminControllers::LicensesController
-  include AdminControllers::FeaturesController
+  include AdminControllers::CustomersController
+  include AdminControllers::ReportsController
+  include AdminControllers::CustomizationController
+  include AdminControllers::WebhookSettingsController
+  include Admin::OrdersController
+  include WebhooksController
   include ApiController
 
   # Set up all routes - API routes FIRST to avoid conflicts
   ApiController.setup_routes(self)
+  WebhooksController.setup_routes(self)
+  SubscriptionController.setup_routes(self)
   AdminController.setup_routes(self)
   AdminControllers::ProductsController.setup_routes(self)
   AdminControllers::LicensesController.setup_routes(self)
-  AdminControllers::FeaturesController.setup_routes(self)
+  AdminControllers::CustomersController.setup_routes(self)
+  AdminControllers::ReportsController.setup_routes(self)
+  AdminControllers::CustomizationController.setup_routes(self)
+  AdminControllers::WebhookSettingsController.setup_routes(self)
+  Admin::OrdersController.setup_routes(self)
   UserAuthController.setup_routes(self)
   PublicController.setup_routes(self)
 end

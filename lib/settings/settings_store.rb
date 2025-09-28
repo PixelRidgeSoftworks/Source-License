@@ -179,6 +179,9 @@ class Settings::SettingsStore
 
         # Monitoring settings with special cases
         [/^monitoring\.(.+)/, method(:monitoring_env_mapping)],
+
+        # Webhook settings
+        [/^webhooks\.(.+)/, method(:webhook_env_mapping)],
       ].freeze
     end
 
@@ -193,6 +196,38 @@ class Settings::SettingsStore
       }.freeze
 
       monitoring_special_mappings[setting_name] || setting_name.upcase
+    end
+
+    def webhook_env_mapping(match)
+      setting_path = match[1]
+
+      # Handle nested webhook settings
+      webhook_special_mappings = {
+        'enabled' => 'WEBHOOKS_ENABLED',
+        'base_url' => 'WEBHOOKS_BASE_URL',
+        'security_token' => 'WEBHOOK_SECURITY_TOKEN',
+        'retry_attempts' => 'WEBHOOK_RETRY_ATTEMPTS',
+        'timeout_seconds' => 'WEBHOOK_TIMEOUT_SECONDS',
+        'stripe.charge_succeeded' => 'STRIPE_WEBHOOK_CHARGE_SUCCEEDED',
+        'stripe.charge_failed' => 'STRIPE_WEBHOOK_CHARGE_FAILED',
+        'stripe.charge_refunded' => 'STRIPE_WEBHOOK_CHARGE_REFUNDED',
+        'stripe.customer_subscription_created' => 'STRIPE_WEBHOOK_SUBSCRIPTION_CREATED',
+        'stripe.customer_subscription_deleted' => 'STRIPE_WEBHOOK_SUBSCRIPTION_DELETED',
+        'stripe.customer_subscription_paused' => 'STRIPE_WEBHOOK_SUBSCRIPTION_PAUSED',
+        'stripe.customer_subscription_resumed' => 'STRIPE_WEBHOOK_SUBSCRIPTION_RESUMED',
+        'stripe.customer_subscription_updated' => 'STRIPE_WEBHOOK_SUBSCRIPTION_UPDATED',
+        'stripe.customer_subscription_trial_will_end' => 'STRIPE_WEBHOOK_TRIAL_WILL_END',
+        'paypal.enabled' => 'PAYPAL_WEBHOOK_ENABLED',
+        'paypal.webhook_id' => 'PAYPAL_WEBHOOK_ID',
+        'notifications.enabled' => 'WEBHOOK_NOTIFICATIONS_ENABLED',
+        'notifications.email' => 'WEBHOOK_NOTIFICATIONS_EMAIL',
+        'notifications.slack_webhook_url' => 'WEBHOOK_SLACK_URL',
+        'logging.enabled' => 'WEBHOOK_LOGGING_ENABLED',
+        'logging.log_level' => 'WEBHOOK_LOG_LEVEL',
+        'logging.retain_days' => 'WEBHOOK_LOG_RETAIN_DAYS',
+      }.freeze
+
+      webhook_special_mappings[setting_path] || "WEBHOOK_#{setting_path.tr('.', '_').upcase}"
     end
 
     def parse_value(value, type)

@@ -596,24 +596,19 @@ module ApiController
     end
   end
 
-  # Handle Stripe webhooks
+  # Handle Stripe webhooks - delegate to the proper webhook handler
   def self.handle_stripe_webhook(request)
+    # Get raw body for signature verification
+    request.body.rewind
     payload = request.body.read
-    sig_header = request.env['HTTP_STRIPE_SIGNATURE']
+    signature = request.env['HTTP_STRIPE_SIGNATURE']
 
-    begin
-      event = Stripe::Webhook.construct_event(
-        payload, sig_header, ENV.fetch('STRIPE_WEBHOOK_SECRET', nil)
-      )
+    # Use the proper webhook handler that includes all event types
+    result = Webhooks::StripeWebhookHandler.handle_webhook(payload, signature)
 
-      case event['type']
-      when 'payment_intent.succeeded'
-        handle_successful_payment(event['data']['object'])
-      end
-    rescue StandardError => e
-      logger.error "Stripe webhook error: #{e.message}"
-      status 400
-    end
+    status 400 unless result[:success]
+
+    result
   end
 
   # Handle PayPal webhooks

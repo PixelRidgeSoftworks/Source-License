@@ -106,7 +106,7 @@ module UserAuthController
     # Secure license details
     app.get '/licenses/:id' do
       require_user_auth
-      license = License[params[:id]]
+      license = License.eager(:subscription, :product).where(id: params[:id]).first
       halt 404 unless license
       halt 403 unless user_owns_license?(current_user, license)
 

@@ -287,7 +287,7 @@
                             </button>
                             <% elsif order.completed? %>
                             <button class="btn btn-outline-warning"
-                                    onclick="updateOrderStatus(<%= order.id %>, 'refunded')"
+                                    onclick="showRefundModal(<%= order.id %>, '<%= h(order.email) %>', '<%= format_currency(order.amount, order.currency) %>')"
                                     title="Refund Order">
                                 <i class="fas fa-undo"></i>
                             </button>
@@ -960,6 +960,209 @@ document.querySelectorAll('.stat-card').forEach(card => {
     margin-left: 0.5em;
 }
 </style>
+
+<!-- Refund Modal -->
+<div class="modal fade" id="refundModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content" style="background: var(--surface-secondary); border: 1px solid var(--border-default);">
+            <div class="modal-header" style="border-bottom: 1px solid var(--border-default);">
+                <h5 class="modal-title">
+                    <i class="fas fa-undo me-2 text-warning"></i>
+                    Refund Order
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Warning:</strong> This action will refund the payment through the payment processor and revoke any associated licenses.
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Order Details</label>
+                    <div class="card" style="background: var(--surface-tertiary);">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-sm-6">
+                                    <strong>Order ID:</strong>
+                                    <span id="refundOrderId"></span>
+                                </div>
+                                <div class="col-sm-6">
+                                    <strong>Customer:</strong>
+                                    <span id="refundCustomerEmail"></span>
+                                </div>
+                            </div>
+                            <div class="row mt-2">
+                                <div class="col-sm-6">
+                                    <strong>Amount:</strong>
+                                    <span id="refundOrderAmount"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="refundAmount" class="form-label">Refund Amount</label>
+                    <div class="input-group">
+                        <span class="input-group-text">$</span>
+                        <input type="number" class="form-control" id="refundAmount" 
+                               step="0.01" min="0.01" placeholder="0.00">
+                        <button type="button" class="btn btn-outline-secondary" onclick="setFullRefund()">
+                            Full Refund
+                        </button>
+                    </div>
+                    <small class="form-text text-muted">Enter the amount to refund or click "Full Refund" for the complete order amount.</small>
+                </div>
+
+                <div class="mb-3">
+                    <label for="refundReason" class="form-label">Refund Reason</label>
+                    <select class="form-select" id="refundReason">
+                        <option value="Admin initiated refund">Admin initiated refund</option>
+                        <option value="Customer request">Customer request</option>
+                        <option value="Product defect">Product defect</option>
+                        <option value="Billing error">Billing error</option>
+                        <option value="Duplicate charge">Duplicate charge</option>
+                        <option value="Fraudulent transaction">Fraudulent transaction</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+
+                <div class="mb-3" id="customReasonGroup" style="display: none;">
+                    <label for="customReason" class="form-label">Custom Reason</label>
+                    <input type="text" class="form-control" id="customReason" placeholder="Enter custom refund reason">
+                </div>
+            </div>
+            <div class="modal-footer" style="border-top: 1px solid var(--border-default);">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-warning" id="processRefundBtn" onclick="processRefund()">
+                    <i class="fas fa-undo me-1"></i>Process Refund
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Refund modal functionality
+let currentRefundOrderId = null;
+let currentRefundAmount = 0;
+
+function showRefundModal(orderId, customerEmail, orderAmount) {
+    currentRefundOrderId = orderId;
+    
+    // Parse the amount (remove currency symbols and convert to number)
+    const amountStr = orderAmount.replace(/[^\d.,]/g, '').replace(',', '');
+    currentRefundAmount = parseFloat(amountStr);
+    
+    // Populate modal fields
+    document.getElementById('refundOrderId').textContent = '#' + orderId;
+    document.getElementById('refundCustomerEmail').textContent = customerEmail;
+    document.getElementById('refundOrderAmount').textContent = orderAmount;
+    document.getElementById('refundAmount').value = currentRefundAmount;
+    document.getElementById('refundReason').value = 'Admin initiated refund';
+    document.getElementById('customReason').value = '';
+    document.getElementById('customReasonGroup').style.display = 'none';
+    
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('refundModal'));
+    modal.show();
+}
+
+function setFullRefund() {
+    document.getElementById('refundAmount').value = currentRefundAmount;
+}
+
+// Show custom reason input when "Other" is selected
+document.getElementById('refundReason').addEventListener('change', function() {
+    const customReasonGroup = document.getElementById('customReasonGroup');
+    if (this.value === 'Other') {
+        customReasonGroup.style.display = 'block';
+        document.getElementById('customReason').focus();
+    } else {
+        customReasonGroup.style.display = 'none';
+    }
+});
+
+function processRefund() {
+    const refundAmount = parseFloat(document.getElementById('refundAmount').value);
+    let refundReason = document.getElementById('refundReason').value;
+    
+    if (refundReason === 'Other') {
+        const customReason = document.getElementById('customReason').value.trim();
+        if (!customReason) {
+            alert('Please enter a custom refund reason.');
+            return;
+        }
+        refundReason = customReason;
+    }
+    
+    // Validate refund amount
+    if (!refundAmount || refundAmount <= 0) {
+        alert('Please enter a valid refund amount.');
+        return;
+    }
+    
+    if (refundAmount > currentRefundAmount) {
+        alert('Refund amount cannot exceed the order amount.');
+        return;
+    }
+    
+    // Confirm refund
+    const confirmMessage = `Are you sure you want to process a $${refundAmount.toFixed(2)} refund for order #${currentRefundOrderId}?\n\nReason: ${refundReason}\n\nThis action cannot be undone and will:\n- Process the refund through the payment processor\n- Revoke any associated licenses\n- Cancel any active subscriptions`;
+    
+    if (!confirm(confirmMessage)) {
+        return;
+    }
+    
+    // Show loading state
+    const processBtn = document.getElementById('processRefundBtn');
+    const originalText = processBtn.innerHTML;
+    processBtn.disabled = true;
+    processBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Processing...';
+    
+    // Process refund
+    fetch(`/admin/orders/${currentRefundOrderId}/refund`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify({
+            amount: refundAmount,
+            reason: refundReason
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Hide modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('refundModal'));
+            modal.hide();
+            
+            // Show success message
+            alert(`Refund processed successfully!\n\nRefund ID: ${data.refund_id || 'N/A'}\nAmount: $${data.amount || refundAmount}`);
+            
+            // Reload page to show updated status
+            location.reload();
+        } else {
+            alert('Refund failed: ' + (data.error || 'Unknown error occurred'));
+            
+            // Restore button state
+            processBtn.disabled = false;
+            processBtn.innerHTML = originalText;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while processing the refund.');
+        
+        // Restore button state
+        processBtn.disabled = false;
+        processBtn.innerHTML = originalText;
+    });
+}
+</script>
 
 <%
 # Helper method for building pagination URLs with current filters

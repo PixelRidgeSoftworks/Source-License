@@ -66,3 +66,9 @@ deployment-logs/*
 launch.ps1
 downloads/*
 stripe.exe
+WEBHOOK_TESTING_GUIDE.md
+Source-License.wiki
+logs/webhooks.log
+logs/security.log
+logs/licenses.log
+COMPREHENSIVE_WEBHOOK_TESTING_GUIDE.md

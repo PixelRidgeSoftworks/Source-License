@@ -3,7 +3,7 @@
 # Source-License: Migration 8 - Create Settings Table
 # Creates the settings table for application configuration
 
-class Migrations::CreateSettingsTable < BaseMigration
+class Migrations::CreateSettingsTable < Migrations::BaseMigration
   VERSION = 8
 
   def up

@@ -520,8 +520,14 @@ function generateCategoryForm(categoryId, data) {
 
                     <div class="col-md-4">
                         <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" name="svg_enabled" ${data.svg_enabled ? 'checked' : ''}>
+                            <label class="form-check-label">Use SVG Visual (Modern)</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-check form-switch">
                             <input class="form-check-input" type="checkbox" name="show_license_card" ${data.show_license_card ? 'checked' : ''}>
-                            <label class="form-check-label">Show License Card</label>
+                            <label class="form-check-label">Show License Card (Legacy)</label>
                         </div>
                     </div>
                     <div class="col-md-4">
@@ -534,6 +540,63 @@ function generateCategoryForm(categoryId, data) {
                         <div class="form-check form-switch">
                             <input class="form-check-input" type="checkbox" name="animation_enabled" ${data.animation_enabled ? 'checked' : ''}>
                             <label class="form-check-label">Enable Animations</label>
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+                    <h6 class="text-primary mb-3">SVG Customization</h6>
+                    <p class="text-muted mb-3">Customize the colors and appearance of the modern SVG visual element</p>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Document Background</label>
+                        <input type="color" class="form-control form-control-color" name="svg_document_color" value="${data.svg_document_color || '#ffffff'}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Document Border</label>
+                        <input type="color" class="form-control form-control-color" name="svg_border_color" value="${data.svg_border_color || '#e1e8ed'}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Header Section</label>
+                        <input type="color" class="form-control form-control-color" name="svg_header_color" value="${data.svg_header_color || '#f8fafc'}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Text Color</label>
+                        <input type="color" class="form-control form-control-color" name="svg_text_color" value="${data.svg_text_color || '#64748b'}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">License Key Background</label>
+                        <input type="color" class="form-control form-control-color" name="svg_key_background_color" value="${data.svg_key_background_color || '#1e293b'}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Status Indicator</label>
+                        <input type="color" class="form-control form-control-color" name="svg_status_color" value="${data.svg_status_color || '#10b981'}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Accent Color (Shield)</label>
+                        <input type="color" class="form-control form-control-color" name="svg_accent_color" value="${data.svg_accent_color || '#3b82f6'}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Secondary Color (Key)</label>
+                        <input type="color" class="form-control form-control-color" name="svg_secondary_color" value="${data.svg_secondary_color || '#10b981'}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Tertiary Color (Lock)</label>
+                        <input type="color" class="form-control form-control-color" name="svg_tertiary_color" value="${data.svg_tertiary_color || '#f59e0b'}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Icon Color</label>
+                        <input type="color" class="form-control form-control-color" name="svg_icon_color" value="${data.svg_icon_color || '#ffffff'}">
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" name="svg_show_floating_elements" ${data.svg_show_floating_elements ? 'checked' : ''}>
+                            <label class="form-check-label">Show Floating Icons</label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" name="svg_enable_animations" ${data.svg_enable_animations ? 'checked' : ''}>
+                            <label class="form-check-label">Enable SVG Animations</label>
                         </div>
                     </div>
                 </div>

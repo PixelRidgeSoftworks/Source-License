@@ -3,7 +3,7 @@
 # Source-License: Migration 21 - Add Customer Name to Licenses
 # Adds customer_name field to licenses table
 
-class Migrations::AddCustomerNameToLicenses < BaseMigration
+class Migrations::AddCustomerNameToLicenses < Migrations::BaseMigration
   VERSION = 21
 
   def up

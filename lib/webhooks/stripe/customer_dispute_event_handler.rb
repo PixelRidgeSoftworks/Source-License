@@ -4,7 +4,7 @@ require_relative 'base_event_handler'
 require_relative 'license_finder_service'
 require_relative 'notification_service'
 
-class Webhooks::Stripe::CustomerDisputeEventHandler < BaseEventHandler
+class Webhooks::Stripe::CustomerDisputeEventHandler < Webhooks::Stripe::BaseEventHandler
   class << self
     # Main entry point for customer and dispute events
     def handle_event(event)

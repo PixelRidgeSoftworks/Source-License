@@ -3,7 +3,7 @@
 # Source-License: Migration 12 - Create Users Table
 # Creates the users table for customer accounts
 
-class Migrations::CreateUsersTable < BaseMigration
+class Migrations::CreateUsersTable < Migrations::BaseMigration
   VERSION = 12
 
   def up

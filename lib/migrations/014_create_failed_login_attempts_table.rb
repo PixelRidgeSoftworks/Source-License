@@ -3,7 +3,7 @@
 # Source-License: Migration 14 - Create Failed Login Attempts Table
 # Creates the failed_login_attempts table for authentication security
 
-class Migrations::CreateFailedLoginAttemptsTable < BaseMigration
+class Migrations::CreateFailedLoginAttemptsTable < Migrations::BaseMigration
   VERSION = 14
 
   def up

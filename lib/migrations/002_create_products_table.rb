@@ -3,7 +3,7 @@
 # Source-License: Migration 2 - Create Products Table
 # Creates the products table for managing software products
 
-class Migrations::CreateProductsTable < BaseMigration
+class Migrations::CreateProductsTable < Migrations::BaseMigration
   VERSION = 2
 
   def up

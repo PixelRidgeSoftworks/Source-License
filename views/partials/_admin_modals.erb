@@ -1,0 +1,423 @@
+<!-- Custom Modal System for Admin Pages -->
+<script>
+// Custom Modal System - Centralized for all admin pages
+// Replaces browser alert(), confirm(), and prompt() with custom modals
+
+// Custom Modal System
+function showCustomModal(title, message, details, type = 'info', buttons = null) {
+    // Remove existing modal if any
+    const existingModal = document.getElementById('customModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+
+    // Create modal HTML
+    const modal = document.createElement('div');
+    modal.id = 'customModal';
+    modal.className = 'custom-modal-overlay';
+
+    const iconClass = type === 'warning' ? 'fas fa-exclamation-triangle' :
+                     type === 'danger' ? 'fas fa-exclamation-circle' :
+                     type === 'success' ? 'fas fa-check-circle' :
+                     type === 'prompt' ? 'fas fa-question-circle' :
+                     'fas fa-info-circle';
+
+    const iconColor = type === 'warning' ? '#ffc107' :
+                     type === 'danger' ? '#dc3545' :
+                     type === 'success' ? '#28a745' :
+                     type === 'prompt' ? '#17a2b8' :
+                     '#17a2b8';
+
+    modal.innerHTML = `
+        <div class="custom-modal">
+            <div class="custom-modal-header">
+                <i class="${iconClass}" style="color: ${iconColor};"></i>
+                <h3>${title}</h3>
+                <button class="custom-modal-close" onclick="closeCustomModal()">&times;</button>
+            </div>
+            <div class="custom-modal-body">
+                <p class="custom-modal-message">${message}</p>
+                ${details ? `<p class="custom-modal-details">${details}</p>` : ''}
+                ${type === 'prompt' ? '<input type="text" class="custom-modal-input form-control mt-3" id="modalPromptInput" placeholder="Enter value...">' : ''}
+            </div>
+            <div class="custom-modal-footer">
+                ${buttons || '<button class="custom-btn custom-btn-primary" onclick="closeCustomModal()">OK</button>'}
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    // Show modal with animation
+    setTimeout(() => modal.classList.add('show'), 10);
+
+    // Focus appropriate element
+    if (type === 'prompt') {
+        setTimeout(() => {
+            const input = document.getElementById('modalPromptInput');
+            if (input) input.focus();
+        }, 100);
+    } else {
+        const firstButton = modal.querySelector('button:not(.custom-modal-close)');
+        if (firstButton) setTimeout(() => firstButton.focus(), 100);
+    }
+
+    // Handle escape key
+    const handleEscape = (e) => {
+        if (e.key === 'Escape') {
+            closeCustomModal();
+            document.removeEventListener('keydown', handleEscape);
+        }
+    };
+    document.addEventListener('keydown', handleEscape);
+
+    return modal;
+}
+
+function closeCustomModal() {
+    const modal = document.getElementById('customModal');
+    if (modal) {
+        modal.classList.remove('show');
+        setTimeout(() => modal.remove(), 300);
+    }
+}
+
+// Replace browser alert() with custom modal
+window.customAlert = function(message, title = 'Alert', type = 'info') {
+    return new Promise((resolve) => {
+        const buttons = '<button class="custom-btn custom-btn-primary" onclick="closeCustomModal(); window.modalResolve()">OK</button>';
+        showCustomModal(title, message, null, type, buttons);
+        window.modalResolve = resolve;
+    });
+};
+
+// Replace browser confirm() with custom modal
+window.customConfirm = function(message, title = 'Confirm', type = 'warning') {
+    return new Promise((resolve) => {
+        const buttons = `
+            <button class="custom-btn custom-btn-secondary" onclick="closeCustomModal(); window.modalResolve(false)">Cancel</button>
+            <button class="custom-btn custom-btn-${type === 'danger' ? 'danger' : 'primary'}" onclick="closeCustomModal(); window.modalResolve(true)">Confirm</button>
+        `;
+        showCustomModal(title, message, null, type, buttons);
+        window.modalResolve = resolve;
+    });
+};
+
+// Replace browser prompt() with custom modal
+window.customPrompt = function(message, defaultValue = '', title = 'Input Required') {
+    return new Promise((resolve) => {
+        const buttons = `
+            <button class="custom-btn custom-btn-secondary" onclick="closeCustomModal(); window.modalResolve(null)">Cancel</button>
+            <button class="custom-btn custom-btn-primary" onclick="const input = document.getElementById('modalPromptInput'); closeCustomModal(); window.modalResolve(input ? input.value : null)">OK</button>
+        `;
+        showCustomModal(title, message, null, 'prompt', buttons);
+
+        // Set default value after modal is shown
+        setTimeout(() => {
+            const input = document.getElementById('modalPromptInput');
+            if (input && defaultValue) {
+                input.value = defaultValue;
+                input.select();
+            }
+        }, 100);
+
+        window.modalResolve = resolve;
+    });
+};
+
+// Enhanced confirm with detailed message
+function showConfirm(title, message, details, onConfirm, onCancel = null, type = 'warning') {
+    const buttons = `
+        <button class="custom-btn custom-btn-secondary" id="confirmCancel">Cancel</button>
+        <button class="custom-btn custom-btn-${type === 'danger' ? 'danger' : 'primary'}" id="confirmSubmit">Confirm</button>
+    `;
+
+    const modal = showCustomModal(title, message, details, type, buttons);
+
+    // Add event listeners after modal is created
+    setTimeout(() => {
+        const cancelBtn = document.getElementById('confirmCancel');
+        const confirmBtn = document.getElementById('confirmSubmit');
+
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', () => {
+                closeCustomModal();
+                if (onCancel) onCancel();
+            });
+        }
+
+        if (confirmBtn) {
+            confirmBtn.addEventListener('click', () => {
+                closeCustomModal();
+                onConfirm();
+            });
+        }
+    }, 50);
+}
+
+function showAlert(title, message, type = 'info', autoDismiss = false, dismissTime = 5000) {
+    const modal = showCustomModal(title, message, null, type);
+
+    // Only auto-dismiss if explicitly requested
+    if (autoDismiss) {
+        setTimeout(() => {
+            const existingModal = document.getElementById('customModal');
+            if (existingModal) {
+                closeCustomModal();
+            }
+        }, dismissTime);
+    }
+
+    return modal;
+}
+
+// Utility function for success notifications
+function showSuccess(message, title = 'Success') {
+    showAlert(title, message, 'success');
+}
+
+// Utility function for error notifications
+function showError(message, title = 'Error') {
+    showAlert(title, message, 'danger');
+}
+
+// Utility function for warning notifications
+function showWarning(message, title = 'Warning') {
+    showAlert(title, message, 'warning');
+}
+
+// Override browser functions to use custom modals instead
+function overrideBrowserPopups() {
+    // Store original functions in case they're needed
+    window._originalAlert = window.alert;
+    window._originalConfirm = window.confirm;
+    window._originalPrompt = window.prompt;
+
+    // Override with async versions that return promises
+    window.alert = async function(message) {
+        return await customAlert(message);
+    };
+
+    window.confirm = async function(message) {
+        return await customConfirm(message);
+    };
+
+    window.prompt = async function(message, defaultValue) {
+        return await customPrompt(message, defaultValue);
+    };
+}
+
+// Initialize on DOM ready
+document.addEventListener('DOMContentLoaded', function() {
+    // Don't override immediately to avoid breaking existing code
+    // overrideBrowserPopups();
+});
+</script>
+
+<!-- Custom Modal Styles -->
+<style>
+/* Custom Modal Styles */
+.custom-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.custom-modal-overlay.show {
+    opacity: 1;
+}
+
+.custom-modal {
+    background: var(--surface-secondary);
+    border: 1px solid var(--border-default);
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    max-width: 500px;
+    width: 90%;
+    max-height: 80vh;
+    overflow: hidden;
+    transform: scale(0.9) translateY(-20px);
+    transition: transform 0.3s ease;
+}
+
+.custom-modal-overlay.show .custom-modal {
+    transform: scale(1) translateY(0);
+}
+
+.custom-modal-header {
+    display: flex;
+    align-items: center;
+    padding: 1.25rem 1.5rem;
+    background: var(--surface-tertiary);
+    border-bottom: 1px solid var(--border-default);
+    gap: 0.75rem;
+}
+
+.custom-modal-header h3 {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: 1.25rem;
+    font-weight: 600;
+    flex: 1;
+}
+
+.custom-modal-close {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+}
+
+.custom-modal-close:hover {
+    background: var(--surface-quaternary);
+    color: var(--text-primary);
+}
+
+.custom-modal-body {
+    padding: 1.5rem;
+}
+
+.custom-modal-message {
+    margin: 0 0 0.75rem 0;
+    color: var(--text-primary);
+    font-size: 1rem;
+    line-height: 1.5;
+    white-space: pre-line; /* Allow line breaks in messages */
+}
+
+.custom-modal-details {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    line-height: 1.4;
+    padding: 0.75rem 1rem;
+    background: var(--surface-tertiary);
+    border-radius: 8px;
+    border-left: 3px solid var(--accent-primary);
+    white-space: pre-line; /* Allow line breaks in details */
+}
+
+.custom-modal-input {
+    margin-top: 0.75rem !important;
+}
+
+.custom-modal-footer {
+    padding: 1rem 1.5rem;
+    background: var(--surface-tertiary);
+    border-top: 1px solid var(--border-default);
+    display: flex;
+    gap: 0.75rem;
+    justify-content: flex-end;
+}
+
+/* Custom Button Styles */
+.custom-btn {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 80px;
+    font-size: 0.875rem;
+}
+
+.custom-btn-primary {
+    background: var(--accent-primary);
+    color: white;
+}
+
+.custom-btn-primary:hover {
+    background: #1e7e34;
+    transform: translateY(-1px);
+}
+
+.custom-btn-secondary {
+    background: var(--surface-quaternary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-default);
+}
+
+.custom-btn-secondary:hover {
+    background: var(--surface-tertiary);
+    border-color: var(--accent-primary);
+}
+
+.custom-btn-danger {
+    background: #dc3545;
+    color: white;
+}
+
+.custom-btn-danger:hover {
+    background: #c82333;
+    transform: translateY(-1px);
+}
+
+.custom-btn-success {
+    background: #28a745;
+    color: white;
+}
+
+.custom-btn-success:hover {
+    background: #218838;
+    transform: translateY(-1px);
+}
+
+.custom-btn-warning {
+    background: #ffc107;
+    color: #212529;
+}
+
+.custom-btn-warning:hover {
+    background: #e0a800;
+    transform: translateY(-1px);
+}
+
+/* Responsive design for modals */
+@media (max-width: 768px) {
+    .custom-modal {
+        width: 95%;
+        max-width: none;
+    }
+
+    .custom-modal-header {
+        padding: 1rem;
+    }
+
+    .custom-modal-body {
+        padding: 1rem;
+    }
+
+    .custom-modal-footer {
+        padding: 1rem;
+        flex-direction: column-reverse;
+    }
+
+    .custom-btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+</style>

@@ -14,28 +14,29 @@ class Migrations::MigrationsRegistry
 
     def all_migration_classes
       [
-        CreateAdminsTable,
-        CreateProductsTable,
-        CreateOrdersTable,
-        CreateOrderItemsTable,
-        CreateLicensesTable,
-        CreateSubscriptionsTable,
-        CreateLicenseActivationsTable,
-        CreateSettingsTable,
-        EnhanceLicensingSystem,
-        AddMissingProductFields,
-        AddCustomerNameToOrders,
-        CreateUsersTable,
-        AddUserIdToLicenses,
-        CreateFailedLoginAttemptsTable,
-        CreateAccountBansTable,
-        EnhanceAdminTableForSecurity,
-        CreateTaxesTable,
-        CreateOrderTaxesTable,
-        AddTaxFieldsToOrders,
-        AddRefundedAtToOrders,
-        AddCustomerNameToLicenses,
-        AddPerformanceIndexes,
+        Migrations::CreateAdminsTable,
+        Migrations::CreateProductsTable,
+        Migrations::CreateOrdersTable,
+        Migrations::CreateOrderItemsTable,
+        Migrations::CreateLicensesTable,
+        Migrations::CreateSubscriptionsTable,
+        Migrations::CreateLicenseActivationsTable,
+        Migrations::CreateSettingsTable,
+        Migrations::EnhanceLicensingSystem,
+        Migrations::AddMissingProductFields,
+        Migrations::AddCustomerNameToOrders,
+        Migrations::CreateUsersTable,
+        Migrations::AddUserIdToLicenses,
+        Migrations::CreateFailedLoginAttemptsTable,
+        Migrations::CreateAccountBansTable,
+        Migrations::EnhanceAdminTableForSecurity,
+        Migrations::CreateTaxesTable,
+        Migrations::CreateOrderTaxesTable,
+        Migrations::AddTaxFieldsToOrders,
+        Migrations::AddRefundedAtToOrders,
+        Migrations::AddCustomerNameToLicenses,
+        Migrations::AddPerformanceIndexes,
+        Migrations::AddProductCategories,
       ]
     end
 
@@ -65,6 +66,7 @@ class Migrations::MigrationsRegistry
         020_add_refunded_at_to_orders
         021_add_customer_name_to_licenses
         022_add_performance_indexes
+        023_add_product_categories
       ]
     end
   end

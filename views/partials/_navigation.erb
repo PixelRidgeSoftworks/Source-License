@@ -18,10 +18,10 @@
                        onmouseout="this.style.color='<%= request.path == '/' ? 'var(--bs-warning)' : 'var(--text-secondary)' %>'">
                         <i class="fas fa-home me-2"></i>Home
                     </a>
-                    <a class="text-decoration-none"
-                       href="/#products" style="color: var(--text-secondary); transition: color 0.3s; white-space: nowrap; margin-right: 2rem;"
+                    <a class="text-decoration-none <%= 'text-warning' if request.path == '/products' %>"
+                       href="/products" style="color: var(--text-secondary); transition: color 0.3s; white-space: nowrap; margin-right: 2rem;"
                        onmouseover="this.style.color='var(--accent-primary)'"
-                       onmouseout="this.style.color='var(--text-secondary)'">
+                       onmouseout="this.style.color='<%= request.path == '/products' ? 'var(--bs-warning)' : 'var(--text-secondary)' %>'">
                         <i class="fas fa-boxes me-2"></i>Products
                     </a>
                     <a class="text-decoration-none"
@@ -57,7 +57,7 @@
                                style="color: var(--text-secondary); transition: color 0.3s; white-space: nowrap;"
                                onmouseover="this.style.color='var(--accent-primary)'"
                                onmouseout="this.style.color='var(--text-secondary)'">
-                                <i class="fas fa-user me-2"></i><%= h(current_user.name || current_user.email.split('@').first) %>
+                                <i class="fas fa-user me-2"></i><%= h((current_user&.name || current_user&.email&.split('@')&.first) || 'User') %>
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end">
                                 <li><a class="dropdown-item" href="/dashboard"><i class="fas fa-tachometer-alt me-2"></i>Dashboard</a></li>

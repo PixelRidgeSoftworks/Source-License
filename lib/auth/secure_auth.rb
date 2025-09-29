@@ -4,7 +4,7 @@
 # Enhanced authentication with security features
 
 module Auth::SecureAuth
-  include BaseAuth
+  include Auth::BaseAuth
 
   #
   # ENHANCED AUTHENTICATION METHODS

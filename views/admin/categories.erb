@@ -1,0 +1,324 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h2>Product Categories</h2>
+    <p class="text-muted mb-0">Manage product categories and organization</p>
+  </div>
+  <a href="/admin/categories/new" class="btn btn-primary">
+    <i class="fas fa-plus me-2"></i>New Category
+  </a>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+  <div class="col-md-4">
+    <div class="card bg-primary text-white">
+      <div class="card-body">
+        <div class="d-flex justify-content-between">
+          <div>
+            <h6 class="card-title">Total Categories</h6>
+            <h3 class="mb-0"><%= @stats[:total] %></h3>
+          </div>
+          <i class="fas fa-folder-open fa-2x opacity-50"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card bg-success text-white">
+      <div class="card-body">
+        <div class="d-flex justify-content-between">
+          <div>
+            <h6 class="card-title">Active Categories</h6>
+            <h3 class="mb-0"><%= @stats[:active] %></h3>
+          </div>
+          <i class="fas fa-check-circle fa-2x opacity-50"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card bg-secondary text-white">
+      <div class="card-body">
+        <div class="d-flex justify-content-between">
+          <div>
+            <h6 class="card-title">Inactive Categories</h6>
+            <h3 class="mb-0"><%= @stats[:inactive] %></h3>
+          </div>
+          <i class="fas fa-pause-circle fa-2x opacity-50"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Categories Management -->
+<div class="card">
+  <div class="card-header">
+    <div class="d-flex justify-content-between align-items-center">
+      <h5 class="mb-0">Categories List</h5>
+      <div class="d-flex gap-2">
+        <button class="btn btn-sm btn-outline-danger" id="bulk-delete-btn" style="display: none;">
+          <i class="fas fa-trash me-1"></i>Delete Selected
+        </button>
+        <div class="dropdown">
+          <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+            <i class="fas fa-cog me-1"></i>Bulk Actions
+          </button>
+          <ul class="dropdown-menu">
+            <li><a class="dropdown-item bulk-action" href="#" data-action="activate">
+              <i class="fas fa-check text-success me-2"></i>Activate Selected
+            </a></li>
+            <li><a class="dropdown-item bulk-action" href="#" data-action="deactivate">
+              <i class="fas fa-pause text-warning me-2"></i>Deactivate Selected
+            </a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item bulk-action text-danger" href="#" data-action="delete">
+              <i class="fas fa-trash me-2"></i>Delete Selected
+            </a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="card-body p-0">
+    <% if @categories.empty? %>
+      <div class="text-center py-5">
+        <i class="fas fa-folder-open fa-3x text-muted mb-3"></i>
+        <h5 class="text-muted">No categories found</h5>
+        <p class="text-muted">Create your first product category to get started.</p>
+        <a href="/admin/categories/new" class="btn btn-primary">
+          <i class="fas fa-plus me-2"></i>Create Category
+        </a>
+      </div>
+    <% else %>
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead class="table-light">
+            <tr>
+              <th width="40">
+                <input type="checkbox" id="select-all" class="form-check-input">
+              </th>
+              <th>Category</th>
+              <th width="120">Products</th>
+              <th width="100">Sort Order</th>
+              <th width="80">Status</th>
+              <th width="120">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @categories.each do |category| %>
+              <tr>
+                <td>
+                  <input type="checkbox" class="form-check-input category-checkbox" value="<%= category.id %>">
+                </td>
+                <td>
+                  <div class="d-flex align-items-center">
+                    <div class="me-3">
+                      <div class="category-icon" style="background-color: <%= category.color %>;">
+                        <i class="<%= category.icon %> text-white"></i>
+                      </div>
+                    </div>
+                    <div>
+                      <h6 class="mb-1"><%= category.name %></h6>
+                      <small class="text-muted">/<%= category.slug %></small>
+                      <% if category.description && !category.description.empty? %>
+                        <p class="text-muted small mb-0 mt-1"><%= category.description.length > 60 ? category.description[0..60] + '...' : category.description %></p>
+                      <% end %>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <span class="badge bg-info">
+                    <%= category.products.count %> products
+                  </span>
+                </td>
+                <td>
+                  <span class="badge bg-secondary"><%= category.sort_order %></span>
+                </td>
+                <td>
+                  <div class="form-check form-switch">
+                    <input class="form-check-input status-toggle" type="checkbox"
+                           data-category-id="<%= category.id %>"
+                           <%= 'checked' if category.active %>>
+                  </div>
+                </td>
+                <td>
+                  <div class="btn-group btn-group-sm">
+                    <a href="/admin/categories/<%= category.id %>/edit" class="btn btn-outline-primary">
+                      <i class="fas fa-edit"></i>
+                    </a>
+                    <button class="btn btn-outline-danger delete-category" data-category-id="<%= category.id %>" data-category-name="<%= category.name %>">
+                      <i class="fas fa-trash"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<style>
+.category-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Select all functionality
+  const selectAll = document.getElementById('select-all');
+  const categoryCheckboxes = document.querySelectorAll('.category-checkbox');
+  const bulkDeleteBtn = document.getElementById('bulk-delete-btn');
+
+  selectAll?.addEventListener('change', function() {
+    categoryCheckboxes.forEach(checkbox => {
+      checkbox.checked = this.checked;
+    });
+    toggleBulkActions();
+  });
+
+  categoryCheckboxes.forEach(checkbox => {
+    checkbox.addEventListener('change', toggleBulkActions);
+  });
+
+  function toggleBulkActions() {
+    const checked = document.querySelectorAll('.category-checkbox:checked');
+    if (bulkDeleteBtn) {
+      bulkDeleteBtn.style.display = checked.length > 0 ? 'block' : 'none';
+    }
+
+    if (selectAll) {
+      selectAll.checked = checked.length === categoryCheckboxes.length;
+      selectAll.indeterminate = checked.length > 0 && checked.length < categoryCheckboxes.length;
+    }
+  }
+
+  // Status toggle
+  document.querySelectorAll('.status-toggle').forEach(toggle => {
+    toggle.addEventListener('change', function() {
+      const categoryId = this.dataset.categoryId;
+      const status = this.checked ? 'active' : 'inactive';
+
+      fetch(`/admin/categories/${categoryId}/toggle-status`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `status=${status}`
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          showAlert('success', data.message);
+        } else {
+          showAlert('error', data.error);
+          this.checked = !this.checked; // Revert toggle
+        }
+      })
+      .catch(error => {
+        showAlert('error', 'An error occurred');
+        this.checked = !this.checked; // Revert toggle
+      });
+    });
+  });
+
+  // Delete category
+  document.querySelectorAll('.delete-category').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const categoryId = this.dataset.categoryId;
+      const categoryName = this.dataset.categoryName;
+
+      if (confirm(`Are you sure you want to delete the category "${categoryName}"?`)) {
+        fetch(`/admin/categories/${categoryId}`, {
+          method: 'DELETE'
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            showAlert('success', data.message);
+            setTimeout(() => location.reload(), 1000);
+          } else {
+            showAlert('error', data.error);
+          }
+        })
+        .catch(error => {
+          showAlert('error', 'An error occurred');
+        });
+      }
+    });
+  });
+
+  // Bulk actions
+  document.querySelectorAll('.bulk-action').forEach(btn => {
+    btn.addEventListener('click', function(e) {
+      e.preventDefault();
+      const action = this.dataset.action;
+      const checked = Array.from(document.querySelectorAll('.category-checkbox:checked')).map(cb => cb.value);
+
+      if (checked.length === 0) {
+        showAlert('warning', 'Please select at least one category');
+        return;
+      }
+
+      if (action === 'delete' && !confirm(`Are you sure you want to delete ${checked.length} categories?`)) {
+        return;
+      }
+
+      fetch('/admin/categories/bulk-action', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `action=${action}&category_ids=${checked.join('&category_ids=')}`
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          const results = data.results;
+          let message = `${results.success} categories processed successfully`;
+          if (results.failed > 0) {
+            message += `, ${results.failed} failed`;
+          }
+          showAlert(results.failed > 0 ? 'warning' : 'success', message);
+          setTimeout(() => location.reload(), 1500);
+        } else {
+          showAlert('error', data.error);
+        }
+      })
+      .catch(error => {
+        showAlert('error', 'An error occurred');
+      });
+    });
+  });
+
+  function showAlert(type, message) {
+    // Create alert element
+    const alert = document.createElement('div');
+    alert.className = `alert alert-${type === 'error' ? 'danger' : type} alert-dismissible fade show position-fixed`;
+    alert.style.cssText = 'top: 20px; right: 20px; z-index: 1050; min-width: 300px;';
+    alert.innerHTML = `
+      ${message}
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+
+    document.body.appendChild(alert);
+
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+      if (alert.parentNode) {
+        alert.remove();
+      }
+    }, 5000);
+  }
+});
+</script>

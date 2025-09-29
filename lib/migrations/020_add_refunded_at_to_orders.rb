@@ -3,7 +3,7 @@
 # Source-License: Migration 20 - Add Refunded At to Orders
 # Adds refunded_at field to orders table
 
-class Migrations::AddRefundedAtToOrders < BaseMigration
+class Migrations::AddRefundedAtToOrders < Migrations::BaseMigration
   VERSION = 20
 
   def up

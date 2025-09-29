@@ -3,7 +3,7 @@
 # Source-License: Migration 4 - Create Order Items Table
 # Creates the order_items table for managing order line items
 
-class Migrations::CreateOrderItemsTable < BaseMigration
+class Migrations::CreateOrderItemsTable < Migrations::BaseMigration
   VERSION = 4
 
   def up

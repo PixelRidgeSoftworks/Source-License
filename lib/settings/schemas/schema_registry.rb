@@ -14,13 +14,13 @@ require_relative 'system_schema'
 class Settings::Schemas::SchemaRegistry
   # Aggregate all settings from individual schema files
   ALL_SCHEMAS = [
-    ApplicationSchema,
-    SocialSchema,
-    PaymentSchema,
-    WebhookSchema,
-    EmailSchema,
-    SecuritySchema,
-    SystemSchema,
+    Settings::Schemas::ApplicationSchema,
+    Settings::Schemas::SocialSchema,
+    Settings::Schemas::PaymentSchema,
+    Settings::Schemas::WebhookSchema,
+    Settings::Schemas::EmailSchema,
+    Settings::Schemas::SecuritySchema,
+    Settings::Schemas::SystemSchema,
   ].freeze
 
   class << self
@@ -60,50 +60,50 @@ class Settings::Schemas::SchemaRegistry
 
     # Convenience methods for accessing individual schema classes
     def application_schema
-      ApplicationSchema
+      Settings::Schemas::ApplicationSchema
     end
 
     def social_schema
-      SocialSchema
+      Settings::Schemas::SocialSchema
     end
 
     def payment_schema
-      PaymentSchema
+      Settings::Schemas::PaymentSchema
     end
 
     def webhook_schema
-      WebhookSchema
+      Settings::Schemas::WebhookSchema
     end
 
     def email_schema
-      EmailSchema
+      Settings::Schemas::EmailSchema
     end
 
     def security_schema
-      SecuritySchema
+      Settings::Schemas::SecuritySchema
     end
 
     def system_schema
-      SystemSchema
+      Settings::Schemas::SystemSchema
     end
 
     # Method to get settings by schema type
     def get_schema_settings(schema_type)
       case schema_type.to_sym
       when :application
-        ApplicationSchema.settings
+        Settings::Schemas::ApplicationSchema.settings
       when :social
-        SocialSchema.settings
+        Settings::Schemas::SocialSchema.settings
       when :payment
-        PaymentSchema.settings
+        Settings::Schemas::PaymentSchema.settings
       when :webhook, :webhooks
-        WebhookSchema.settings
+        Settings::Schemas::WebhookSchema.settings
       when :email
-        EmailSchema.settings
+        Settings::Schemas::EmailSchema.settings
       when :security
-        SecuritySchema.settings
+        Settings::Schemas::SecuritySchema.settings
       when :system
-        SystemSchema.settings
+        Settings::Schemas::SystemSchema.settings
       else
         {}
       end

@@ -4,7 +4,7 @@
 # Handles account bans, failed attempts tracking, and security monitoring
 
 module Auth::SecurityFeatures
-  include BaseAuth
+  include Auth::BaseAuth
 
   #
   # ACCOUNT SECURITY MONITORING

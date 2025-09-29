@@ -4,7 +4,7 @@
 # Handles password operations, validation, and policy enforcement
 
 module Auth::PasswordManager
-  include BaseAuth
+  include Auth::BaseAuth
 
   #
   # PASSWORD MANAGEMENT

@@ -8,28 +8,28 @@ class Webhooks::Stripe::EventDispatcher
   # Event type to handler mapping
   EVENT_HANDLERS = {
     # Payment events
-    'payment_intent.created' => PaymentEventHandler,
-    'payment_intent.succeeded' => PaymentEventHandler,
-    'charge.succeeded' => PaymentEventHandler,
-    'charge.failed' => PaymentEventHandler,
-    'charge.refunded' => PaymentEventHandler,
-    'payment_method.attached' => PaymentEventHandler,
+    'payment_intent.created' => Webhooks::Stripe::PaymentEventHandler,
+    'payment_intent.succeeded' => Webhooks::Stripe::PaymentEventHandler,
+    'charge.succeeded' => Webhooks::Stripe::PaymentEventHandler,
+    'charge.failed' => Webhooks::Stripe::PaymentEventHandler,
+    'charge.refunded' => Webhooks::Stripe::PaymentEventHandler,
+    'payment_method.attached' => Webhooks::Stripe::PaymentEventHandler,
 
     # Subscription events
-    'customer.subscription.created' => SubscriptionEventHandler,
-    'customer.subscription.deleted' => SubscriptionEventHandler,
-    'customer.subscription.paused' => SubscriptionEventHandler,
-    'customer.subscription.resumed' => SubscriptionEventHandler,
-    'customer.subscription.updated' => SubscriptionEventHandler,
-    'customer.subscription.trial_will_end' => SubscriptionEventHandler,
-    'invoice.payment_failed' => SubscriptionEventHandler,
-    'invoice.payment_succeeded' => SubscriptionEventHandler,
+    'customer.subscription.created' => Webhooks::Stripe::SubscriptionEventHandler,
+    'customer.subscription.deleted' => Webhooks::Stripe::SubscriptionEventHandler,
+    'customer.subscription.paused' => Webhooks::Stripe::SubscriptionEventHandler,
+    'customer.subscription.resumed' => Webhooks::Stripe::SubscriptionEventHandler,
+    'customer.subscription.updated' => Webhooks::Stripe::SubscriptionEventHandler,
+    'customer.subscription.trial_will_end' => Webhooks::Stripe::SubscriptionEventHandler,
+    'invoice.payment_failed' => Webhooks::Stripe::SubscriptionEventHandler,
+    'invoice.payment_succeeded' => Webhooks::Stripe::SubscriptionEventHandler,
 
     # Customer and dispute events
-    'customer.updated' => CustomerDisputeEventHandler,
-    'charge.dispute.created' => CustomerDisputeEventHandler,
-    'charge.dispute.updated' => CustomerDisputeEventHandler,
-    'charge.dispute.closed' => CustomerDisputeEventHandler,
+    'customer.updated' => Webhooks::Stripe::CustomerDisputeEventHandler,
+    'charge.dispute.created' => Webhooks::Stripe::CustomerDisputeEventHandler,
+    'charge.dispute.updated' => Webhooks::Stripe::CustomerDisputeEventHandler,
+    'charge.dispute.closed' => Webhooks::Stripe::CustomerDisputeEventHandler,
   }.freeze
 
   class << self

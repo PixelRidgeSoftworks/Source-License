@@ -1,134 +1,142 @@
 <head>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
 </head>
+
 <!-- Hero Section -->
 <section class="hero-section">
     <div class="hero-content">
         <div class="container">
-            <div class="row align-items-center min-vh-50">
+            <div class="row align-items-center min-vh-70">
                 <div class="col-lg-6">
                     <div class="hero-text">
                         <h1 class="display-3 fw-bold mb-4">
-                            <%= custom('text.hero_title', 'Professional Software Licensing Made Simple') %>
+                            <%= custom('hero_section.title', 'Transform Your Business with Our Solutions') %>
                         </h1>
                         <p class="lead mb-4 text-secondary fs-4">
-                            <%= custom('text.hero_subtitle',
-                            'Secure, reliable, and easy-to-manage software licenses for developers and businesses. Support for both one-time purchases and subscriptions with integrated payment processing.') %>
+                            <%= custom('hero_section.subtitle',
+                            'Powerful, reliable, and easy-to-use solutions designed to help your business grow. From startups to enterprises, we provide the tools you need to succeed.') %>
                         </p>
 
                         <!-- CTA Buttons -->
-                        <div class="d-flex gap-3 mb-5">
-                            <a href="#products" class="btn btn-primary btn-lg px-4 py-3">
-                                <i class="fas fa-boxes me-2"></i>
-                                Browse Products
+                        <div class="d-flex gap-3 mb-5 flex-wrap">
+                            <a href="<%= custom('hero_section.cta_primary_link', '/products') %>" class="btn btn-primary btn-lg px-4 py-3">
+                                <i class="<%= custom('hero_section.cta_primary_icon', 'fas fa-rocket') %> me-2"></i>
+                                <%= custom('hero_section.cta_primary_text', 'Get Started') %>
                             </a>
                             <% if user_logged_in? %>
                                 <a href="/dashboard" class="btn btn-outline-primary btn-lg px-4 py-3">
                                     <i class="fas fa-tachometer-alt me-2"></i>
-                                    My Dashboard
+                                    <%= custom('hero_section.cta_dashboard_text', 'My Dashboard') %>
                                 </a>
                             <% else %>
-                                <a href="/register" class="btn btn-outline-success btn-lg px-4 py-3">
-                                    <i class="fas fa-user-plus me-2"></i>
-                                    Create Account
+                                <a href="<%= custom('hero_section.cta_secondary_link', '/register') %>" class="btn btn-outline-success btn-lg px-4 py-3">
+                                    <i class="<%= custom('hero_section.cta_secondary_icon', 'fas fa-user-plus') %> me-2"></i>
+                                    <%= custom('hero_section.cta_secondary_text', 'Sign Up Free') %>
                                 </a>
                             <% end %>
                         </div>
 
-                        <!-- Quick Access for Non-Users -->
-                        <% unless user_logged_in? %>
-                        <div class="mb-4">
-                            <a href="/validate-license" class="btn btn-link text-decoration-none">
-                                <i class="fas fa-shield-alt me-2"></i>
-                                Just need to validate a license?
-                            </a>
-                        </div>
-                        <% end %>
-
                         <!-- Trust Indicators -->
+                        <% if custom('hero_section.show_trust_indicators', true) %>
                         <div class="row g-4 text-center">
                             <div class="col-4">
                                 <div class="d-flex flex-column align-items-center">
-                                    <i class="fas fa-shield-alt text-success mb-2" style="font-size: 1.5rem;"></i>
-                                    <small class="text-secondary fw-medium">SSL Secured</small>
+                                    <i class="<%= custom('hero_section.trust_indicator_1_icon', 'fas fa-shield-alt') %> text-success mb-2" style="font-size: 1.5rem;"></i>
+                                    <small class="text-secondary fw-medium"><%= custom('hero_section.trust_indicator_1_text', 'Secure') %></small>
                                 </div>
                             </div>
                             <div class="col-4">
                                 <div class="d-flex flex-column align-items-center">
-                                    <i class="fas fa-lock text-success mb-2" style="font-size: 1.5rem;"></i>
-                                    <small class="text-secondary fw-medium">PCI Compliant</small>
+                                    <i class="<%= custom('hero_section.trust_indicator_2_icon', 'fas fa-clock') %> text-success mb-2" style="font-size: 1.5rem;"></i>
+                                    <small class="text-secondary fw-medium"><%= custom('hero_section.trust_indicator_2_text', 'Fast Setup') %></small>
                                 </div>
                             </div>
                             <div class="col-4">
                                 <div class="d-flex flex-column align-items-center">
-                                    <i class="fas fa-clock text-success mb-2" style="font-size: 1.5rem;"></i>
-                                    <small class="text-secondary fw-medium">24/7 Support</small>
+                                    <i class="<%= custom('hero_section.trust_indicator_3_icon', 'fas fa-users') %> text-success mb-2" style="font-size: 1.5rem;"></i>
+                                    <small class="text-secondary fw-medium"><%= custom('hero_section.trust_indicator_3_text', 'Expert Support') %></small>
                                 </div>
                             </div>
                         </div>
+                        <% end %>
                     </div>
                 </div>
 
                 <div class="col-lg-6">
                     <div class="hero-visual text-center position-relative">
-                        <!-- Floating License Card -->
-                        <div class="card shadow-xl" style="max-width: 400px; margin: 0 auto; transform: rotate(-5deg);">
-                            <div class="card-header text-center py-3">
-                                <h6 class="mb-0 fw-bold">
-                                    <i class="fas fa-certificate text-warning me-2"></i>
-                                    Software License
-                                </h6>
-                            </div>
-                            <div class="card-body">
-                                <div class="row align-items-center mb-3">
-                                    <div class="col-8">
-                                        <h6 class="mb-1">Premium Software Pro</h6>
-                                        <small class="text-muted">Version 2.1.0</small>
-                                    </div>
-                                    <div class="col-4 text-end">
-                                        <span class="status-badge status-active">Active</span>
-                                    </div>
+                        <!-- Show SVG or Dashboard based on customization -->
+                        <% if custom('hero_section.svg_enabled', true) %>
+                            <%= erb :'partials/_hero_svg' %>
+                        <% else %>
+                            <!-- Generic Business Dashboard -->
+                            <div class="card shadow-xl" style="max-width: 400px; margin: 0 auto; transform: rotate(-3deg);">
+                                <div class="card-header text-center py-3">
+                                    <h6 class="mb-0 fw-bold">
+                                        <i class="fas fa-chart-line text-primary me-2"></i>
+                                        <%= custom('hero_section.dashboard_title', 'Business Dashboard') %>
+                                    </h6>
                                 </div>
-
-                                <div class="mb-3">
-                                    <label class="form-label small text-muted">License Key</label>
-                                    <div class="d-flex align-items-center gap-2">
-                                        <code class="bg-dark text-light px-2 py-1 rounded flex-grow-1 small">
-                                            PSP-2024-XXXX-XXXX
-                                        </code>
-                                        <button class="btn btn-sm btn-outline-primary" onclick="SourceLicense.copyToClipboard('PSP-2024-XXXX-XXXX')">
-                                            <i class="fas fa-copy"></i>
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <div class="row text-center">
-                                    <div class="col-6">
-                                        <div class="border-end">
-                                            <div class="fw-bold text-success">2/5</div>
-                                            <small class="text-muted">Activations</small>
+                                <div class="card-body">
+                                    <div class="row text-center mb-3">
+                                        <div class="col-4">
+                                            <div class="fw-bold text-success fs-4"><%= custom('hero_section.stat_1_value', '98%') %></div>
+                                            <small class="text-muted"><%= custom('hero_section.stat_1_label', 'Success Rate') %></small>
+                                        </div>
+                                        <div class="col-4">
+                                            <div class="fw-bold text-primary fs-4"><%= custom('hero_section.stat_2_value', '24/7') %></div>
+                                            <small class="text-muted"><%= custom('hero_section.stat_2_label', 'Support') %></small>
+                                        </div>
+                                        <div class="col-4">
+                                            <div class="fw-bold text-warning fs-4"><%= custom('hero_section.stat_3_value', '10k+') %></div>
+                                            <small class="text-muted"><%= custom('hero_section.stat_3_label', 'Customers') %></small>
                                         </div>
                                     </div>
-                                    <div class="col-6">
-                                        <div class="fw-bold text-info">365 days</div>
-                                        <small class="text-muted">Remaining</small>
+
+                                    <!-- Progress bars -->
+                                    <div class="mb-3">
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                            <small class="text-muted"><%= custom('hero_section.progress_1_label', 'Performance') %></small>
+                                            <small class="text-muted"><%= custom('hero_section.progress_1_value', '92%') %></small>
+                                        </div>
+                                        <div class="progress" style="height: 6px;">
+                                            <div class="progress-bar bg-success" style="width: 92%"></div>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                            <small class="text-muted"><%= custom('hero_section.progress_2_label', 'Growth') %></small>
+                                            <small class="text-muted"><%= custom('hero_section.progress_2_value', '87%') %></small>
+                                        </div>
+                                        <div class="progress" style="height: 6px;">
+                                            <div class="progress-bar bg-primary" style="width: 87%"></div>
+                                        </div>
+                                    </div>
+
+                                    <div class="text-center mt-3">
+                                        <span class="badge bg-success-subtle text-success px-3 py-2">
+                                            <i class="fas fa-check-circle me-1"></i>
+                                            <%= custom('hero_section.status_text', 'All Systems Operational') %>
+                                        </span>
                                     </div>
                                 </div>
                             </div>
-                        </div>
 
-                        <!-- Background Elements -->
-                        <div class="position-absolute top-0 start-0 w-100 h-100" style="z-index: -1;">
-                            <div class="position-absolute" style="top: 20%; left: 10%; animation: float 6s ease-in-out infinite;">
-                                <i class="fas fa-shield-alt text-success" style="font-size: 2rem; opacity: 0.3;"></i>
+                            <!-- Background Elements -->
+                            <% if custom('hero_section.show_background_elements', true) %>
+                            <div class="position-absolute top-0 start-0 w-100 h-100" style="z-index: -1;">
+                                <div class="position-absolute" style="top: 20%; left: 10%; animation: float 6s ease-in-out infinite;">
+                                    <i class="fas fa-star text-warning" style="font-size: 2rem; opacity: 0.3;"></i>
+                                </div>
+                                <div class="position-absolute" style="top: 60%; right: 20%; animation: float 8s ease-in-out infinite reverse;">
+                                    <i class="fas fa-bolt text-primary" style="font-size: 1.5rem; opacity: 0.3;"></i>
+                                </div>
+                                <div class="position-absolute" style="bottom: 30%; left: 20%; animation: float 7s ease-in-out infinite;">
+                                    <i class="fas fa-gem text-success" style="font-size: 1.8rem; opacity: 0.3;"></i>
+                                </div>
                             </div>
-                            <div class="position-absolute" style="top: 60%; right: 20%; animation: float 8s ease-in-out infinite reverse;">
-                                <i class="fas fa-key text-primary" style="font-size: 1.5rem; opacity: 0.3;"></i>
-                            </div>
-                            <div class="position-absolute" style="bottom: 30%; left: 20%; animation: float 7s ease-in-out infinite;">
-                                <i class="fas fa-lock text-warning" style="font-size: 1.8rem; opacity: 0.3;"></i>
-                            </div>
-                        </div>
+                            <% end %>
+                        <% end %>
                     </div>
                 </div>
             </div>
@@ -142,357 +150,279 @@
     50% { transform: translateY(-20px); }
 }
 
-.min-vh-50 {
-    min-height: 50vh;
+.min-vh-70 {
+    min-height: 70vh;
 }
 </style>
 
 <!-- Features Section -->
-<section class="py-5">
+<% if custom('features_section.enabled', true) %>
+<section class="py-5" style="background: var(--surface-secondary);">
     <div class="container">
         <div class="row text-center mb-5">
             <div class="col-lg-8 mx-auto">
                 <h2 class="fw-bold mb-3">
-                    <%= custom('features_title', 'Why Choose Source License?') %>
+                    <%= custom('features_section.title', 'Why Choose Us?') %>
                 </h2>
                 <p class="lead text-secondary">
-                    <%= custom('features_subtitle',
-                    'Built with modern technology and security best practices to ensure your software licensing is handled professionally.') %>
+                    <%= custom('features_section.subtitle',
+                    'We provide cutting-edge solutions with exceptional service to help your business thrive in today\'s competitive market.') %>
                 </p>
             </div>
         </div>
 
         <div class="row g-4">
-            <!-- Feature 1: Secure -->
+            <!-- Feature 1 -->
+            <% if custom('features_section.feature_1_enabled', true) %>
             <div class="col-lg-4 col-md-6">
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <i class="fas fa-shield-alt"></i>
+                <div class="feature-card h-100 text-center p-4 rounded shadow-sm" style="background: var(--surface-primary); border: 1px solid var(--border-default);">
+                    <div class="feature-icon mb-3" style="background: linear-gradient(135deg, <%= custom('features_section.feature_1_color_start', '#007bff') %>, <%= custom('features_section.feature_1_color_end', '#0056b3') %>); width: 60px; height: 60px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;">
+                        <i class="<%= custom('features_section.feature_1_icon', 'fas fa-rocket') %> text-white" style="font-size: 1.5rem;"></i>
                     </div>
-                    <h5 class="fw-bold mb-3">Ultra Secure</h5>
+                    <h5 class="fw-bold mb-3"><%= custom('features_section.feature_1_title', 'Fast & Reliable') %></h5>
                     <p class="text-secondary">
-                        Military-grade encryption, secure API endpoints, and comprehensive license validation
-                        protect your intellectual property.
+                        <%= custom('features_section.feature_1_description', 'Lightning-fast performance with 99.9% uptime guarantee. Built on modern infrastructure to ensure your business never slows down.') %>
                     </p>
                 </div>
             </div>
+            <% end %>
 
-            <!-- Feature 2: Easy Integration -->
+            <!-- Feature 2 -->
+            <% if custom('features_section.feature_2_enabled', true) %>
             <div class="col-lg-4 col-md-6">
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <i class="fas fa-code"></i>
+                <div class="feature-card h-100 text-center p-4 rounded shadow-sm" style="background: var(--surface-primary); border: 1px solid var(--border-default);">
+                    <div class="feature-icon mb-3" style="background: linear-gradient(135deg, <%= custom('features_section.feature_2_color_start', '#28a745') %>, <%= custom('features_section.feature_2_color_end', '#1e7e34') %>); width: 60px; height: 60px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;">
+                        <i class="<%= custom('features_section.feature_2_icon', 'fas fa-shield-alt') %> text-white" style="font-size: 1.5rem;"></i>
                     </div>
-                    <h5 class="fw-bold mb-3">Easy Integration</h5>
+                    <h5 class="fw-bold mb-3"><%= custom('features_section.feature_2_title', 'Secure & Compliant') %></h5>
                     <p class="text-secondary">
-                        RESTful API with comprehensive documentation makes it simple to integrate
-                        license validation into your software.
+                        <%= custom('features_section.feature_2_description', 'Enterprise-grade security with industry-standard compliance. Your data is protected with military-grade encryption.') %>
                     </p>
                 </div>
             </div>
+            <% end %>
 
-            <!-- Feature 3: Payment Processing -->
+            <!-- Feature 3 -->
+            <% if custom('features_section.feature_3_enabled', true) %>
             <div class="col-lg-4 col-md-6">
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <i class="fas fa-credit-card"></i>
+                <div class="feature-card h-100 text-center p-4 rounded shadow-sm" style="background: var(--surface-primary); border: 1px solid var(--border-default);">
+                    <div class="feature-icon mb-3" style="background: linear-gradient(135deg, <%= custom('features_section.feature_3_color_start', '#ffc107') %>, <%= custom('features_section.feature_3_color_end', '#e0a800') %>); width: 60px; height: 60px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;">
+                        <i class="<%= custom('features_section.feature_3_icon', 'fas fa-cogs') %> text-white" style="font-size: 1.5rem;"></i>
                     </div>
-                    <h5 class="fw-bold mb-3">Payment Processing</h5>
+                    <h5 class="fw-bold mb-3"><%= custom('features_section.feature_3_title', 'Easy Integration') %></h5>
                     <p class="text-secondary">
-                        Integrated Stripe and PayPal support for seamless payment processing
-                        and automatic license generation.
+                        <%= custom('features_section.feature_3_description', 'Seamless integration with your existing tools and workflows. Get up and running in minutes, not hours.') %>
                     </p>
                 </div>
             </div>
+            <% end %>
 
-            <!-- Feature 4: Real-time Management -->
+            <!-- Feature 4 -->
+            <% if custom('features_section.feature_4_enabled', true) %>
             <div class="col-lg-4 col-md-6">
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <i class="fas fa-tachometer-alt"></i>
+                <div class="feature-card h-100 text-center p-4 rounded shadow-sm" style="background: var(--surface-primary); border: 1px solid var(--border-default);">
+                    <div class="feature-icon mb-3" style="background: linear-gradient(135deg, <%= custom('features_section.feature_4_color_start', '#dc3545') %>, <%= custom('features_section.feature_4_color_end', '#b02a37') %>); width: 60px; height: 60px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;">
+                        <i class="<%= custom('features_section.feature_4_icon', 'fas fa-users') %> text-white" style="font-size: 1.5rem;"></i>
                     </div>
-                    <h5 class="fw-bold mb-3">Real-time Management</h5>
+                    <h5 class="fw-bold mb-3"><%= custom('features_section.feature_4_title', 'Expert Support') %></h5>
                     <p class="text-secondary">
-                        Instantly activate, suspend, or revoke licenses. Monitor usage and
-                        activations in real-time through the admin dashboard.
+                        <%= custom('features_section.feature_4_description', '24/7 dedicated support from our team of experts. Get help when you need it, however you need it.') %>
                     </p>
                 </div>
             </div>
+            <% end %>
 
-            <!-- Feature 5: Subscription Support -->
+            <!-- Feature 5 -->
+            <% if custom('features_section.feature_5_enabled', true) %>
             <div class="col-lg-4 col-md-6">
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <i class="fas fa-sync-alt"></i>
+                <div class="feature-card h-100 text-center p-4 rounded shadow-sm" style="background: var(--surface-primary); border: 1px solid var(--border-default);">
+                    <div class="feature-icon mb-3" style="background: linear-gradient(135deg, <%= custom('features_section.feature_5_color_start', '#17a2b8') %>, <%= custom('features_section.feature_5_color_end', '#117a8b') %>); width: 60px; height: 60px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;">
+                        <i class="<%= custom('features_section.feature_5_icon', 'fas fa-chart-line') %> text-white" style="font-size: 1.5rem;"></i>
                     </div>
-                    <h5 class="fw-bold mb-3">Subscription Support</h5>
+                    <h5 class="fw-bold mb-3"><%= custom('features_section.feature_5_title', 'Analytics & Insights') %></h5>
                     <p class="text-secondary">
-                        Support for both one-time purchases and recurring subscriptions
-                        with automatic renewal and billing management.
+                        <%= custom('features_section.feature_5_description', 'Comprehensive analytics and reporting to help you make data-driven decisions and optimize your operations.') %>
                     </p>
                 </div>
             </div>
+            <% end %>
 
-            <!-- Feature 6: Multi-Platform -->
+            <!-- Feature 6 -->
+            <% if custom('features_section.feature_6_enabled', true) %>
             <div class="col-lg-4 col-md-6">
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <i class="fas fa-laptop"></i>
+                <div class="feature-card h-100 text-center p-4 rounded shadow-sm" style="background: var(--surface-primary); border: 1px solid var(--border-default);">
+                    <div class="feature-icon mb-3" style="background: linear-gradient(135deg, <%= custom('features_section.feature_6_color_start', '#6f42c1') %>, <%= custom('features_section.feature_6_color_end', '#5a32a3') %>); width: 60px; height: 60px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;">
+                        <i class="<%= custom('features_section.feature_6_icon', 'fas fa-mobile-alt') %> text-white" style="font-size: 1.5rem;"></i>
                     </div>
-                    <h5 class="fw-bold mb-3">Multi-Platform</h5>
+                    <h5 class="fw-bold mb-3"><%= custom('features_section.feature_6_title', 'Mobile Ready') %></h5>
                     <p class="text-secondary">
-                        Cross-platform support with activation tracking across Windows,
-                        macOS, and Linux environments.
+                        <%= custom('features_section.feature_6_description', 'Fully responsive design that works perfectly on all devices. Manage your business from anywhere, anytime.') %>
                     </p>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- Products Section -->
-<section id="products" class="py-5">
-    <div class="container">
-        <div class="row text-center mb-5">
-            <div class="col-lg-8 mx-auto">
-                <h2 class="fw-bold mb-3">
-                    <%= custom('text.products_title', 'Available Software Products') %>
-                </h2>
-                <p class="lead text-secondary">
-                    <%= custom('text.products_subtitle',
-                    'Choose from our selection of professional software solutions. All products include secure licensing and instant delivery.') %>
-                </p>
-            </div>
-        </div>
-
-        <% if @products && @products.any? %>
-        <div class="row g-4">
-            <% @products.each do |product| %>
-            <div class="col-lg-4 col-md-6">
-                <div class="card h-100">
-                    <div class="card-header border-0 pb-0">
-                        <div class="d-flex justify-content-between align-items-start">
-                            <h5 class="fw-bold mb-0"><%= h(product.name) %></h5>
-                            <% if product.subscription? %>
-                                <span class="badge bg-info">Subscription</span>
-                            <% else %>
-                                <span class="badge bg-success">One-time</span>
-                            <% end %>
-                        </div>
-                    </div>
-
-                    <div class="card-body">
-                        <div class="price-display mb-3">
-                            <%= product.formatted_price %>
-                            <% if product.subscription? %>
-                                <small class="text-muted">/month</small>
-                            <% end %>
-                        </div>
-
-                        <p class="text-secondary mb-3">
-                            <%= h(product.description) %>
-                        </p>
-
-                        <!-- License Info -->
-                        <div class="small text-muted mb-3">
-                            <div class="d-flex justify-content-between">
-                                <span>Max Activations:</span>
-                                <span class="fw-bold"><%= product.max_activations %></span>
-                            </div>
-                            <% if product.version %>
-                            <div class="d-flex justify-content-between">
-                                <span>Version:</span>
-                                <span class="fw-bold"><%= h(product.version) %></span>
-                            </div>
-                            <% end %>
-                        </div>
-                    </div>
-
-                    <div class="card-footer border-0">
-                        <div class="d-grid gap-2">
-                            <% if user_logged_in? %>
-                                <button class="btn btn-primary" onclick="window.cart.addItem(<%= product.id %>)">
-                                    <i class="fas fa-cart-plus me-2"></i>
-                                    Add to Cart
-                                </button>
-                            <% else %>
-                                <a href="/register" class="btn btn-primary">
-                                    <i class="fas fa-user-plus me-2"></i>
-                                    Sign Up to Purchase
-                                </a>
-                            <% end %>
-                            <a href="/product/<%= product.id %>" class="btn btn-outline-secondary">
-                                <i class="fas fa-info-circle me-2"></i>
-                                View Details
-                            </a>
-                        </div>
-                    </div>
                 </div>
             </div>
             <% end %>
         </div>
-        <% else %>
-        <!-- No Products Available -->
-        <div class="row">
-            <div class="col-12 text-center">
-                <div class="card">
-                    <div class="card-body py-5">
-                        <i class="fas fa-box-open text-muted mb-3" style="font-size: 4rem;"></i>
-                        <h4 class="text-muted">No Products Available</h4>
-                        <p class="text-muted mb-4">
-                            Products are currently being configured. Please check back soon or contact support.
-                        </p>
-                        <% if admin_logged_in? %>
-                        <a href="/admin/products" class="btn btn-primary">
-                            <i class="fas fa-plus me-2"></i>
-                            Add Products
-                        </a>
-                        <% end %>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <% end %>
     </div>
 </section>
+<% end %>
 
 <!-- How It Works Section -->
+<% if custom('how_it_works.enabled', true) %>
 <section class="py-5">
     <div class="container">
         <div class="row text-center mb-5">
             <div class="col-lg-8 mx-auto">
                 <h2 class="fw-bold mb-3">
-                    <%= custom('text.how_it_works_title', 'How It Works') %>
+                    <%= custom('how_it_works.title', 'How It Works') %>
                 </h2>
                 <p class="lead text-secondary">
-                    <%= custom('text.how_it_works_subtitle', 'Get your software license in three simple steps.') %>
+                    <%= custom('how_it_works.subtitle', 'Get started in three simple steps and see results immediately.') %>
                 </p>
             </div>
         </div>
 
         <div class="row g-4">
             <!-- Step 1 -->
+            <% if custom('how_it_works.step_1_enabled', true) %>
             <div class="col-lg-4 text-center">
                 <div class="position-relative mb-4">
-                    <div class="feature-icon" style="background: var(--gradient-primary);">
-                        <i class="fas fa-shopping-cart"></i>
+                    <div class="feature-icon mx-auto" style="background: linear-gradient(135deg, #007bff, #0056b3); width: 80px; height: 80px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;">
+                        <i class="<%= custom('how_it_works.step_1_icon', 'fas fa-user-plus') %> text-white" style="font-size: 2rem;"></i>
                     </div>
-                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-info">
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-info fs-6 px-3 py-2">
                         1
                     </span>
                 </div>
-                <h5 class="fw-bold mb-3">Choose & Purchase</h5>
+                <h5 class="fw-bold mb-3"><%= custom('how_it_works.step_1_title', 'Sign Up') %></h5>
                 <p class="text-secondary">
-                    Select your desired software product and complete the secure checkout process
-                    using your preferred payment method.
+                    <%= custom('how_it_works.step_1_description', 'Create your account in seconds with our streamlined registration process. No credit card required to get started.') %>
                 </p>
             </div>
+            <% end %>
 
             <!-- Step 2 -->
+            <% if custom('how_it_works.step_2_enabled', true) %>
             <div class="col-lg-4 text-center">
                 <div class="position-relative mb-4">
-                    <div class="feature-icon" style="background: var(--gradient-primary);">
-                        <i class="fas fa-key"></i>
+                    <div class="feature-icon mx-auto" style="background: linear-gradient(135deg, #28a745, #1e7e34); width: 80px; height: 80px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;">
+                        <i class="<%= custom('how_it_works.step_2_icon', 'fas fa-cogs') %> text-white" style="font-size: 2rem;"></i>
                     </div>
-                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-info">
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-info fs-6 px-3 py-2">
                         2
                     </span>
                 </div>
-                <h5 class="fw-bold mb-3">Receive License</h5>
+                <h5 class="fw-bold mb-3"><%= custom('how_it_works.step_2_title', 'Setup & Configure') %></h5>
                 <p class="text-secondary">
-                    Get your license key instantly via email with download instructions
-                    and activation guidelines.
+                    <%= custom('how_it_works.step_2_description', 'Customize your setup with our intuitive configuration wizard. Everything is designed to be simple and straightforward.') %>
                 </p>
             </div>
+            <% end %>
 
             <!-- Step 3 -->
+            <% if custom('how_it_works.step_3_enabled', true) %>
             <div class="col-lg-4 text-center">
                 <div class="position-relative mb-4">
-                    <div class="feature-icon" style="background: var(--gradient-primary);">
-                        <i class="fas fa-rocket"></i>
+                    <div class="feature-icon mx-auto" style="background: linear-gradient(135deg, #ffc107, #e0a800); width: 80px; height: 80px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;">
+                        <i class="<%= custom('how_it_works.step_3_icon', 'fas fa-rocket') %> text-white" style="font-size: 2rem;"></i>
                     </div>
-                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-info">
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-info fs-6 px-3 py-2">
                         3
                     </span>
                 </div>
-                <h5 class="fw-bold mb-3">Activate & Use</h5>
+                <h5 class="fw-bold mb-3"><%= custom('how_it_works.step_3_title', 'Launch & Grow') %></h5>
                 <p class="text-secondary">
-                    Download your software, activate it with your license key,
-                    and start using it immediately.
+                    <%= custom('how_it_works.step_3_description', 'Go live instantly and watch your business grow. Our platform scales with you as your needs evolve.') %>
                 </p>
+            </div>
+            <% end %>
+        </div>
+
+        <!-- CTA -->
+        <div class="row mt-5">
+            <div class="col-12 text-center">
+                <a href="<%= custom('how_it_works.cta_link', '/register') %>" class="btn btn-primary btn-lg px-5 py-3">
+                    <i class="fas fa-arrow-right me-2"></i>
+                    <%= custom('how_it_works.cta_text', 'Start Your Journey') %>
+                </a>
             </div>
         </div>
     </div>
 </section>
+<% end %>
 
 <!-- Support Section -->
-<section id="support" class="py-5">
+<% if custom('support_section.enabled', true) %>
+<section class="py-5" style="background: var(--surface-secondary);">
     <div class="container">
         <div class="row text-center mb-5">
             <div class="col-lg-8 mx-auto">
                 <h2 class="fw-bold mb-3">
-                    <%= custom('text.support_title', 'Need Help?') %>
+                    <%= custom('support_section.title', 'Need Help?') %>
                 </h2>
                 <p class="lead text-secondary">
-                    <%= custom('text.support_subtitle',
-                    'We\'re here to help you with any questions about your licenses or our products.') %>
+                    <%= custom('support_section.subtitle',
+                    'We\'re here to support you every step of the way. Get help when you need it, however you need it.') %>
                 </p>
             </div>
         </div>
 
-        <div class="row g-4">
-            <!-- License Management -->
-            <div class="col-lg-6">
-                <div class="card h-100">
+        <div class="row g-4 justify-content-center">
+            <!-- Support Card 1 -->
+            <% if custom('support_section.card_1_enabled', true) %>
+            <div class="col-lg-5 col-md-6">
+                <div class="card h-100 shadow-sm" style="background: var(--surface-primary); border: 1px solid var(--border-default);">
                     <div class="card-body text-center p-4">
-                        <div class="feature-icon mb-3" style="background: var(--gradient-primary);">
-                            <i class="fas fa-shield-alt"></i>
+                        <div class="feature-icon mb-3 mx-auto" style="background: linear-gradient(135deg, #007bff, #0056b3); width: 60px; height: 60px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;">
+                            <i class="<%= custom('support_section.card_1_icon', 'fas fa-tachometer-alt') %> text-white" style="font-size: 1.5rem;"></i>
                         </div>
-                        <h5 class="fw-bold">License Management</h5>
+                        <h5 class="fw-bold"><%= custom('support_section.card_1_title', 'Account Management') %></h5>
                         <p class="text-secondary mb-4">
-                            Validate license keys, manage your software licenses, or access your secure dashboard.
+                            <%= custom('support_section.card_1_description', 'Access your account, manage your settings, or view your activity through our user-friendly dashboard.') %>
                         </p>
                         <div class="d-grid gap-2">
                             <% if user_logged_in? %>
                                 <a href="/dashboard" class="btn btn-primary">
                                     <i class="fas fa-tachometer-alt me-2"></i>
-                                    My Dashboard
+                                    <%= custom('support_section.card_1_button_1_text', 'My Dashboard') %>
                                 </a>
                             <% else %>
-                                <a href="/validate-license" class="btn btn-primary">
-                                    <i class="fas fa-shield-alt me-2"></i>
-                                    Validate License
+                                <a href="<%= custom('support_section.card_1_button_1_link', '/register') %>" class="btn btn-primary">
+                                    <i class="fas fa-user-plus me-2"></i>
+                                    <%= custom('support_section.card_1_button_1_text', 'Create Account') %>
                                 </a>
-                                <a href="/login" class="btn btn-outline-primary">
+                                <a href="<%= custom('support_section.card_1_button_2_link', '/login') %>" class="btn btn-outline-primary">
                                     <i class="fas fa-sign-in-alt me-2"></i>
-                                    Login for Full Access
+                                    <%= custom('support_section.card_1_button_2_text', 'Sign In') %>
                                 </a>
                             <% end %>
                         </div>
                     </div>
                 </div>
             </div>
+            <% end %>
 
-            <!-- Contact Support -->
-            <div class="col-lg-6">
-                <div class="card h-100">
+            <!-- Support Card 2 -->
+            <% if custom('support_section.card_2_enabled', true) %>
+            <div class="col-lg-5 col-md-6">
+                <div class="card h-100 shadow-sm" style="background: var(--surface-primary); border: 1px solid var(--border-default);">
                     <div class="card-body text-center p-4">
-                        <div class="feature-icon mb-3" style="background: var(--gradient-primary);">
-                            <i class="fas fa-life-ring"></i>
+                        <div class="feature-icon mb-3 mx-auto" style="background: linear-gradient(135deg, #28a745, #1e7e34); width: 60px; height: 60px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;">
+                            <i class="<%= custom('support_section.card_2_icon', 'fas fa-life-ring') %> text-white" style="font-size: 1.5rem;"></i>
                         </div>
-                        <h5 class="fw-bold">Contact Support</h5>
+                        <h5 class="fw-bold"><%= custom('support_section.card_2_title', 'Contact Support') %></h5>
                         <p class="text-secondary mb-4">
-                            Get help from our support team for technical issues or licensing questions.
+                            <%= custom('support_section.card_2_description', 'Get help from our support team for technical issues, questions, or general assistance.') %>
                         </p>
-                        <a href="mailto:<%= custom('branding.support_email',
-                           ENV['SUPPORT_EMAIL'] || 'support@example.com') %>"
+                        <a href="<%= custom('support_section.card_2_button_link', 'mailto:' + custom('branding.support_email', ENV['SUPPORT_EMAIL'] || 'support@example.com')) %>"
                            class="btn btn-success">
                             <i class="fas fa-envelope me-2"></i>
-                            Email Support
+                            <%= custom('support_section.card_2_button_text', 'Email Support') %>
                         </a>
                     </div>
                 </div>
             </div>
+            <% end %>
         </div>
     </div>
 </section>
+<% end %>

@@ -3,7 +3,7 @@
 # Source-License: Migration 22 - Add Performance Indexes
 # Adds performance indexes for license validation optimization
 
-class Migrations::AddPerformanceIndexes < BaseMigration
+class Migrations::AddPerformanceIndexes < Migrations::BaseMigration
   VERSION = 22
 
   def up
@@ -20,9 +20,12 @@ class Migrations::AddPerformanceIndexes < BaseMigration
     add_performance_index_if_not_exists(:products, %i[id name], 'products_id_name_perf_idx')
 
     # Index for license expiration date queries
-    add_performance_index_if_not_exists(:licenses, :expires_at, 'licenses_expires_at_perf_idx') unless index_exists?(
+    unless index_exists?(
       :licenses, :expires_at
     )
+      add_performance_index_if_not_exists(:licenses, :expires_at,
+                                          'licenses_expires_at_perf_idx')
+    end
 
     # Index for activation counts (for activation limit checks)
     add_performance_index_if_not_exists(:licenses, :activation_count, 'licenses_activation_count_perf_idx')

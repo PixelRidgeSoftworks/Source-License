@@ -125,13 +125,17 @@ class Payments::StripeProcessor < Payments::BasePaymentProcessor
       setup_stripe
 
       begin
+        # Map custom reasons to valid Stripe reasons
+        stripe_reason = map_refund_reason(reason)
+
         refund = Stripe::Refund.create({
           payment_intent: order.payment_intent_id,
           amount: (amount * 100).to_i,
-          reason: reason || 'requested_by_customer',
+          reason: stripe_reason,
           metadata: {
             order_id: order.id,
-            refund_reason: reason,
+            refund_reason: reason || 'Unknown',
+            original_reason: reason,
           },
         })
 
@@ -143,7 +147,7 @@ class Payments::StripeProcessor < Payments::BasePaymentProcessor
           refund_id: refund.id,
           amount: refund.amount / 100.0,
         }
-      rescue Stripe::StripeError
+      rescue Stripe::StripeError => e
         {
           success: false,
           error: e.message,
@@ -368,6 +372,20 @@ class Payments::StripeProcessor < Payments::BasePaymentProcessor
       # Fallback: create customer without checking for duplicates
       customer = Stripe::Customer.create({ email: email })
       customer.id
+    end
+
+    # Map custom refund reasons to valid Stripe reasons
+    def map_refund_reason(reason)
+      return 'requested_by_customer' if reason.nil? || reason.empty?
+
+      case reason.to_s.downcase
+      when /duplicate|duplicated|double.*charge|charged.*twice/
+        'duplicate'
+      when /fraud|fraudulent|unauthorized|chargeback|dispute/
+        'fraudulent'
+      when /admin.*refund|admin.*initiated|bulk.*refund|customer.*request|requested|refund.*request/
+        'requested_by_customer'
+      end
     end
   end
 end

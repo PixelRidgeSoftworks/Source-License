@@ -3,7 +3,7 @@
 # Source-License: Migration 6 - Create Subscriptions Table
 # Creates the subscriptions table for subscription-based licenses
 
-class Migrations::CreateSubscriptionsTable < BaseMigration
+class Migrations::CreateSubscriptionsTable < Migrations::BaseMigration
   VERSION = 6
 
   def up

@@ -3,7 +3,7 @@
 # Source-License: Migration 10 - Add Missing Product Fields
 # Adds missing fields to products table
 
-class Migrations::AddMissingProductFields < BaseMigration
+class Migrations::AddMissingProductFields < Migrations::BaseMigration
   VERSION = 10
 
   def up

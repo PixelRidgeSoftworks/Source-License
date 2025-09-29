@@ -4,7 +4,7 @@
 # Handles JWT token generation, validation, and API authentication
 
 module Auth::JWTManager
-  include BaseAuth
+  include Auth::BaseAuth
 
   #
   # JWT TOKEN MANAGEMENT

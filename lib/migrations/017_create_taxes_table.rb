@@ -3,7 +3,7 @@
 # Source-License: Migration 17 - Create Taxes Table
 # Creates the taxes table for custom tax configuration
 
-class Migrations::CreateTaxesTable < BaseMigration
+class Migrations::CreateTaxesTable < Migrations::BaseMigration
   VERSION = 17
 
   def up

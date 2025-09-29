@@ -3,7 +3,7 @@
 # Source-License: Migration 16 - Enhance Admin Table for Security
 # Enhances admin table for security features
 
-class Migrations::EnhanceAdminTableForSecurity < BaseMigration
+class Migrations::EnhanceAdminTableForSecurity < Migrations::BaseMigration
   VERSION = 16
 
   def up
@@ -29,7 +29,10 @@ class Migrations::EnhanceAdminTableForSecurity < BaseMigration
 
       # Add password policy fields
       add_column :password_expires_at, DateTime unless admin_schema.include?(:password_expires_at)
-      add_column :force_password_change, :boolean, default: false unless admin_schema.include?(:force_password_change)
+      unless admin_schema.include?(:force_password_change)
+        add_column :force_password_change, :boolean,
+                   default: false
+      end
     end
 
     # Add indexes for new fields

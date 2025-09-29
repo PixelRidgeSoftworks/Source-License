@@ -9,10 +9,17 @@ require 'json'
 require_relative '../logging/payment_logger'
 require_relative '../models'
 require_relative '../settings_manager'
-require_relative 'stripe/event_dispatcher'
 
-module Webhooks
+# Define the Webhooks namespace hierarchy first
+# I am not sure why the compact style of module definition is not working here...
+# However, it isn't. So, we define the modules in the expanded style.
+# Then disable the rubocop Style/ClassAndModuleChildren check for these lines.
+module Webhooks # rubocop:disable Style/ClassAndModuleChildren
+  module Stripe
+  end
 end
+
+require_relative 'stripe/event_dispatcher'
 
 class Webhooks::StripeWebhookHandler
   class << self
@@ -53,7 +60,12 @@ class Webhooks::StripeWebhookHandler
 
     # Process different types of webhook events using the modular dispatcher
     def process_webhook_event(event)
-      Webhooks::Stripe::EventDispatcher.dispatch(event)
+      result = Webhooks::Stripe::EventDispatcher.dispatch(event)
+
+      # Debug logging for charge.refunded events
+      puts "DEBUG: charge.refunded event processing result: #{result.inspect}" if event.type == 'charge.refunded'
+
+      result
     end
 
     # Logging methods

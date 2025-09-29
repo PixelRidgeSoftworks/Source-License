@@ -12,11 +12,18 @@ module PublicController
     # PUBLIC ROUTES - Website Frontend
     # ==================================================
 
-    # Homepage / Storefront
+    # Homepage / Landing page
     app.get '/' do
-      @products = Product.where(active: true).order(:name)
       @page_title = custom('branding.site_name', 'Software License Store')
       erb :index, layout: :'layouts/main_layout'
+    end
+
+    # Products listing page
+    app.get '/products' do
+      @products = Product.where(active: true).order(:name)
+      @categories = ProductCategory.order(:name)
+      @page_title = custom('text.products_title', 'Our Software Products')
+      erb :products, layout: :'layouts/main_layout'
     end
 
     # Product details page

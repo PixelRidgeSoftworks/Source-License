@@ -4,7 +4,7 @@
 # Handles secure session creation, validation, and lifecycle management
 
 module Auth::SessionManager
-  include BaseAuth
+  include Auth::BaseAuth
 
   #
   # ENHANCED SESSION MANAGEMENT

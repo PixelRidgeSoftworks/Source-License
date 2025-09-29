@@ -3,7 +3,7 @@
 # Source-License: Migration 9 - Enhance Licensing System
 # Enhances licensing system with subscription billing capabilities
 
-class Migrations::EnhanceLicensingSystem < BaseMigration
+class Migrations::EnhanceLicensingSystem < Migrations::BaseMigration
   VERSION = 9
 
   def up

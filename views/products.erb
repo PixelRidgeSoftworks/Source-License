@@ -1,0 +1,446 @@
+<head>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
+</head>
+
+<!-- Page Header -->
+<section class="py-5" style="background: var(--surface-secondary);">
+    <div class="container">
+        <div class="row text-center">
+            <div class="col-lg-8 mx-auto">
+                <h1 class="display-4 fw-bold mb-3">
+                    <%= custom('products_page.title', 'Our Software Products') %>
+                </h1>
+                <p class="lead text-secondary">
+                    <%= custom('products_page.subtitle',
+                    'Choose from our selection of professional software solutions. All products include secure licensing and instant delivery.') %>
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Category Filter and Search -->
+<section class="py-4 border-bottom">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <div class="category-filters">
+                    <h6 class="mb-3 text-muted"><%= custom('products_page.category_filters_title', 'Browse by Category:') %></h6>
+                    <div class="d-flex flex-wrap gap-2">
+                        <button class="btn btn-outline-primary category-filter active" data-category="all">
+                            <i class="fas fa-th-large me-2"></i>
+                            <%= custom('products_page.all_products_text', 'All Products') %>
+                        </button>
+                        <% if @categories && @categories.any? %>
+                            <% @categories.each do |category| %>
+                                <button class="btn btn-outline-secondary category-filter"
+                                        data-category="<%= category.id %>"
+                                        style="border-color: <%= category.badge_color %>;">
+                                    <i class="<%= category.icon_class %> me-2"></i>
+                                    <%= h(category.name) %>
+                                    <span class="badge bg-secondary ms-2"><%= category.active_products_count %></span>
+                                </button>
+                            <% end %>
+                        <% end %>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="search-box">
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="fas fa-search"></i>
+                        </span>
+                        <input type="text" class="form-control" id="productSearch" placeholder="Search products..." autocomplete="off">
+                        <button class="btn btn-outline-secondary" type="button" onclick="clearSearch()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Products Grid -->
+<section class="py-5">
+    <div class="container">
+        <% if @products && @products.any? %>
+            <!-- Products organized by categories -->
+            <% if @categories && @categories.any? %>
+                <% @categories.each do |category| %>
+                    <% category_products = @products.select { |p| p.category_id == category.id } %>
+                    <% if category_products.any? %>
+                        <div class="category-section mb-5" data-category-id="<%= category.id %>">
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="category-header-icon me-3"
+                                             style="background: <%= category.badge_color %>; width: 50px; height: 50px; border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+                                            <i class="<%= category.icon_class %> text-white" style="font-size: 1.5rem;"></i>
+                                        </div>
+                                        <div>
+                                            <h3 class="fw-bold mb-1"><%= h(category.name) %></h3>
+                                            <% if category.description %>
+                                                <p class="text-muted mb-0"><%= h(category.description) %></p>
+                                            <% end %>
+                                        </div>
+                                        <div class="ms-auto">
+                                            <span class="badge bg-light text-dark fs-6"><%= category_products.count %> products</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row g-4">
+                                <% category_products.each do |product| %>
+                                    <div class="col-lg-4 col-md-6 product-card" data-category="<%= product.category_id %>" data-name="<%= h(product.name.downcase) %>" data-description="<%= h(product.description&.downcase) %>">
+                                        <div class="card h-100 product-item" style="background: var(--surface-primary); border: 1px solid var(--border-default);">
+                                            <div class="card-header border-0 pb-2">
+                                                <div class="d-flex justify-content-between align-items-start">
+                                                    <h5 class="fw-bold mb-0 product-name"><%= h(product.name) %></h5>
+                                                    <% if product.subscription? %>
+                                                        <span class="badge bg-info">Subscription</span>
+                                                    <% else %>
+                                                        <span class="badge bg-success">One-time</span>
+                                                    <% end %>
+                                                </div>
+                                            </div>
+
+                                            <div class="card-body">
+                                                <div class="price-display mb-3">
+                                                    <span class="h4 fw-bold text-primary">$<%= product.formatted_price %></span>
+                                                    <% if product.subscription? %>
+                                                        <small class="text-muted">/month</small>
+                                                    <% end %>
+                                                </div>
+
+                                                <p class="text-secondary mb-3 product-description">
+                                                    <%= h(product.description) %>
+                                                </p>
+
+                                                <!-- License Info -->
+                                                <div class="small text-muted mb-3">
+                                                    <div class="d-flex justify-content-between mb-1">
+                                                        <span><i class="fas fa-users me-1"></i> Max Activations:</span>
+                                                        <span class="fw-bold"><%= product.max_activations %></span>
+                                                    </div>
+                                                    <% if product.version %>
+                                                    <div class="d-flex justify-content-between mb-1">
+                                                        <span><i class="fas fa-code-branch me-1"></i> Version:</span>
+                                                        <span class="fw-bold"><%= h(product.version) %></span>
+                                                    </div>
+                                                    <% end %>
+                                                    <% if product.category %>
+                                                    <div class="d-flex justify-content-between">
+                                                        <span><i class="<%= product.category.icon_class %> me-1"></i> Category:</span>
+                                                        <span class="fw-bold" style="color: <%= product.category.badge_color %>;"><%= h(product.category.name) %></span>
+                                                    </div>
+                                                    <% end %>
+                                                </div>
+                                            </div>
+
+                                            <div class="card-footer border-0 bg-transparent">
+                                                <div class="d-grid gap-2">
+                                                    <% if user_logged_in? %>
+                                                        <button class="btn btn-primary" onclick="window.cart.addItem(<%= product.id %>)">
+                                                            <i class="fas fa-cart-plus me-2"></i>
+                                                            Add to Cart
+                                                        </button>
+                                                    <% else %>
+                                                        <a href="/register" class="btn btn-primary">
+                                                            <i class="fas fa-user-plus me-2"></i>
+                                                            Sign Up to Purchase
+                                                        </a>
+                                                    <% end %>
+                                                    <a href="/product/<%= product.id %>" class="btn btn-outline-secondary">
+                                                        <i class="fas fa-info-circle me-2"></i>
+                                                        View Details
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                <% end %>
+                            </div>
+                        </div>
+                    <% end %>
+                <% end %>
+            <% end %>
+
+            <!-- Products without category -->
+            <% uncategorized_products = @products.select { |p| p.category_id.nil? } %>
+            <% if uncategorized_products.any? %>
+                <div class="category-section mb-5" data-category-id="uncategorized">
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="category-header-icon me-3"
+                                     style="background: #6c757d; width: 50px; height: 50px; border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+                                    <i class="fas fa-folder text-white" style="font-size: 1.5rem;"></i>
+                                </div>
+                                <div>
+                                    <h3 class="fw-bold mb-1">Other Products</h3>
+                                    <p class="text-muted mb-0">Additional software products</p>
+                                </div>
+                                <div class="ms-auto">
+                                    <span class="badge bg-light text-dark fs-6"><%= uncategorized_products.count %> products</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-4">
+                        <% uncategorized_products.each do |product| %>
+                            <div class="col-lg-4 col-md-6 product-card" data-category="uncategorized" data-name="<%= h(product.name.downcase) %>" data-description="<%= h(product.description&.downcase) %>">
+                                <div class="card h-100 product-item" style="background: var(--surface-primary); border: 1px solid var(--border-default);">
+                                    <div class="card-header border-0 pb-2">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <h5 class="fw-bold mb-0 product-name"><%= h(product.name) %></h5>
+                                            <% if product.subscription? %>
+                                                <span class="badge bg-info">Subscription</span>
+                                            <% else %>
+                                                <span class="badge bg-success">One-time</span>
+                                            <% end %>
+                                        </div>
+                                    </div>
+
+                                    <div class="card-body">
+                                        <div class="price-display mb-3">
+                                            <span class="h4 fw-bold text-primary">$<%= product.formatted_price %></span>
+                                            <% if product.subscription? %>
+                                                <small class="text-muted">/month</small>
+                                            <% end %>
+                                        </div>
+
+                                        <p class="text-secondary mb-3 product-description">
+                                            <%= h(product.description) %>
+                                        </p>
+
+                                        <!-- License Info -->
+                                        <div class="small text-muted mb-3">
+                                            <div class="d-flex justify-content-between mb-1">
+                                                <span><i class="fas fa-users me-1"></i> Max Activations:</span>
+                                                <span class="fw-bold"><%= product.max_activations %></span>
+                                            </div>
+                                            <% if product.version %>
+                                            <div class="d-flex justify-content-between">
+                                                <span><i class="fas fa-code-branch me-1"></i> Version:</span>
+                                                <span class="fw-bold"><%= h(product.version) %></span>
+                                            </div>
+                                            <% end %>
+                                        </div>
+                                    </div>
+
+                                    <div class="card-footer border-0 bg-transparent">
+                                        <div class="d-grid gap-2">
+                                            <% if user_logged_in? %>
+                                                <button class="btn btn-primary" onclick="window.cart.addItem(<%= product.id %>)">
+                                                    <i class="fas fa-cart-plus me-2"></i>
+                                                    Add to Cart
+                                                </button>
+                                            <% else %>
+                                                <a href="/register" class="btn btn-primary">
+                                                    <i class="fas fa-user-plus me-2"></i>
+                                                    Sign Up to Purchase
+                                                </a>
+                                            <% end %>
+                                            <a href="/product/<%= product.id %>" class="btn btn-outline-secondary">
+                                                <i class="fas fa-info-circle me-2"></i>
+                                                View Details
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        <% end %>
+                    </div>
+                </div>
+            <% end %>
+
+        <% else %>
+            <!-- No Products Available -->
+            <div class="row">
+                <div class="col-12 text-center">
+                    <div class="card shadow-sm" style="background: var(--surface-primary); border: 1px solid var(--border-default);">
+                        <div class="card-body py-5">
+                            <i class="fas fa-box-open text-muted mb-3" style="font-size: 4rem;"></i>
+                            <h4 class="text-muted">No Products Available</h4>
+                            <p class="text-muted mb-4">
+                                Products are currently being configured. Please check back soon or contact support.
+                            </p>
+                            <% if admin_logged_in? %>
+                            <a href="/admin/products" class="btn btn-primary">
+                                <i class="fas fa-plus me-2"></i>
+                                Add Products
+                            </a>
+                            <% else %>
+                            <a href="/" class="btn btn-primary">
+                                <i class="fas fa-home me-2"></i>
+                                Back to Home
+                            </a>
+                            <% end %>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        <% end %>
+
+        <!-- No Results Found (Hidden by default) -->
+        <div id="noResults" class="row d-none">
+            <div class="col-12 text-center">
+                <div class="card shadow-sm" style="background: var(--surface-primary); border: 1px solid var(--border-default);">
+                    <div class="card-body py-5">
+                        <i class="fas fa-search text-muted mb-3" style="font-size: 3rem;"></i>
+                        <h5 class="text-muted">No products found</h5>
+                        <p class="text-muted mb-3">
+                            Try adjusting your search or category filter.
+                        </p>
+                        <button class="btn btn-primary" onclick="clearFilters()">
+                            <i class="fas fa-undo me-2"></i>
+                            Show All Products
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- JavaScript for filtering and search -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const categoryFilters = document.querySelectorAll('.category-filter');
+    const productCards = document.querySelectorAll('.product-card');
+    const categorySections = document.querySelectorAll('.category-section');
+    const searchInput = document.getElementById('productSearch');
+    const noResults = document.getElementById('noResults');
+
+    let currentCategory = 'all';
+    let currentSearch = '';
+
+    // Category filtering
+    categoryFilters.forEach(filter => {
+        filter.addEventListener('click', function() {
+            // Update active state
+            categoryFilters.forEach(f => f.classList.remove('active', 'btn-primary'));
+            categoryFilters.forEach(f => f.classList.add('btn-outline-secondary'));
+            this.classList.remove('btn-outline-secondary');
+            this.classList.add('active', 'btn-primary');
+
+            currentCategory = this.dataset.category;
+            filterProducts();
+        });
+    });
+
+    // Search functionality
+    searchInput.addEventListener('input', function() {
+        currentSearch = this.value.toLowerCase().trim();
+        filterProducts();
+    });
+
+    function filterProducts() {
+        let visibleCount = 0;
+
+        // Handle category sections
+        categorySections.forEach(section => {
+            const sectionCategoryId = section.dataset.categoryId;
+            const sectionProducts = section.querySelectorAll('.product-card');
+            let sectionHasVisibleProducts = false;
+
+            sectionProducts.forEach(card => {
+                const cardCategory = card.dataset.category;
+                const cardName = card.dataset.name || '';
+                const cardDescription = card.dataset.description || '';
+
+                const matchesCategory = currentCategory === 'all' ||
+                                       cardCategory === currentCategory ||
+                                       (currentCategory === 'uncategorized' && cardCategory === 'uncategorized');
+
+                const matchesSearch = currentSearch === '' ||
+                                     cardName.includes(currentSearch) ||
+                                     cardDescription.includes(currentSearch);
+
+                if (matchesCategory && matchesSearch) {
+                    card.style.display = '';
+                    sectionHasVisibleProducts = true;
+                    visibleCount++;
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+
+            // Show/hide entire section based on whether it has visible products
+            if (currentCategory === 'all') {
+                section.style.display = sectionHasVisibleProducts ? '' : 'none';
+            } else {
+                const shouldShowSection = (currentCategory === sectionCategoryId) ||
+                                        (currentCategory === 'uncategorized' && sectionCategoryId === 'uncategorized');
+                section.style.display = (shouldShowSection && sectionHasVisibleProducts) ? '' : 'none';
+            }
+        });
+
+        // Show/hide no results message
+        if (visibleCount === 0) {
+            noResults.classList.remove('d-none');
+        } else {
+            noResults.classList.add('d-none');
+        }
+    }
+
+    // Global functions for buttons
+    window.clearSearch = function() {
+        searchInput.value = '';
+        currentSearch = '';
+        filterProducts();
+    };
+
+    window.clearFilters = function() {
+        // Reset category filter
+        categoryFilters.forEach(f => f.classList.remove('active', 'btn-primary'));
+        categoryFilters.forEach(f => f.classList.add('btn-outline-secondary'));
+        document.querySelector('[data-category="all"]').classList.remove('btn-outline-secondary');
+        document.querySelector('[data-category="all"]').classList.add('active', 'btn-primary');
+
+        // Reset search
+        searchInput.value = '';
+        currentCategory = 'all';
+        currentSearch = '';
+        filterProducts();
+    };
+});
+</script>
+
+<style>
+.category-filter {
+    transition: all 0.2s ease;
+}
+
+.category-filter:hover {
+    transform: translateY(-1px);
+}
+
+.product-item {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.product-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.search-box .input-group {
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.category-section {
+    border-bottom: 1px solid #eee;
+    padding-bottom: 2rem;
+}
+
+.category-section:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+</style>

@@ -21,3 +21,11 @@ require_relative 'models/billing_cycle'
 require_relative 'models/subscription_billing_history'
 require_relative 'models/tax'
 require_relative 'models/order_tax'
+
+# Conditionally load ProductCategory model only if table exists
+begin
+  require_relative 'models/product_category'
+rescue Sequel::DatabaseError
+  # ProductCategory table doesn't exist yet, skip loading the model
+  puts '⚠️  ProductCategory model not loaded - table may not exist yet'
+end

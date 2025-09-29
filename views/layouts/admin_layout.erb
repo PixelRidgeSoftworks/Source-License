@@ -68,22 +68,31 @@
             line-height: 1.6;
             font-weight: 400;
             min-height: 100vh;
+            overflow-x: hidden; /* Prevent horizontal scrolling */
         }
 
         .admin-wrapper {
             display: flex;
             min-height: 100vh;
+            width: 100%;
+            max-width: 100vw; /* Prevent wrapper from exceeding viewport width */
         }
 
         .admin-sidebar {
             width: var(--sidebar-width);
+            min-width: var(--sidebar-width);
+            max-width: var(--sidebar-width);
             background-color: var(--surface-primary);
             color: var(--text-primary);
             position: fixed;
+            top: 0;
+            left: 0;
             height: 100vh;
             overflow-y: auto;
+            overflow-x: hidden; /* Prevent horizontal scrolling in sidebar */
             transition: transform 0.3s ease;
             border-right: 1px solid var(--border-default);
+            z-index: 1000;
         }
 
         .admin-content {
@@ -91,6 +100,9 @@
             margin-left: var(--sidebar-width);
             min-height: 100vh;
             background: var(--bs-body-bg);
+            width: calc(100vw - var(--sidebar-width));
+            max-width: calc(100vw - var(--sidebar-width));
+            overflow-x: auto; /* Allow horizontal scrolling only in content if needed */
         }
 
         .admin-header {
@@ -216,10 +228,16 @@
 
             .admin-content {
                 margin-left: 0;
+                width: 100vw;
+                max-width: 100vw;
             }
 
             .mobile-toggle {
                 display: inline-block;
+            }
+
+            .admin-header {
+                padding: 1rem;
             }
         }
 
@@ -318,6 +336,9 @@
                     <%= nav_link '<i class="fas fa-box"></i> Products', '/admin/products', class: 'nav-link' %>
                 </li>
                 <li class="nav-item">
+                    <%= nav_link '<i class="fas fa-tags"></i> Categories', '/admin/categories', class: 'nav-link' %>
+                </li>
+                <li class="nav-item">
                     <%= nav_link '<i class="fas fa-key"></i> Licenses', '/admin/licenses', class: 'nav-link' %>
                 </li>
                 <li class="nav-item">
@@ -348,9 +369,6 @@
                 </li>
                 <li class="nav-item">
                     <%= nav_link '<i class="fas fa-cog"></i> Settings', '/admin/settings', class: 'nav-link' %>
-                </li>
-                <li class="nav-item">
-                    <%= nav_link '<i class="fas fa-webhook"></i> Webhooks', '/admin/webhooks', class: 'nav-link' %>
                 </li>
 
                 <hr class="my-3" style="border-color: rgba(255,255,255,0.2);">
@@ -421,6 +439,9 @@
         </div>
     </div>
 
+    <!-- Custom Modal System -->
+    <%= erb :'partials/_admin_modals' %>
+
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
@@ -444,10 +465,15 @@
             }
         });
 
-        // Flash message auto-hide
+        // Flash message auto-hide (only for actual flash messages, not modals)
         document.addEventListener('DOMContentLoaded', function() {
-            const flashMessages = document.querySelectorAll('.flash-message');
+            const flashMessages = document.querySelectorAll('.flash-message:not(#customModal):not(.custom-modal-overlay)');
             flashMessages.forEach(function(message) {
+                // Don't auto-hide if it's inside a custom modal
+                if (message.closest('.custom-modal-overlay')) {
+                    return;
+                }
+
                 setTimeout(function() {
                     message.style.transition = 'opacity 0.5s ease';
                     message.style.opacity = '0';
@@ -458,15 +484,38 @@
             });
         });
 
-        // Confirm delete actions
+        // Confirm delete actions with custom modal
         document.addEventListener('click', function(event) {
             if (event.target.classList.contains('btn-danger') &&
                 (event.target.textContent.includes('Delete') ||
                  event.target.textContent.includes('Revoke'))) {
 
-                if (!confirm('Are you sure you want to perform this action? This cannot be undone.')) {
-                    event.preventDefault();
-                }
+                event.preventDefault();
+
+                const actionText = event.target.textContent.includes('Delete') ? 'delete' : 'revoke';
+                const title = actionText === 'delete' ? 'Delete Item' : 'Revoke Item';
+                const message = `Are you sure you want to ${actionText} this item?`;
+                const details = 'This action cannot be undone.';
+
+                showConfirm(
+                    title,
+                    message,
+                    details,
+                    () => {
+                        // If it's a form button, submit the form
+                        if (event.target.type === 'submit') {
+                            event.target.form.submit();
+                        } else if (event.target.onclick) {
+                            // If it has an onclick handler, execute it
+                            event.target.onclick();
+                        } else if (event.target.href) {
+                            // If it's a link, navigate to it
+                            window.location.href = event.target.href;
+                        }
+                    },
+                    null,
+                    'danger'
+                );
             }
         });
 
@@ -521,8 +570,10 @@
                 }, 3000);
             },
 
-            confirmAction: function(message = 'Are you sure?') {
-                return confirm(message);
+            confirmAction: function(message = 'Are you sure?', title = 'Confirm Action') {
+                return new Promise((resolve) => {
+                    showConfirm(title, message, null, () => resolve(true), () => resolve(false));
+                });
             }
         };
     </script>

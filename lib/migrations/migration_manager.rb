@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Source-License: Migration Manager
-# Handles orchestration of database migrations
+# Manages the execution of migrations using the registry system
 
 class Migrations::MigrationManager
   class << self
@@ -12,10 +12,10 @@ class Migrations::MigrationManager
       create_schema_info_table
 
       # Load all migration files
-      MigrationsRegistry.load_all_migrations
+      Migrations::MigrationsRegistry.load_all_migrations
 
       # Run migrations in order
-      MigrationsRegistry.all_migration_classes.each do |migration_class|
+      Migrations::MigrationsRegistry.all_migration_classes.each do |migration_class|
         migration = migration_class.new
         run_migration(migration.version, migration)
       end
@@ -41,9 +41,22 @@ class Migrations::MigrationManager
       return if migration_exists?(version)
 
       puts "Running migration #{version}: #{migration_instance.class.name}"
-      migration_instance.up
-      record_migration(version)
-      puts "✓ Migration #{version} completed"
+
+      begin
+        migration_instance.up
+        record_migration(version)
+        puts "✓ Migration #{version} completed"
+      rescue StandardError => e
+        puts "✗ Migration #{version} FAILED: #{e.message}"
+        puts "Error details: #{e.class.name}"
+        puts "Backtrace: #{e.backtrace.first(3).join("\n")}" if e.backtrace
+        puts
+        puts "Migration #{version} was NOT recorded as completed due to the error."
+        puts 'Please fix the migration and run it again.'
+
+        # Re-raise the error to stop the migration process
+        raise e
+      end
     end
 
     # Check if a migration has already been run

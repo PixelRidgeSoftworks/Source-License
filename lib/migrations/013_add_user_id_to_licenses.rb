@@ -3,7 +3,7 @@
 # Source-License: Migration 13 - Add User ID to Licenses
 # Adds user_id foreign key to licenses table
 
-class Migrations::AddUserIdToLicenses < BaseMigration
+class Migrations::AddUserIdToLicenses < Migrations::BaseMigration
   VERSION = 13
 
   def up

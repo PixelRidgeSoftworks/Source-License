@@ -45,7 +45,7 @@
         <div class="stat-card">
             <div class="d-flex justify-content-between align-items-start">
                 <div>
-                    <div class="stat-number text-info"><%= @products.select(&:subscription?).count %></div>
+                    <div class="stat-number text-info"><%= @products.count { |p| p.license_type == 'subscription' } %></div>
                     <div class="stat-label">Subscription Products</div>
                 </div>
                 <div class="text-info">
@@ -59,7 +59,7 @@
         <div class="stat-card">
             <div class="d-flex justify-content-between align-items-start">
                 <div>
-                    <div class="stat-number text-warning"><%= @products.select(&:one_time?).count %></div>
+                    <div class="stat-number text-warning"><%= @products.count { |p| p.license_type == 'one_time' } %></div>
                     <div class="stat-label">One-time Products</div>
                 </div>
                 <div class="text-warning">
@@ -91,6 +91,14 @@
                 <option value="">All Types</option>
                 <option value="one_time">One-time</option>
                 <option value="subscription">Subscription</option>
+            </select>
+            <select class="form-select" id="categoryFilter">
+                <option value="">All Categories</option>
+                <% if defined?(ProductCategory) %>
+                  <% ProductCategory.where(active: true).order(:sort_order, :name).each do |category| %>
+                  <option value="<%= category.id %>"><%= h(category.name) %></option>
+                  <% end %>
+                <% end %>
             </select>
         </div>
     </div>
@@ -151,6 +159,7 @@
                 <tr class="product-row"
                     data-status="<%= product.active ? 'active' : 'inactive' %>"
                     data-type="<%= product.license_type %>"
+                    data-category="<%= product.category_id || '' %>"
                     data-name="<%= h(product.name.downcase) %>">
                     <td>
                         <input type="checkbox" class="form-check-input product-checkbox"
@@ -423,13 +432,18 @@ function bulkActivate() {
     const productNames = getSelectedProductNames();
 
     if (productIds.length === 0) {
-        alert('Please select products to activate.');
+        showAlert('No Selection', 'Please select products to activate.', 'warning');
         return;
     }
 
-    if (confirm(`Are you sure you want to activate ${productIds.length} selected products?\n\n${productNames.slice(0, 5).join(', ')}${productNames.length > 5 ? '...' : ''}`)) {
-        performBulkAction('activate', productIds);
-    }
+    showConfirm(
+        'Activate Products',
+        `Are you sure you want to activate ${productIds.length} selected products?`,
+        `Products: ${productNames.slice(0, 5).join(', ')}${productNames.length > 5 ? '...' : ''}`,
+        () => performBulkAction('activate', productIds),
+        null,
+        'success'
+    );
 }
 
 // Bulk deactivate products
@@ -438,13 +452,18 @@ function bulkDeactivate() {
     const productNames = getSelectedProductNames();
 
     if (productIds.length === 0) {
-        alert('Please select products to deactivate.');
+        showAlert('No Selection', 'Please select products to deactivate.', 'warning');
         return;
     }
 
-    if (confirm(`Are you sure you want to deactivate ${productIds.length} selected products?\n\n${productNames.slice(0, 5).join(', ')}${productNames.length > 5 ? '...' : ''}`)) {
-        performBulkAction('deactivate', productIds);
-    }
+    showConfirm(
+        'Deactivate Products',
+        `Are you sure you want to deactivate ${productIds.length} selected products?`,
+        `Products: ${productNames.slice(0, 5).join(', ')}${productNames.length > 5 ? '...' : ''}\n\nThis will hide them from the store.`,
+        () => performBulkAction('deactivate', productIds),
+        null,
+        'warning'
+    );
 }
 
 // Bulk delete products
@@ -453,13 +472,18 @@ function bulkDelete() {
     const productNames = getSelectedProductNames();
 
     if (productIds.length === 0) {
-        alert('Please select products to delete.');
+        showAlert('No Selection', 'Please select products to delete.', 'warning');
         return;
     }
 
-    if (confirm(`⚠️ WARNING: Are you sure you want to DELETE ${productIds.length} selected products?\n\n${productNames.slice(0, 5).join(', ')}${productNames.length > 5 ? '...' : ''}\n\nThis action CANNOT be undone and will affect all associated licenses!`)) {
-        performBulkAction('delete', productIds);
-    }
+    showConfirm(
+        'Delete Products',
+        `⚠️ WARNING: Are you sure you want to DELETE ${productIds.length} selected products?`,
+        `Products: ${productNames.slice(0, 5).join(', ')}${productNames.length > 5 ? '...' : ''}\n\nThis action CANNOT be undone and will affect all associated licenses!`,
+        () => performBulkAction('delete', productIds),
+        null,
+        'danger'
+    );
 }
 
 // Bulk export products
@@ -467,7 +491,7 @@ function bulkExport() {
     const productIds = getSelectedProductIds();
 
     if (productIds.length === 0) {
-        alert('Please select products to export.');
+        showAlert('No Selection', 'Please select products to export.', 'warning');
         return;
     }
 
@@ -511,69 +535,86 @@ function performBulkAction(action, productIds) {
                         }
                     }
                 }
-                alert(message);
+                showAlert('Bulk Action Complete', message, 'info');
             }
             location.reload();
         } else {
-            alert('Error: ' + (data.error || 'Unknown error occurred'));
+            showError(data.error || 'Unknown error occurred');
             toolbar.innerHTML = originalHTML;
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('An error occurred while performing the bulk action.');
+        showError('An error occurred while performing the bulk action.');
         toolbar.innerHTML = originalHTML;
     });
 }
 
 // Toggle product status
 function toggleProductStatus(productId, newStatus) {
-    if (confirm(`Are you sure you want to ${newStatus} this product?`)) {
-        fetch(`/admin/products/${productId}/toggle-status`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
-            },
-            body: JSON.stringify({ status: newStatus })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                location.reload();
-            } else {
-                alert('Error: ' + data.error);
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('An error occurred while updating the product status.');
-        });
-    }
+    const action = newStatus === 'active' ? 'activate' : 'deactivate';
+    const type = newStatus === 'active' ? 'success' : 'warning';
+
+    showConfirm(
+        `${action.charAt(0).toUpperCase() + action.slice(1)} Product`,
+        `Are you sure you want to ${action} this product?`,
+        newStatus === 'inactive' ? 'This will hide the product from the store.' : 'This will make the product available in the store.',
+        () => {
+            fetch(`/admin/products/${productId}/toggle-status`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({ status: newStatus })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    showError(data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showError('An error occurred while updating the product status.');
+            });
+        },
+        null,
+        type
+    );
 }
 
 // Delete product
 function deleteProduct(productId, productName) {
-    if (confirm(`Are you sure you want to delete "${productName}"? This action cannot be undone and will affect all associated licenses.`)) {
-        fetch(`/admin/products/${productId}`, {
-            method: 'DELETE',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                location.reload();
-            } else {
-                alert('Error: ' + data.error);
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('An error occurred while deleting the product.');
-        });
-    }
+    showConfirm(
+        'Delete Product',
+        `Are you sure you want to delete "${productName}"?`,
+        'This action cannot be undone and will affect all associated licenses.',
+        () => {
+            fetch(`/admin/products/${productId}`, {
+                method: 'DELETE',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    showError(data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showError('An error occurred while deleting the product.');
+            });
+        },
+        null,
+        'danger'
+    );
 }
 
 // Export products

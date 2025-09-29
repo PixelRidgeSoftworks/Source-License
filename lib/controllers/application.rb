@@ -9,6 +9,7 @@ require_relative 'admin_namespace'
 require_relative 'admin/products_controller'
 require_relative 'admin/licenses_controller'
 require_relative 'admin/customers_controller'
+require_relative 'admin/categories_controller'
 require_relative 'admin/reports_controller'
 require_relative 'admin/customization_controller'
 require_relative 'admin/webhook_settings_controller'
@@ -108,6 +109,7 @@ class SourceLicenseApp < Sinatra::Base
   include AdminControllers::ProductsController
   include AdminControllers::LicensesController
   include AdminControllers::CustomersController
+  include Admin::CategoriesController
   include AdminControllers::ReportsController
   include AdminControllers::CustomizationController
   include AdminControllers::WebhookSettingsController
@@ -123,6 +125,7 @@ class SourceLicenseApp < Sinatra::Base
   AdminControllers::ProductsController.setup_routes(self)
   AdminControllers::LicensesController.setup_routes(self)
   AdminControllers::CustomersController.setup_routes(self)
+  Admin::CategoriesController.setup_routes(self)
   AdminControllers::ReportsController.setup_routes(self)
   AdminControllers::CustomizationController.setup_routes(self)
   AdminControllers::WebhookSettingsController.setup_routes(self)

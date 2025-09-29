@@ -4,7 +4,7 @@
 # Maintains backward compatibility with existing authentication methods
 
 module Auth::LegacyAuth
-  include BaseAuth
+  include Auth::BaseAuth
 
   #
   # BASIC AUTHENTICATION METHODS (Legacy compatibility)

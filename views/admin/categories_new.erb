@@ -1,0 +1,319 @@
+<% content_for :title, "New Product Category" %>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h2>New Product Category</h2>
+    <p class="text-muted mb-0">Create a new category to organize your products</p>
+  </div>
+  <a href="/admin/categories" class="btn btn-outline-secondary">
+    <i class="fas fa-arrow-left me-2"></i>Back to Categories
+  </a>
+</div>
+
+<div class="row">
+  <div class="col-lg-8">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0">Category Details</h5>
+      </div>
+      <div class="card-body">
+        <form method="POST" action="/admin/categories" id="category-form">
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label for="name" class="form-label">Category Name *</label>
+                <input type="text" class="form-control" id="name" name="name"
+                       value="<%= @category.name if @category %>" required autocomplete="off">
+                <div class="form-text">The display name of the category</div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label for="slug" class="form-label">URL Slug *</label>
+                <input type="text" class="form-control" id="slug" name="slug"
+                       value="<%= @category.slug if @category %>" required autocomplete="off">
+                <div class="form-text">URL-friendly version (auto-generated from name)</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label for="description" class="form-label">Description</label>
+            <textarea class="form-control" id="description" name="description" rows="3"><%= @category.description if @category %></textarea>
+            <div class="form-text">Optional description of the category</div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label for="color" class="form-label">Category Color</label>
+                <div class="input-group">
+                  <input type="color" class="form-control form-control-color" id="color" name="color"
+                         value="<%= @category&.color || '#6c757d' %>" autocomplete="off">
+                  <input type="text" class="form-control" id="color-text"
+                         value="<%= @category&.color || '#6c757d' %>" autocomplete="off">
+                </div>
+                <div class="form-text">Color used for category badges and icons</div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label for="icon" class="form-label">Icon Class</label>
+                <input type="text" class="form-control" id="icon" name="icon"
+                       value="<%= @category&.icon || 'fas fa-folder' %>" autocomplete="off">
+                <div class="form-text">FontAwesome icon class (e.g., fas fa-desktop)</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label for="sort_order" class="form-label">Sort Order</label>
+                <input type="number" class="form-control" id="sort_order" name="sort_order"
+                       value="<%= @category&.sort_order || 0 %>" min="0" autocomplete="off">
+                <div class="form-text">Lower numbers appear first</div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-3 d-flex align-items-end">
+                <div class="form-check form-switch">
+                  <input class="form-check-input" type="checkbox" id="active" name="active"
+                         value="1" <%= 'checked' if @category.nil? || @category.active %>>
+                  <label class="form-check-label" for="active">
+                    Active Category
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-between">
+            <a href="/admin/categories" class="btn btn-outline-secondary">Cancel</a>
+            <button type="submit" class="btn btn-primary">
+              <i class="fas fa-save me-2"></i>Create Category
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="card">
+      <div class="card-header">
+        <h6 class="mb-0">Preview</h6>
+      </div>
+      <div class="card-body">
+        <div id="category-preview" class="text-center">
+          <div class="category-preview-icon mb-3" style="background-color: #6c757d;">
+            <i class="fas fa-folder text-white"></i>
+          </div>
+          <h6 id="preview-name">Category Name</h6>
+          <small class="text-muted" id="preview-slug">/category-slug</small>
+          <p class="text-muted small mt-2" id="preview-description">Category description will appear here...</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mt-4">
+      <div class="card-header">
+        <h6 class="mb-0">Icon Reference</h6>
+      </div>
+      <div class="card-body">
+        <div class="row g-2">
+          <div class="col-4 text-center">
+            <button type="button" class="btn btn-outline-secondary btn-sm w-100 icon-select" data-icon="fas fa-desktop">
+              <i class="fas fa-desktop"></i><br>
+              <small>Desktop</small>
+            </button>
+          </div>
+          <div class="col-4 text-center">
+            <button type="button" class="btn btn-outline-secondary btn-sm w-100 icon-select" data-icon="fas fa-mobile-alt">
+              <i class="fas fa-mobile-alt"></i><br>
+              <small>Mobile</small>
+            </button>
+          </div>
+          <div class="col-4 text-center">
+            <button type="button" class="btn btn-outline-secondary btn-sm w-100 icon-select" data-icon="fas fa-puzzle-piece">
+              <i class="fas fa-puzzle-piece"></i><br>
+              <small>Plugin</small>
+            </button>
+          </div>
+          <div class="col-4 text-center">
+            <button type="button" class="btn btn-outline-secondary btn-sm w-100 icon-select" data-icon="fas fa-palette">
+              <i class="fas fa-palette"></i><br>
+              <small>Theme</small>
+            </button>
+          </div>
+          <div class="col-4 text-center">
+            <button type="button" class="btn btn-outline-secondary btn-sm w-100 icon-select" data-icon="fas fa-cogs">
+              <i class="fas fa-cogs"></i><br>
+              <small>Service</small>
+            </button>
+          </div>
+          <div class="col-4 text-center">
+            <button type="button" class="btn btn-outline-secondary btn-sm w-100 icon-select" data-icon="fas fa-gamepad">
+              <i class="fas fa-gamepad"></i><br>
+              <small>Game</small>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.category-preview-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  margin: 0 auto;
+}
+
+.icon-select {
+  height: 60px;
+}
+
+.icon-select small {
+  font-size: 0.7rem;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const nameInput = document.getElementById('name');
+  const slugInput = document.getElementById('slug');
+  const colorInput = document.getElementById('color');
+  const colorTextInput = document.getElementById('color-text');
+  const iconInput = document.getElementById('icon');
+  const descriptionInput = document.getElementById('description');
+
+  const previewName = document.getElementById('preview-name');
+  const previewSlug = document.getElementById('preview-slug');
+  const previewDescription = document.getElementById('preview-description');
+  const previewIcon = document.querySelector('.category-preview-icon');
+
+  // Auto-generate slug from name
+  nameInput.addEventListener('input', function() {
+    const slug = this.value
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '');
+
+    if (!slugInput.dataset.manuallyEdited) {
+      slugInput.value = slug;
+    }
+
+    updatePreview();
+  });
+
+  // Mark slug as manually edited if user changes it
+  slugInput.addEventListener('input', function() {
+    this.dataset.manuallyEdited = 'true';
+    updatePreview();
+  });
+
+  // Sync color inputs
+  colorInput.addEventListener('input', function() {
+    colorTextInput.value = this.value;
+    updatePreview();
+  });
+
+  colorTextInput.addEventListener('input', function() {
+    if (/^#[0-9A-F]{6}$/i.test(this.value)) {
+      colorInput.value = this.value;
+      updatePreview();
+    }
+  });
+
+  // Update preview when icon or description changes
+  iconInput.addEventListener('input', updatePreview);
+  descriptionInput.addEventListener('input', updatePreview);
+
+  // Icon selection
+  document.querySelectorAll('.icon-select').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const icon = this.dataset.icon;
+      iconInput.value = icon;
+      updatePreview();
+
+      // Visual feedback
+      document.querySelectorAll('.icon-select').forEach(b => b.classList.remove('btn-primary'));
+      this.classList.add('btn-primary');
+    });
+  });
+
+  function updatePreview() {
+    const name = nameInput.value || 'Category Name';
+    const slug = slugInput.value || 'category-slug';
+    const color = colorInput.value || '#6c757d';
+    const icon = iconInput.value || 'fas fa-folder';
+    const description = descriptionInput.value || 'Category description will appear here...';
+
+    previewName.textContent = name;
+    previewSlug.textContent = `/${slug}`;
+    previewDescription.textContent = description;
+    previewIcon.style.backgroundColor = color;
+
+    // Update icon
+    const iconElement = previewIcon.querySelector('i');
+    iconElement.className = `${icon} text-white`;
+  }
+
+  // Form validation
+  document.getElementById('category-form').addEventListener('submit', function(e) {
+    const name = nameInput.value.trim();
+    const slug = slugInput.value.trim();
+
+    if (!name) {
+      e.preventDefault();
+      showAlert('error', 'Category name is required');
+      nameInput.focus();
+      return;
+    }
+
+    if (!slug) {
+      e.preventDefault();
+      showAlert('error', 'URL slug is required');
+      slugInput.focus();
+      return;
+    }
+
+    if (!/^[a-z0-9-]+$/.test(slug)) {
+      e.preventDefault();
+      showAlert('error', 'URL slug can only contain lowercase letters, numbers, and hyphens');
+      slugInput.focus();
+      return;
+    }
+  });
+
+  function showAlert(type, message) {
+    const alert = document.createElement('div');
+    alert.className = `alert alert-${type === 'error' ? 'danger' : type} alert-dismissible fade show position-fixed`;
+    alert.style.cssText = 'top: 20px; right: 20px; z-index: 1050; min-width: 300px;';
+    alert.innerHTML = `
+      ${message}
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+
+    document.body.appendChild(alert);
+
+    setTimeout(() => {
+      if (alert.parentNode) {
+        alert.remove();
+      }
+    }, 5000);
+  }
+
+  // Initial preview update
+  updatePreview();
+});
+</script>

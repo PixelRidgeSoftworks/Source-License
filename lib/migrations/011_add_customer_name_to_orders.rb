@@ -3,7 +3,7 @@
 # Source-License: Migration 11 - Add Customer Name to Orders
 # Adds customer_name field to orders table
 
-class Migrations::AddCustomerNameToOrders < BaseMigration
+class Migrations::AddCustomerNameToOrders < Migrations::BaseMigration
   VERSION = 11
 
   def up

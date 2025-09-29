@@ -3,7 +3,7 @@
 # Source-License: Migration 5 - Create Licenses Table
 # Creates the licenses table for managing software licenses
 
-class Migrations::CreateLicensesTable < BaseMigration
+class Migrations::CreateLicensesTable < Migrations::BaseMigration
   VERSION = 5
 
   def up

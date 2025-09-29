@@ -4,7 +4,7 @@ require_relative 'base_event_handler'
 require_relative 'license_finder_service'
 require_relative 'notification_service'
 
-class Webhooks::Stripe::PaymentEventHandler < BaseEventHandler
+class Webhooks::Stripe::PaymentEventHandler < Webhooks::Stripe::BaseEventHandler
   class << self
     # Main entry point for payment events
     def handle_event(event)
@@ -109,8 +109,19 @@ class Webhooks::Stripe::PaymentEventHandler < BaseEventHandler
       charge = event.data.object
 
       # Find associated order or license by charge metadata or customer email
-      license = LicenseFinderService.find_license_for_charge(charge)
-      return { success: false, error: 'License not found for charge' } unless license
+      license = Webhooks::Stripe::LicenseFinderService.find_license_for_charge(charge)
+
+      # If no license is found, this might be a successful payment for an order
+      # that hasn't generated licenses yet. Log it but don't fail.
+      unless license
+        log_license_event(nil, 'charge_succeeded_no_license', {
+          charge_id: charge.id,
+          amount: charge.amount / 100.0,
+          payment_intent_id: charge.payment_intent,
+          customer_id: charge.customer,
+        })
+        return { success: true, message: 'Charge succeeded - no associated license found' }
+      end
 
       DB.transaction do
         # If this is a subscription renewal charge
@@ -136,7 +147,7 @@ class Webhooks::Stripe::PaymentEventHandler < BaseEventHandler
         end
 
         # Send success notification
-        NotificationService.send_charge_success_notification(license, charge)
+        Webhooks::Stripe::NotificationService.send_charge_success_notification(license, charge)
       end
 
       { success: true, message: 'Charge success processed - license extended/renewed/issued' }
@@ -147,11 +158,22 @@ class Webhooks::Stripe::PaymentEventHandler < BaseEventHandler
       charge = event.data.object
 
       # Find associated license
-      license = LicenseFinderService.find_license_for_charge(charge)
-      return { success: false, error: 'License not found for charge' } unless license
+      license = Webhooks::Stripe::LicenseFinderService.find_license_for_charge(charge)
+
+      # If no license is found, this might be a failed payment for an order
+      # that hasn't generated licenses yet. Log it but don't fail.
+      unless license
+        log_license_event(nil, 'charge_failed_no_license', {
+          charge_id: charge.id,
+          failure_reason: charge.failure_message,
+          payment_intent_id: charge.payment_intent,
+          customer_id: charge.customer,
+        })
+        return { success: true, message: 'Charge failed - no associated license found' }
+      end
 
       # Send warning notification to user
-      NotificationService.send_charge_failed_notification(license, charge)
+      Webhooks::Stripe::NotificationService.send_charge_failed_notification(license, charge)
 
       log_license_event(license, 'charge_failed_warning', {
         charge_id: charge.id,
@@ -166,8 +188,19 @@ class Webhooks::Stripe::PaymentEventHandler < BaseEventHandler
       charge = event.data.object
 
       # Find associated license
-      license = LicenseFinderService.find_license_for_charge(charge)
-      return { success: false, error: 'License not found for charge' } unless license
+      license = Webhooks::Stripe::LicenseFinderService.find_license_for_charge(charge)
+
+      # If no license is found, this might be a refund for a failed payment or
+      # an order that hasn't generated licenses yet. Log it but don't fail.
+      unless license
+        log_license_event(nil, 'charge_refunded_no_license', {
+          charge_id: charge.id,
+          refund_amount: charge.amount_refunded / 100.0,
+          payment_intent_id: charge.payment_intent,
+          customer_id: charge.customer,
+        })
+        return { success: true, message: 'Charge refunded - no associated license found' }
+      end
 
       DB.transaction do
         # Revoke the license due to refund
@@ -189,7 +222,7 @@ class Webhooks::Stripe::PaymentEventHandler < BaseEventHandler
         })
 
         # Send revocation notification
-        NotificationService.send_license_revoked_notification(license, 'refund')
+        Webhooks::Stripe::NotificationService.send_license_revoked_notification(license, 'refund')
       end
 
       { success: true, message: 'License revoked due to charge refund' }

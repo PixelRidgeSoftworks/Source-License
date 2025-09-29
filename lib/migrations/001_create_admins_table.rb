@@ -3,7 +3,7 @@
 # Source-License: Migration 1 - Create Admins Table
 # Creates the admins table with authentication and security features
 
-class Migrations::CreateAdminsTable < BaseMigration
+class Migrations::CreateAdminsTable < Migrations::BaseMigration
   VERSION = 1
 
   def up

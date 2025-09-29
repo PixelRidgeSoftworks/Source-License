@@ -3,7 +3,7 @@
 # Source-License: Migration 19 - Add Tax Fields to Orders
 # Adds tax-related fields to orders table
 
-class Migrations::AddTaxFieldsToOrders < BaseMigration
+class Migrations::AddTaxFieldsToOrders < Migrations::BaseMigration
   VERSION = 19
 
   def up

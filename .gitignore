@@ -72,3 +72,4 @@ logs/webhooks.log
 logs/security.log
 logs/licenses.log
 COMPREHENSIVE_WEBHOOK_TESTING_GUIDE.md
+logs/payments.log

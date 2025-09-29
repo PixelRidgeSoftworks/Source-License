@@ -123,6 +123,58 @@ module AdminControllers::WebhookSettingsController
           enabled: SettingsManager.get('webhooks.stripe.payment_intent_succeeded'),
           description: 'Complete orders when payment intent succeeds',
         },
+        'charge.dispute.created' => {
+          enabled: SettingsManager.get('webhooks.stripe.charge_dispute_created'),
+          description: 'Process Stripe charge.dispute.created events (chargeback handling)',
+        },
+        'charge.dispute.updated' => {
+          enabled: SettingsManager.get('webhooks.stripe.charge_dispute_updated'),
+          description: 'Process Stripe charge.dispute.updated events (dispute progress tracking)',
+        },
+        'charge.dispute.closed' => {
+          enabled: SettingsManager.get('webhooks.stripe.charge_dispute_closed'),
+          description: 'Process Stripe charge.dispute.closed events (dispute resolution)',
+        },
+        'invoice.payment_failed' => {
+          enabled: SettingsManager.get('webhooks.stripe.invoice_payment_failed'),
+          description: 'Process Stripe invoice.payment_failed events (subscription payment failures)',
+        },
+        'invoice.payment_succeeded' => {
+          enabled: SettingsManager.get('webhooks.stripe.invoice_payment_succeeded'),
+          description: 'Process Stripe invoice.payment_succeeded events (subscription renewals)',
+        },
+        'invoice.created' => {
+          enabled: SettingsManager.get('webhooks.stripe.invoice_created'),
+          description: 'Process Stripe invoice.created events (billing cycle tracking)',
+        },
+        'payment_method.attached' => {
+          enabled: SettingsManager.get('webhooks.stripe.payment_method_attached'),
+          description: 'Process Stripe payment_method.attached events (payment method tracking)',
+        },
+        'customer.updated' => {
+          enabled: SettingsManager.get('webhooks.stripe.customer_updated'),
+          description: 'Process Stripe customer.updated events (customer data synchronization)',
+        },
+        'customer.created' => {
+          enabled: SettingsManager.get('webhooks.stripe.customer_created'),
+          description: 'Process Stripe customer.created events (new customer tracking)',
+        },
+        'plan.created' => {
+          enabled: SettingsManager.get('webhooks.stripe.plan_created'),
+          description: 'Process Stripe plan.created events (subscription plan tracking)',
+        },
+        'price.created' => {
+          enabled: SettingsManager.get('webhooks.stripe.price_created'),
+          description: 'Process Stripe price.created events (pricing tier tracking)',
+        },
+        'product.created' => {
+          enabled: SettingsManager.get('webhooks.stripe.product_created'),
+          description: 'Process Stripe product.created events (product catalog sync)',
+        },
+        'setup_intent.created' => {
+          enabled: SettingsManager.get('webhooks.stripe.setup_intent_created'),
+          description: 'Process Stripe setup_intent.created events (payment setup tracking)',
+        },
       },
       paypal: {
         enabled: SettingsManager.get('webhooks.paypal.enabled'),
@@ -178,6 +230,19 @@ module AdminControllers::WebhookSettingsController
       'customer_subscription_trial_will_end' => 'webhooks.stripe.customer_subscription_trial_will_end',
       'payment_intent_created' => 'webhooks.stripe.payment_intent_created',
       'payment_intent_succeeded' => 'webhooks.stripe.payment_intent_succeeded',
+      'charge_dispute_created' => 'webhooks.stripe.charge_dispute_created',
+      'charge_dispute_updated' => 'webhooks.stripe.charge_dispute_updated',
+      'charge_dispute_closed' => 'webhooks.stripe.charge_dispute_closed',
+      'invoice_payment_failed' => 'webhooks.stripe.invoice_payment_failed',
+      'invoice_payment_succeeded' => 'webhooks.stripe.invoice_payment_succeeded',
+      'invoice_created' => 'webhooks.stripe.invoice_created',
+      'payment_method_attached' => 'webhooks.stripe.payment_method_attached',
+      'customer_updated' => 'webhooks.stripe.customer_updated',
+      'customer_created' => 'webhooks.stripe.customer_created',
+      'plan_created' => 'webhooks.stripe.plan_created',
+      'price_created' => 'webhooks.stripe.price_created',
+      'product_created' => 'webhooks.stripe.product_created',
+      'setup_intent_created' => 'webhooks.stripe.setup_intent_created',
     }
 
     webhook_mappings.each do |form_key, setting_key|

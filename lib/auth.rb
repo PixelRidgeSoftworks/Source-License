@@ -3,6 +3,10 @@
 # Source-License: Unified Authentication System
 # Comprehensive authentication with security features, JWT support, and admin/user management
 
+# Define the Auth module namespace first
+module Auth
+end
+
 # Load all authentication modules
 require_relative 'auth/base_auth'
 require_relative 'auth/legacy_auth'

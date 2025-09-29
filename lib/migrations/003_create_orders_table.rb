@@ -3,7 +3,7 @@
 # Source-License: Migration 3 - Create Orders Table
 # Creates the orders table for managing customer orders
 
-class Migrations::CreateOrdersTable < BaseMigration
+class Migrations::CreateOrdersTable < Migrations::BaseMigration
   VERSION = 3
 
   def up

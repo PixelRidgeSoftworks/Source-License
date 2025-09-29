@@ -99,10 +99,11 @@ module Admin::OrdersController
           case new_status
           when 'completed'
             # Complete the order and generate licenses if needed
-            Admin::OrdersController.complete_order(order)
+            Admin::OrdersController.complete_order(order, current_secure_admin.id)
           when 'refunded'
             # Process refund through payment system
-            refund_result = Admin::OrdersController.process_order_refund(order, 'Admin refund')
+            refund_result = Admin::OrdersController.process_order_refund(order, 'Admin refund', nil,
+                                                                         current_secure_admin.id)
             return { success: false, error: refund_result[:error] }.to_json unless refund_result[:success]
           else
             # Simple status update
@@ -152,7 +153,8 @@ module Admin::OrdersController
       end
 
       begin
-        result = Admin::OrdersController.process_order_refund(order, refund_reason, refund_amount)
+        result = Admin::OrdersController.process_order_refund(order, refund_reason, refund_amount,
+                                                              current_secure_admin.id)
         result.to_json
       rescue StandardError => e
         PaymentLogger.log_security_event('refund_processing_failed', {
@@ -171,8 +173,17 @@ module Admin::OrdersController
       require_csrf_token unless ENV['APP_ENV'] == 'test'
       content_type :json
 
-      action = params[:action]
-      order_ids = params[:order_ids] || []
+      # Handle JSON request body
+      request_data = {}
+      if request.content_type&.include?('application/json')
+        request.body.rewind
+        request_data = JSON.parse(request.body.read)
+      else
+        request_data = params
+      end
+
+      action = request_data['action']
+      order_ids = request_data['order_ids'] || []
 
       return { success: false, error: 'Invalid action' }.to_json unless %w[complete refund delete].include?(action)
 
@@ -186,11 +197,12 @@ module Admin::OrdersController
 
         case action
         when 'complete'
-          Admin::OrdersController.complete_order(order) unless order.completed?
+          Admin::OrdersController.complete_order(order, current_secure_admin.id) unless order.completed?
           results[:success] += 1
         when 'refund'
           if order.completed? && !order.refunded?
-            refund_result = Admin::OrdersController.process_order_refund(order, 'Bulk admin refund')
+            refund_result = Admin::OrdersController.process_order_refund(order, 'Bulk admin refund', nil,
+                                                                         current_secure_admin.id)
             if refund_result[:success]
               results[:success] += 1
             else
@@ -300,7 +312,7 @@ module Admin::OrdersController
   end
 
   # Process refund through payment system
-  def self.process_order_refund(order, reason, amount = nil)
+  def self.process_order_refund(order, reason, amount = nil, admin_id = nil)
     amount ||= order.amount
 
     # Process refund through payment processor
@@ -321,7 +333,7 @@ module Admin::OrdersController
           PaymentLogger.log_license_event(license, 'revoked_admin_refund', {
             order_id: order.id,
             refund_amount: amount,
-            admin_id: current_secure_admin.id,
+            admin_id: admin_id,
           })
 
           # Cancel subscriptions if any
@@ -333,7 +345,7 @@ module Admin::OrdersController
         order_id: order.id,
         refund_amount: amount,
         reason: reason,
-        admin_id: current_secure_admin.id,
+        admin_id: admin_id,
         transaction_id: refund_result[:refund_id],
       })
 
@@ -347,7 +359,7 @@ module Admin::OrdersController
       PaymentLogger.log_security_event('refund_failed', {
         order_id: order.id,
         error: refund_result[:error],
-        admin_id: current_secure_admin.id,
+        admin_id: admin_id,
       })
 
       {
@@ -358,7 +370,7 @@ module Admin::OrdersController
   end
 
   # Complete an order and generate licenses
-  def self.complete_order(order)
+  def self.complete_order(order, admin_id = nil)
     return if order.completed?
 
     DB.transaction do
@@ -384,7 +396,7 @@ module Admin::OrdersController
 
           PaymentLogger.log_license_event(license, 'issued_admin_completion', {
             order_id: order.id,
-            admin_id: current_secure_admin.id,
+            admin_id: admin_id,
           })
         end
       end

@@ -3,7 +3,7 @@
 # Source-License: Migration 15 - Create Account Bans Table
 # Creates the account_bans table for progressive ban system
 
-class Migrations::CreateAccountBansTable < BaseMigration
+class Migrations::CreateAccountBansTable < Migrations::BaseMigration
   VERSION = 15
 
   def up

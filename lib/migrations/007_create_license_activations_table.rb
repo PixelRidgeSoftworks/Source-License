@@ -3,7 +3,7 @@
 # Source-License: Migration 7 - Create License Activations Table
 # Creates the license_activations table for tracking license activations
 
-class Migrations::CreateLicenseActivationsTable < BaseMigration
+class Migrations::CreateLicenseActivationsTable < Migrations::BaseMigration
   VERSION = 7
 
   def up

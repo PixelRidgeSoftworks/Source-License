@@ -8,7 +8,8 @@ require 'net/http'
 require 'uri'
 require_relative '../logging/payment_logger'
 
-module Webhooks
+# Define the Webhooks namespace hierarchy first
+module Webhooks::Paypal
 end
 
 class Webhooks::PaypalWebhookHandler

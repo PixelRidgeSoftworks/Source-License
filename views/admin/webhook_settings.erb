@@ -42,15 +42,14 @@
                     <div class="card-body">
                       <div class="d-flex justify-content-between align-items-center mb-2">
                         <div class="form-check form-switch">
-                          <input 
-                            class="form-check-input" 
-                            type="checkbox" 
+                          <input
+                            class="form-check-input"
+                            type="checkbox"
                             id="stripe_<%= event_type.gsub('.', '_') %>"
-                            name="stripe_webhooks[<%= event_type.gsub('.', '_') %>]" 
+                            name="stripe_webhooks[<%= event_type.gsub('.', '_') %>]"
                             value="1"
                             <%= 'checked' if config[:enabled] %>
-                            onchange="updateWebhookStatus(this, 'status_<%= event_type.gsub('.', '_') %>')"
-                          >
+                            onchange="updateWebhookStatus(this, 'status_<%= event_type.gsub('.', '_') %>')">
                           <label class="form-check-label fw-bold" for="stripe_<%= event_type.gsub('.', '_') %>">
                             <%= event_type %>
                           </label>
@@ -93,15 +92,14 @@
             </p>
 
             <div class="form-check form-switch">
-              <input 
-                class="form-check-input" 
-                type="checkbox" 
+              <input
+                class="form-check-input"
+                type="checkbox"
                 id="paypal_enabled"
-                name="paypal_webhooks[enabled]" 
+                name="paypal_webhooks[enabled]"
                 value="1"
                 <%= 'checked' if @webhook_settings[:paypal][:enabled] %>
-                disabled
-              >
+                disabled>
               <label class="form-check-label" for="paypal_enabled">
                 Enable PayPal Webhooks (Coming Soon)
               </label>
@@ -190,7 +188,7 @@
               </ul>
             </div>
           </div>
-          
+
           <div class="alert alert-info mt-3" role="alert">
             <h6 class="alert-heading">Setup Instructions:</h6>
             <ol class="mb-0">

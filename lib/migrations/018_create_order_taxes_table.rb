@@ -3,7 +3,7 @@
 # Source-License: Migration 18 - Create Order Taxes Table
 # Creates the order_taxes table for tracking applied taxes
 
-class Migrations::CreateOrderTaxesTable < BaseMigration
+class Migrations::CreateOrderTaxesTable < Migrations::BaseMigration
   VERSION = 18
 
   def up

@@ -88,12 +88,21 @@ module AdminControllers::CustomizationController
       erb :'admin/code_guide', layout: :'layouts/admin_layout'
     end
 
-    # Live preview endpoint
+    # Live preview endpoint - Home Page
     app.get '/admin/customize/preview' do
       require_secure_admin_auth
       @page_title = custom('branding.site_name', 'Source License')
       @products = Product.where(active: true).order(:name).limit(3)
       erb :index, layout: :'layouts/main_layout'
+    end
+
+    # Live preview endpoint - Products Page
+    app.get '/admin/customize/preview/products' do
+      require_secure_admin_auth
+      @page_title = custom('products_page.title', 'Our Software Products')
+      @categories = ProductCategory.order(:name)
+      @products = Product.where(active: true).order(:name)
+      erb :products, layout: :'layouts/main_layout'
     end
   end
 end

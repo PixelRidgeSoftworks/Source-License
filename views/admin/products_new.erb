@@ -58,6 +58,22 @@
                                 Describe what this software does and its key features. This will be shown to customers.
                             </div>
                         </div>
+                        <div class="col-12">
+                            <div class="form-floating">
+                                <select class="form-select" id="category_id" name="category_id" required>
+                                    <option value="">Select a category...</option>
+                                    <% if @categories && @categories.any? %>
+                                        <% @categories.each do |category| %>
+                                            <option value="<%= category.id %>"><%= h(category.name) %></option>
+                                        <% end %>
+                                    <% end %>
+                                </select>
+                                <label for="category_id">Product Category *</label>
+                            </div>
+                            <div class="form-text">
+                                Select the category this product belongs to. This helps organize products for customers.
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

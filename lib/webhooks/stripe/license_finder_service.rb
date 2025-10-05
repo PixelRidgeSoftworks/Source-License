@@ -9,14 +9,17 @@ class Webhooks::Stripe::LicenseFinderService
       if charge.payment_intent
         order = Order.where(payment_intent_id: charge.payment_intent).first
         if order
-          # If order doesn't have licenses yet, create them first
-          if order.licenses.empty? && order.status == 'pending'
+          # Return existing licenses if they exist - don't create duplicates
+          return order.licenses.first if order.licenses.any?
+
+          # Only generate licenses if order is still pending (shouldn't happen in normal flow)
+          if order.status == 'pending'
             # Complete the order and generate licenses
             order.update(status: 'completed', completed_at: Time.now)
             ApiController.generate_licenses_for_order(order)
             order.refresh # Reload to get the new licenses
+            return order.licenses.first if order.licenses.any?
           end
-          return order.licenses.first if order.licenses.any?
         end
       end
 

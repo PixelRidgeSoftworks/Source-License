@@ -142,12 +142,12 @@ class SourceLicenseConfigurator
       if response.empty? || response == 'y' || response == 'yes'
         generate_and_set_secure_value(var_name, generator_type)
         return
-      else
+      elsif prompt_keep_current_value
         # User declined auto-generation, ask if they want to keep current or enter manually
-        return if prompt_keep_current_value
+        return
       end
-    else
-      return if prompt_keep_current_value
+    elsif prompt_keep_current_value
+      return
     end
 
     # Manual entry (only reached if user wants to change the value)

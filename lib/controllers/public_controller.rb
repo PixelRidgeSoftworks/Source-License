@@ -20,8 +20,8 @@ module PublicController
 
     # Products listing page
     app.get '/products' do
-      @products = Product.where(active: true).order(:name)
-      @categories = ProductCategory.order(:name)
+      @products = Product.where(active: true).where(Sequel.~(name: nil)).where(Sequel.~(name: '')).order(:name).all
+      @categories = ProductCategory.order(:name).all
       @page_title = custom('text.products_title', 'Our Software Products')
       erb :products, layout: :'layouts/main_layout'
     end
@@ -36,14 +36,14 @@ module PublicController
 
     # Cart page
     app.get '/cart' do
-      @products = Product.where(active: true).order(:name).all
+      @products = Product.where(active: true).where(Sequel.~(name: nil)).where(Sequel.~(name: '')).order(:name).all
       @page_title = 'Shopping Cart'
       erb :cart, layout: :'layouts/main_layout'
     end
 
     # Checkout page
     app.get '/checkout' do
-      @products = Product.where(active: true).order(:name).all
+      @products = Product.where(active: true).where(Sequel.~(name: nil)).where(Sequel.~(name: '')).order(:name).all
       @page_title = 'Checkout'
       erb :checkout, layout: :'layouts/main_layout'
     end

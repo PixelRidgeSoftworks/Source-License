@@ -23,6 +23,7 @@ module AdminControllers::ProductsController
     # Add new product form
     app.get '/admin/products/new' do
       require_secure_admin_auth
+      @categories = ProductCategory.order(:name)
       @page_title = 'Add New Product'
       erb :'admin/products_new', layout: :'layouts/admin_layout'
     end
@@ -63,6 +64,7 @@ module AdminControllers::ProductsController
           license_type: params[:license_type],
           max_activations: params[:max_activations].to_i,
           version: params[:version],
+          category_id: params[:category_id].to_i,
           download_file: download_file,
           download_url: params[:download_url],
           file_size: params[:file_size],
@@ -90,11 +92,13 @@ module AdminControllers::ProductsController
           redirect "/admin/products/#{product.id}"
         else
           flash :error, "Error creating product: #{product.errors.full_messages.join(', ')}"
+          @categories = ProductCategory.order(:name)
           @page_title = 'Add New Product'
           erb :'admin/products_new', layout: :'layouts/admin_layout'
         end
       rescue StandardError => e
         flash :error, "Error creating product: #{e.message}"
+        @categories = ProductCategory.order(:name)
         @page_title = 'Add New Product'
         erb :'admin/products_new', layout: :'layouts/admin_layout'
       end

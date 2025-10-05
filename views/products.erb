@@ -69,7 +69,7 @@
             <!-- Products organized by categories -->
             <% if @categories && @categories.any? %>
                 <% @categories.each do |category| %>
-                    <% category_products = @products.select { |p| p.category_id == category.id } %>
+                    <% category_products = @products.select { |p| p.category_id == category.id && p.name && !p.name.strip.empty? } %>
                     <% if category_products.any? %>
                         <div class="category-section mb-5" data-category-id="<%= category.id %>">
                             <div class="row mb-4">
@@ -94,7 +94,7 @@
 
                             <div class="row g-4">
                                 <% category_products.each do |product| %>
-                                    <div class="col-lg-4 col-md-6 product-card" data-category="<%= product.category_id %>" data-name="<%= h(product.name.downcase) %>" data-description="<%= h(product.description&.downcase) %>">
+                                    <div class="col-lg-4 col-md-6 product-card" data-category="<%= product.category_id %>" data-name="<%= h(product.name&.downcase || '') %>" data-description="<%= h(product.description&.downcase || '') %>">
                                         <div class="card h-100 product-item" style="background: var(--surface-primary); border: 1px solid var(--border-default);">
                                             <div class="card-header border-0 pb-2">
                                                 <div class="d-flex justify-content-between align-items-start">
@@ -169,7 +169,7 @@
             <% end %>
 
             <!-- Products without category -->
-            <% uncategorized_products = @products.select { |p| p.category_id.nil? } %>
+            <% uncategorized_products = @products.select { |p| p.category_id.nil? && p.name && !p.name.strip.empty? } %>
             <% if uncategorized_products.any? %>
                 <div class="category-section mb-5" data-category-id="uncategorized">
                     <div class="row mb-4">
@@ -192,7 +192,7 @@
 
                     <div class="row g-4">
                         <% uncategorized_products.each do |product| %>
-                            <div class="col-lg-4 col-md-6 product-card" data-category="uncategorized" data-name="<%= h(product.name.downcase) %>" data-description="<%= h(product.description&.downcase) %>">
+                            <div class="col-lg-4 col-md-6 product-card" data-category="uncategorized" data-name="<%= h(product.name&.downcase || '') %>" data-description="<%= h(product.description&.downcase || '') %>">
                                 <div class="card h-100 product-item" style="background: var(--surface-primary); border: 1px solid var(--border-default);">
                                     <div class="card-header border-0 pb-2">
                                         <div class="d-flex justify-content-between align-items-start">

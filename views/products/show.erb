@@ -1,0 +1,329 @@
+<!-- Product Details Page -->
+<section class="py-5" style="background: var(--surface-secondary);">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-8">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb bg-transparent p-0">
+                        <li class="breadcrumb-item"><a href="/">Home</a></li>
+                        <li class="breadcrumb-item"><a href="/products">Products</a></li>
+                        <li class="breadcrumb-item active"><%= h(@product.name) %></li>
+                    </ol>
+                </nav>
+
+                <div class="d-flex align-items-center mb-4">
+                    <div class="me-3">
+                        <% if @product.category %>
+                            <div class="category-badge" style="background: <%= @product.category.badge_color %>;">
+                                <i class="<%= @product.category.icon_class %> me-2"></i>
+                                <%= h(@product.category.name) %>
+                            </div>
+                        <% end %>
+                    </div>
+                    <div>
+                        <h1 class="display-5 fw-bold mb-2"><%= h(@product.name) %></h1>
+                        <% if @product.version %>
+                            <p class="text-muted mb-0">Version <%= h(@product.version) %></p>
+                        <% end %>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 text-md-end">
+                <div class="price-section">
+                    <div class="h2 fw-bold text-primary mb-1">
+                        $<%= @product.formatted_price %>
+                        <% if @product.subscription? %>
+                            <small class="text-muted">/<%= @product.billing_cycle || 'month' %></small>
+                        <% end %>
+                    </div>
+                    <% if @product.subscription? && @product.trial? %>
+                        <p class="text-success mb-0">
+                            <i class="fas fa-gift me-1"></i>
+                            <%= @product.trial_period_text %> free trial
+                        </p>
+                    <% end %>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="py-5">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8">
+                <!-- Product Description -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Product Description
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <% if @product.description && !@product.description.strip.empty? %>
+                            <p class="lead"><%= h(@product.description) %></p>
+                        <% else %>
+                            <p class="text-muted">No description available for this product.</p>
+                        <% end %>
+                    </div>
+                </div>
+
+                <!-- License Details -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-key me-2"></i>
+                            License Information
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-sm-6">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-users text-primary me-3"></i>
+                                    <div>
+                                        <h6 class="mb-1">Max Activations</h6>
+                                        <p class="text-muted mb-0"><%= @product.max_activations %> device<%= @product.max_activations > 1 ? 's' : '' %></p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-certificate text-primary me-3"></i>
+                                    <div>
+                                        <h6 class="mb-1">License Type</h6>
+                                        <p class="text-muted mb-0">
+                                            <% if @product.subscription? %>
+                                                Subscription License
+                                            <% else %>
+                                                Perpetual License
+                                            <% end %>
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <% if @product.subscription? %>
+                            <hr class="my-4">
+                            <h6 class="fw-bold mb-3">Subscription Details</h6>
+                            <div class="row g-3">
+                                <div class="col-sm-6">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-calendar text-info me-3"></i>
+                                        <div>
+                                            <h6 class="mb-1">Billing</h6>
+                                            <p class="text-muted mb-0"><%= @product.billing_frequency_text %></p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <% if @product.trial? %>
+                                    <div class="col-sm-6">
+                                        <div class="d-flex align-items-center">
+                                            <i class="fas fa-gift text-success me-3"></i>
+                                            <div>
+                                                <h6 class="mb-1">Free Trial</h6>
+                                                <p class="text-muted mb-0"><%= @product.trial_period_text %></p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                <% end %>
+                                <% if @product.respond_to?(:setup_fee) && @product.setup_fee && @product.setup_fee > 0 %>
+                                    <div class="col-sm-6">
+                                        <div class="d-flex align-items-center">
+                                            <i class="fas fa-dollar-sign text-warning me-3"></i>
+                                            <div>
+                                                <h6 class="mb-1">Setup Fee</h6>
+                                                <p class="text-muted mb-0"><%= @product.formatted_setup_fee %></p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                <% end %>
+                            </div>
+                        <% end %>
+                    </div>
+                </div>
+
+                <!-- Download Information -->
+                <% if @product.file_size || @product.download_url || @product.download_file %>
+                    <div class="card shadow-sm">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-download me-2"></i>
+                                Download Information
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <% if @product.file_size %>
+                                <p class="mb-2">
+                                    <i class="fas fa-file-archive text-muted me-2"></i>
+                                    <strong>File Size:</strong> <%= h(@product.file_size) %>
+                                </p>
+                            <% end %>
+                            <p class="text-muted mb-0">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Download links will be provided after purchase and license generation.
+                            </p>
+                        </div>
+                    </div>
+                <% end %>
+            </div>
+
+            <div class="col-lg-4">
+                <!-- Purchase Card -->
+                <div class="card shadow-sm sticky-top" style="top: 2rem;">
+                    <div class="card-header text-center">
+                        <h5 class="mb-0">Purchase License</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="text-center mb-4">
+                            <div class="h3 fw-bold text-primary">
+                                $<%= @product.formatted_price %>
+                                <% if @product.subscription? %>
+                                    <small class="text-muted fs-6">/<%= @product.billing_cycle || 'month' %></small>
+                                <% end %>
+                            </div>
+                            <% if @product.subscription? && @product.trial? %>
+                                <p class="text-success mb-0">
+                                    <small><i class="fas fa-gift me-1"></i><%= @product.trial_period_text %> free</small>
+                                </p>
+                            <% end %>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <% if user_logged_in? %>
+                                <button class="btn btn-primary btn-lg" onclick="addToCart(<%= @product.id %>)">
+                                    <i class="fas fa-cart-plus me-2"></i>
+                                    Add to Cart
+                                </button>
+                                <button class="btn btn-success" onclick="buyNow(<%= @product.id %>)">
+                                    <i class="fas fa-bolt me-2"></i>
+                                    Buy Now
+                                </button>
+                            <% else %>
+                                <a href="/register" class="btn btn-primary btn-lg">
+                                    <i class="fas fa-user-plus me-2"></i>
+                                    Sign Up to Purchase
+                                </a>
+                                <a href="/login" class="btn btn-outline-secondary">
+                                    <i class="fas fa-sign-in-alt me-2"></i>
+                                    Already have an account?
+                                </a>
+                            <% end %>
+                        </div>
+
+                        <hr class="my-4">
+                        
+                        <div class="text-center">
+                            <h6 class="mb-3">What's Included:</h6>
+                            <ul class="list-unstyled text-start">
+                                <li class="mb-2">
+                                    <i class="fas fa-check text-success me-2"></i>
+                                    Instant license delivery
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-check text-success me-2"></i>
+                                    <%= @product.max_activations %> device activation<%= @product.max_activations > 1 ? 's' : '' %>
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-check text-success me-2"></i>
+                                    Secure download access
+                                </li>
+                                <% if @product.subscription? %>
+                                    <li class="mb-2">
+                                        <i class="fas fa-check text-success me-2"></i>
+                                        Automatic updates
+                                    </li>
+                                    <% if @product.trial? %>
+                                        <li class="mb-2">
+                                            <i class="fas fa-check text-success me-2"></i>
+                                            <%= @product.trial_period_text %> free trial
+                                        </li>
+                                    <% end %>
+                                <% end %>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Support Info -->
+                <div class="card shadow-sm mt-4">
+                    <div class="card-body text-center">
+                        <h6 class="fw-bold mb-3">
+                            <i class="fas fa-headset text-primary me-2"></i>
+                            Need Help?
+                        </h6>
+                        <p class="small text-muted mb-3">
+                            Our support team is ready to assist you with any questions.
+                        </p>
+                        <a href="mailto:<%= custom('app.support_email', 'support@example.com') %>" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-envelope me-2"></i>
+                            Contact Support
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+function addToCart(productId) {
+    if (typeof window.cart !== 'undefined') {
+        window.cart.addItem(productId);
+    } else {
+        // Fallback for basic cart functionality
+        alert('Product added to cart! Redirecting to checkout...');
+        window.location.href = '/checkout';
+    }
+}
+
+function buyNow(productId) {
+    // Add to cart and redirect to checkout
+    addToCart(productId);
+    setTimeout(() => {
+        window.location.href = '/checkout';
+    }, 500);
+}
+</script>
+
+<style>
+.category-badge {
+    display: inline-block;
+    padding: 0.375rem 0.75rem;
+    border-radius: 0.5rem;
+    color: white;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.price-section {
+    text-align: right;
+}
+
+.sticky-top {
+    z-index: 1020;
+}
+
+@media (max-width: 767.98px) {
+    .price-section {
+        text-align: center;
+        margin-top: 1rem;
+    }
+}
+
+.breadcrumb {
+    background: transparent;
+    padding: 0;
+}
+
+.breadcrumb-item a {
+    color: var(--accent-primary);
+    text-decoration: none;
+}
+
+.breadcrumb-item a:hover {
+    text-decoration: underline;
+}
+</style>

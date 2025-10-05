@@ -4,7 +4,7 @@
 
 [![CodeQL Security Analysis](https://github.com/PixelRidgeSoftworks/Source-License/actions/workflows/codeql.yml/badge.svg)](https://github.com/PixelRidgeSoftworks/Source-License/actions/workflows/codeql.yml) [![Join our Discord](https://img.shields.io/badge/Discord-Join%20Server-7289DA?logo=discord&logoColor=white)](https://discord.gg/j6v99ZPkrQ)
 
-# Source License - Professional Software Licensing Platform
+# Source License - Professional Open Source Software Licensing Platform
 
 > **IMPORTANT NOTE:** Source License is still in ***Alpha***. There **WILL** be issues, missing functionality, missing documentation, etc. Please let us know of any and all issues via a Issue!
 

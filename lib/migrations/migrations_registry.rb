@@ -37,6 +37,9 @@ class Migrations::MigrationsRegistry
         Migrations::AddCustomerNameToLicenses,
         Migrations::AddPerformanceIndexes,
         Migrations::AddProductCategories,
+        Migrations::AddMachineIdSupport,
+        Migrations::SecureLicenseSystem,
+        Migrations::EnforceMachineIdRequirement,
       ]
     end
 
@@ -67,6 +70,9 @@ class Migrations::MigrationsRegistry
         021_add_customer_name_to_licenses
         022_add_performance_indexes
         023_add_product_categories
+        024_add_machine_id_support
+        025_secure_license_system
+        026_enforce_machine_id_requirement
       ]
     end
   end

@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative 'license_controller'
+
 # Controller for API routes
 module ApiController
   def self.included(base)
@@ -270,105 +272,88 @@ module ApiController
       end
     end
 
-    # License validation API
+    # License validation API - Now using secure controller
     app.get '/api/license/:key/validate' do
       content_type :json
 
       begin
-        # Single optimized JOIN query
-        license_data = DB[:licenses]
-          .select(Sequel[:licenses][:id].as(:id), :license_key, :status, :expires_at, :activation_count,
-                  Sequel[:licenses][:max_activations].as(:max_activations),
-                  :custom_max_activations, :custom_expires_at, :product_id)
-          .join(:products, id: :product_id)
-          .select_append(Sequel[:products][:name].as(:product_name))
-          .where(license_key: params[:key])
-          .first
+        # Extract request parameters
+        machine_fingerprint = params[:machine_fingerprint]
+        machine_id = params[:machine_id]
+        request_info = LicenseController.extract_request_info(request)
 
-        if license_data
-          # Calculate effective values without additional queries
-          effective_max_activations = license_data[:custom_max_activations] || license_data[:max_activations] || 1
-          effective_expires_at = license_data[:custom_expires_at] || license_data[:expires_at]
+        # Use secure license controller
+        result = LicenseController.validate_license(
+          params[:key],
+          machine_fingerprint,
+          machine_id,
+          request_info
+        )
 
-          # Inline validity check
-          is_valid = license_data[:status] == 'active' &&
-                     (effective_expires_at.nil? || effective_expires_at > Time.now)
-
-          {
-            valid: is_valid,
-            status: license_data[:status],
-            product: license_data[:product_name] || 'Unknown',
-            expires_at: effective_expires_at,
-            activations_used: license_data[:activation_count] || 0,
-            max_activations: effective_max_activations,
-          }.to_json
-        else
-          status 404
-          { valid: false, error: 'License not found' }.to_json
+        # Set rate limit headers if available
+        if result[:rate_limit]
+          headers 'X-RateLimit-Remaining' => result[:rate_limit][:remaining].to_s,
+                  'X-RateLimit-Reset' => result[:rate_limit][:reset_at].to_s
         end
+
+        # Set appropriate HTTP status
+        unless result[:valid]
+          status 400 if result[:error] && result[:error] != 'License not found'
+          status 404 if result[:error] == 'License not found'
+          status 429 if result[:error]&.include?('Rate limit')
+        end
+
+        result.to_json
       rescue StandardError
         status 500
-        { valid: false, error: 'Internal server error' }.to_json
+        { valid: false, error: 'Internal server error', timestamp: Time.now.iso8601 }.to_json
       end
     end
 
-    # License activation API
+    # License activation API - Now using secure controller
     app.post '/api/license/:key/activate' do
       content_type :json
 
       begin
-        # Single transaction with optimistic locking
-        result = DB.transaction do
-          # Use SELECT FOR UPDATE for row-level locking
-          license_data = DB[:licenses]
-            .select(:id, :status, :expires_at, :activation_count, :max_activations,
-                    :custom_max_activations, :custom_expires_at)
-            .where(license_key: params[:key])
-            .for_update
-            .first
+        # Parse request body for machine_id and other data
+        request_body = request.body.read
+        request.body.rewind
 
-          unless license_data
-            status 404
-            return { success: false, error: 'License not found' }.to_json
-          end
+        activation_data = {}
+        activation_data = JSON.parse(request_body) unless request_body.empty?
 
-          # Quick validity checks
-          effective_max_activations = license_data[:custom_max_activations] || license_data[:max_activations] || 1
-          effective_expires_at = license_data[:custom_expires_at] || license_data[:expires_at]
+        machine_fingerprint = activation_data['machine_fingerprint'] || params[:machine_fingerprint]
+        machine_id = activation_data['machine_id'] || params[:machine_id]
+        request_info = LicenseController.extract_request_info(request)
 
-          unless license_data[:status] == 'active'
-            status 400
-            return { success: false, error: 'License is not active' }.to_json
-          end
+        # Use secure license controller
+        result = LicenseController.activate_license(
+          params[:key],
+          machine_fingerprint,
+          machine_id,
+          request_info
+        )
 
-          if effective_expires_at && effective_expires_at <= Time.now
-            status 400
-            return { success: false, error: 'License has expired' }.to_json
-          end
+        # Set rate limit headers if available
+        if result[:rate_limit]
+          headers 'X-RateLimit-Remaining' => result[:rate_limit][:remaining].to_s,
+                  'X-RateLimit-Reset' => result[:rate_limit][:reset_at].to_s
+        end
 
-          if license_data[:activation_count] >= effective_max_activations
-            status 400
-            return { success: false, error: 'Maximum activations reached' }.to_json
-          end
-
-          # Update activation count in single query
-          DB[:licenses]
-            .where(id: license_data[:id])
-            .update(
-              activation_count: license_data[:activation_count] + 1,
-              last_activated_at: Time.now
-            )
-
-          {
-            success: true,
-            activations_remaining: effective_max_activations - license_data[:activation_count] - 1,
-          }
+        # Set appropriate HTTP status
+        unless result[:success]
+          status 404 if result[:error] == 'Invalid license'
+          status 400 if result[:error] && !result[:error].include?('Rate limit') && result[:error] != 'Invalid license'
+          status 429 if result[:error]&.include?('Rate limit')
         end
 
         result.to_json
-      rescue StandardError => e
+      rescue JSON::ParserError
+        status 400
+        { success: false, error: 'Invalid JSON in request body', timestamp: Time.now.iso8601 }.to_json
+      rescue StandardError
         status 500
-        { success: false, error: e.message }.to_json
+        { success: false, error: 'Internal server error', timestamp: Time.now.iso8601 }.to_json
       end
     end
 

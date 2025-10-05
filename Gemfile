@@ -24,6 +24,7 @@ gem 'sqlite3', '~> 1.6' # SQLite driver for development/testing
 # Authentication & Security
 gem 'bcrypt', '~> 3.1'
 gem 'jwt', '~> 2.7'
+gem 'rack-attack', '~> 6.7'
 
 # HTTP & JSON
 gem 'json', '~> 2.7'

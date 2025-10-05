@@ -34,5 +34,13 @@ class LicenseActivation < Sequel::Model
   def validate
     super
     errors.add(:machine_fingerprint, 'cannot be empty') if !machine_fingerprint || machine_fingerprint.strip.empty?
+
+    # Validate machine_id if license requires it
+    return unless license&.requires_machine_id?
+
+    return unless !machine_id || machine_id.strip.empty?
+
+    errors.add(:machine_id,
+               'cannot be empty when license requires machine ID')
   end
 end

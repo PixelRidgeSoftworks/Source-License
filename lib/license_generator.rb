@@ -5,15 +5,20 @@
 
 require 'securerandom'
 require 'digest'
+require_relative 'services/secure_license_service'
 
 class LicenseGenerator
   class << self
     # Generate a new license for a product and order
     def generate_for_product(product, order, user = nil)
       license_key = generate_license_key
+      license_key_hash = SecureLicenseService.hash_license_key(license_key)
+      license_salt = SecureRandom.hex(16)
 
       license = License.create(
         license_key: license_key,
+        license_key_hash: license_key_hash,
+        license_salt: license_salt,
         order_id: order.id,
         product_id: product.id,
         customer_email: order.email,
@@ -292,98 +297,214 @@ class LicenseGenerator
   end
 end
 
-# License validation service
+# Secure License validation service
 class LicenseValidator
   class << self
-    # Validate a license key
-    def validate(license_key, machine_fingerprint = nil)
-      license = License.first(license_key: license_key)
+    # Validate a license key with security enhancements
+    def validate(license_key, machine_fingerprint = nil, machine_id = nil, request_info = {})
+      # Use secure service for constant-time lookup
+      license = SecureLicenseService.find_license_by_key(license_key)
 
-      return validation_result(false, 'License not found') unless license
-      return validation_result(false, 'License is revoked') if license.revoked?
-      return validation_result(false, 'License is suspended') if license.suspended?
-      return validation_result(false, 'License has expired') if license.expired?
+      # Log the validation attempt
+      SecureLicenseService.log_license_operation(
+        action: 'validate',
+        license_id: license&.dig(:id),
+        license_key: license_key,
+        machine_fingerprint: machine_fingerprint,
+        machine_id: machine_id,
+        ip_address: request_info[:ip_address],
+        user_agent: request_info[:user_agent],
+        success: license ? true : false,
+        failure_reason: license ? nil : 'License not found'
+      )
 
-      # Check machine fingerprint if provided
-      if machine_fingerprint
-        activation = license.license_activations_dataset.where(
-          machine_fingerprint: machine_fingerprint,
-          active: true
-        ).first
-
-        return validation_result(false, 'License not activated on this machine') unless activation
+      return SecureLicenseService.secure_error_response('Invalid license') unless license
+      return SecureLicenseService.secure_error_response('License not available') if license[:status] != 'active'
+      if license[:expires_at] && license[:expires_at] < Time.now
+        return SecureLicenseService.secure_error_response('License has expired')
       end
 
-      validation_result(true, 'License is valid', license_info(license))
+      # Check if license requires machine ID validation
+      if license[:requires_machine_id] && !machine_id
+        return SecureLicenseService.secure_error_response('Machine ID required for this license')
+      end
+
+      # Validate machine activation if machine data provided
+      if (machine_fingerprint || machine_id) && license[:requires_machine_id] && !SecureLicenseService.validate_machine_activation(
+        license[:id], machine_fingerprint, machine_id
+      )
+        return SecureLicenseService.secure_error_response('License not activated on this machine')
+      end
+
+      # Generate secure JWT response
+      license_data = {
+        valid: true,
+        expires_at: license[:expires_at],
+        requires_machine_id: license[:requires_machine_id],
+        license_id: license[:id],
+      }
+
+      {
+        valid: true,
+        token: SecureLicenseService.generate_license_jwt(license_data),
+        timestamp: Time.now.iso8601,
+      }
     end
 
-    # Activate license on a machine
-    def activate(license_key, machine_fingerprint, system_info = {})
-      license = License.first(license_key: license_key)
+    # Activate license on a machine with security enhancements
+    def activate(license_key, machine_fingerprint = nil, machine_id = nil, request_info = {})
+      # Use secure service for constant-time lookup
+      license = SecureLicenseService.find_license_by_key(license_key)
 
-      return activation_result(false, 'License not found') unless license
-      return activation_result(false, 'License is not valid') unless license.valid?
-      return activation_result(false, 'No activations remaining') unless license.activations_available?
+      success = false
+      failure_reason = nil
 
-      if license.activate!(machine_fingerprint, system_info[:ip_address], system_info[:user_agent], system_info)
-        activation_result(true, 'License activated successfully', {
-          activations_remaining: license.remaining_activations,
-          expires_at: license.expires_at,
-        })
-      else
-        activation_result(false, 'License already activated on this machine')
+      begin
+        return SecureLicenseService.secure_error_response('Invalid license') unless license
+        return SecureLicenseService.secure_error_response('License not available') if license[:status] != 'active'
+        if license[:expires_at] && license[:expires_at] < Time.now
+          return SecureLicenseService.secure_error_response('License has expired')
+        end
+
+        # Check if license requires machine ID
+        if license[:requires_machine_id] && !machine_id
+          failure_reason = 'Machine ID required for this license'
+          return SecureLicenseService.secure_error_response(failure_reason)
+        end
+
+        # Check activation limits
+        if license[:max_activations] && license[:activation_count] >= license[:max_activations]
+          failure_reason = 'No activations remaining'
+          return SecureLicenseService.secure_error_response(failure_reason)
+        end
+
+        # Check if already activated on this machine
+        if SecureLicenseService.validate_machine_activation(license[:id], machine_fingerprint, machine_id)
+          failure_reason = 'License already activated on this machine'
+          return SecureLicenseService.secure_error_response(failure_reason)
+        end
+
+        # Create activation record with hashed machine data
+        activation_data = {
+          license_id: license[:id],
+          active: true,
+          activated_at: Time.now,
+          ip_address: request_info[:ip_address],
+          user_agent: request_info[:user_agent],
+        }
+
+        # Hash machine data before storage
+        if machine_fingerprint
+          activation_data[:machine_fingerprint_hash] = SecureLicenseService.hash_machine_data(machine_fingerprint)
+        end
+
+        activation_data[:machine_id_hash] = SecureLicenseService.hash_machine_data(machine_id) if machine_id
+
+        # Insert activation and update license counter
+        DB.transaction do
+          DB[:license_activations].insert(activation_data)
+          DB[:licenses].where(id: license[:id]).update(
+            activation_count: license[:activation_count] + 1,
+            updated_at: Time.now
+          )
+        end
+
+        success = true
+
+        {
+          success: true,
+          message: 'License activated successfully',
+          activations_remaining: license[:max_activations] ? license[:max_activations] - (license[:activation_count] + 1) : nil,
+          expires_at: license[:expires_at]&.iso8601,
+          timestamp: Time.now.iso8601,
+        }
+      rescue StandardError
+        failure_reason = 'Activation failed'
+        SecureLicenseService.secure_error_response(failure_reason)
+      ensure
+        # Log the activation attempt
+        SecureLicenseService.log_license_operation(
+          action: 'activate',
+          license_id: license&.dig(:id),
+          license_key: license_key,
+          machine_fingerprint: machine_fingerprint,
+          machine_id: machine_id,
+          ip_address: request_info[:ip_address],
+          user_agent: request_info[:user_agent],
+          success: success,
+          failure_reason: failure_reason
+        )
       end
     end
 
     # Deactivate license on a machine
-    def deactivate(license_key, machine_fingerprint)
-      license = License.first(license_key: license_key)
+    def deactivate(license_key, machine_fingerprint = nil, machine_id = nil, request_info = {})
+      license = SecureLicenseService.find_license_by_key(license_key)
+      success = false
+      failure_reason = nil
 
-      return deactivation_result(false, 'License not found') unless license
+      begin
+        return SecureLicenseService.secure_error_response('Invalid license') unless license
 
-      if license.deactivate!(machine_fingerprint)
-        deactivation_result(true, 'License deactivated successfully')
-      else
-        deactivation_result(false, 'License not activated on this machine')
+        # Find activation to deactivate
+        query = DB[:license_activations].where(
+          license_id: license[:id],
+          active: true,
+          revoked: false
+        )
+
+        if machine_fingerprint
+          fingerprint_hash = SecureLicenseService.hash_machine_data(machine_fingerprint)
+          query = query.where(machine_fingerprint_hash: fingerprint_hash)
+        end
+
+        if machine_id
+          machine_id_hash = SecureLicenseService.hash_machine_data(machine_id)
+          query = query.where(machine_id_hash: machine_id_hash)
+        end
+
+        activation = query.first
+
+        if activation
+          # Deactivate and update counter
+          DB.transaction do
+            DB[:license_activations].where(id: activation[:id]).update(
+              active: false,
+              deactivated_at: Time.now
+            )
+            DB[:licenses].where(id: license[:id]).update(
+              activation_count: [license[:activation_count] - 1, 0].max,
+              updated_at: Time.now
+            )
+          end
+
+          success = true
+          {
+            success: true,
+            message: 'License deactivated successfully',
+            timestamp: Time.now.iso8601,
+          }
+        else
+          failure_reason = 'License not activated on this machine'
+          SecureLicenseService.secure_error_response(failure_reason)
+        end
+      rescue StandardError
+        failure_reason = 'Deactivation failed'
+        SecureLicenseService.secure_error_response(failure_reason)
+      ensure
+        # Log the deactivation attempt
+        SecureLicenseService.log_license_operation(
+          action: 'deactivate',
+          license_id: license&.dig(:id),
+          license_key: license_key,
+          machine_fingerprint: machine_fingerprint,
+          machine_id: machine_id,
+          ip_address: request_info[:ip_address],
+          user_agent: request_info[:user_agent],
+          success: success,
+          failure_reason: failure_reason
+        )
       end
-    end
-
-    private
-
-    def validation_result(valid, message, data = {})
-      {
-        valid: valid,
-        message: message,
-        timestamp: Time.now.iso8601,
-      }.merge(data)
-    end
-
-    def activation_result(success, message, data = {})
-      {
-        success: success,
-        message: message,
-        timestamp: Time.now.iso8601,
-      }.merge(data)
-    end
-
-    def deactivation_result(success, message, data = {})
-      {
-        success: success,
-        message: message,
-        timestamp: Time.now.iso8601,
-      }.merge(data)
-    end
-
-    def license_info(license)
-      {
-        product_name: license.product.name,
-        product_version: license.product.version,
-        customer_email: license.customer_email,
-        max_activations: license.max_activations,
-        current_activations: license.activation_count,
-        expires_at: license.expires_at,
-        issued_at: license.created_at,
-      }
     end
   end
 end

@@ -74,6 +74,11 @@ class License < Sequel::Model
     custom_max_activations || custom_expires_at
   end
 
+  # Check if license requires machine ID
+  def requires_machine_id?
+    !!requires_machine_id
+  end
+
   # Check license type
   def perpetual?
     license_type == 'perpetual'
@@ -165,9 +170,12 @@ class License < Sequel::Model
   end
 
   # Activate license for a machine
-  def activate!(machine_fingerprint, ip_address = nil, user_agent = nil, system_info = {})
+  def activate!(machine_fingerprint, ip_address = nil, user_agent = nil, system_info = {}, machine_id = nil)
     return false unless valid?
     return false unless activations_available?
+
+    # Check if machine ID is required but not provided
+    return false if requires_machine_id? && (machine_id.nil? || machine_id.to_s.strip.empty?)
 
     # Check if already activated on this machine
     existing = license_activations_dataset.where(
@@ -177,15 +185,29 @@ class License < Sequel::Model
 
     return false if existing
 
+    # If license requires machine ID, check if machine ID is already used
+    if requires_machine_id? && machine_id
+      existing_machine_id = license_activations_dataset.where(
+        machine_id: machine_id.to_s.strip,
+        active: true
+      ).first
+      return false if existing_machine_id
+    end
+
     DB.transaction do
       # Create activation record
-      add_license_activation(
+      activation_data = {
         machine_fingerprint: machine_fingerprint,
         ip_address: ip_address,
         user_agent: user_agent,
         system_info: system_info.to_json,
-        active: true
-      )
+        active: true,
+      }
+
+      # Add machine_id if provided and required
+      activation_data[:machine_id] = machine_id.to_s.strip if requires_machine_id? && machine_id
+
+      add_license_activation(activation_data)
 
       # Update activation count
       update(

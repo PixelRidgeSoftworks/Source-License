@@ -62,7 +62,7 @@ source_license.db
 test.db
 installer-logs/*
 deployment-logs/*
-.env.backup
+.env.backup*
 launch.ps1
 downloads/*
 stripe.exe

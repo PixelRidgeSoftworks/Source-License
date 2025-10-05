@@ -1,0 +1,407 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'securerandom'
+require 'bcrypt'
+require 'io/console'
+require 'fileutils'
+require 'optparse'
+
+class SourceLicenseConfigurator
+  ENV_FILE = '.env'
+  BACKUP_SUFFIX = '.backup'
+
+  # Define which environment variables should be auto-generated with secure values
+  SECURE_VARIABLES = {
+    'APP_SECRET' => :secret_key,
+    'JWT_SECRET' => :jwt_secret,
+    'LICENSE_HASH_SALT' => :license_salt,
+    'LICENSE_JWT_SECRET' => :license_jwt_secret,
+    'INITIAL_ADMIN_PASSWORD' => :admin_password,
+    'STRIPE_WEBHOOK_SECRET' => :webhook_secret,
+  }.freeze
+
+  # Variables that should be prompted for but not auto-generated
+  IMPORTANT_VARIABLES = %w[
+    APP_NAME APP_ENV APP_HOST PORT
+    SUPPORT_EMAIL ORGANIZATION_NAME ORGANIZATION_URL
+    DATABASE_ADAPTER DATABASE_NAME DATABASE_HOST DATABASE_PORT
+    DATABASE_USER DATABASE_PASSWORD
+    INITIAL_ADMIN_EMAIL
+    STRIPE_PUBLISHABLE_KEY STRIPE_SECRET_KEY
+    PAYPAL_CLIENT_ID PAYPAL_CLIENT_SECRET PAYPAL_ENVIRONMENT
+    SMTP_HOST SMTP_PORT SMTP_USERNAME SMTP_PASSWORD
+  ].freeze
+
+  def initialize
+    @env_vars = {}
+    @comments = {}
+    @original_order = []
+  end
+
+  def run
+    puts '🔧 Source-License Configuration Tool'
+    puts '=' * 50
+    puts
+
+    unless File.exist?(ENV_FILE)
+      puts '❌ .env file not found. Please copy .env.example to .env first.'
+      exit 1
+    end
+
+    load_env_file
+
+    puts 'This tool will help you configure your Source-License installation.'
+    puts 'For security variables, we can auto-generate secure values for you.'
+    puts
+
+    configure_variables
+
+    create_backup
+    write_env_file
+
+    puts
+    puts '✅ Configuration complete!'
+    puts "📋 Your settings have been saved to #{ENV_FILE}"
+    puts "💾 A backup was created at #{ENV_FILE}#{BACKUP_SUFFIX}"
+    puts
+    puts '🚀 You can now start your Source-License application!'
+  end
+
+  private
+
+  def load_env_file
+    current_comment_block = []
+
+    File.readlines(ENV_FILE, chomp: true).each do |line|
+      if line.strip.empty?
+        current_comment_block << line
+      elsif line.start_with?('#')
+        current_comment_block << line
+      elsif line.include?('=')
+        # This is a variable line
+        key, value = line.split('=', 2)
+        key = key.strip
+        @env_vars[key] = value || ''
+        @original_order << key
+
+        # Associate any accumulated comments with this variable
+        if current_comment_block.any?
+          @comments[key] = current_comment_block.join("\n")
+          current_comment_block = []
+        end
+      end
+    end
+  end
+
+  def configure_variables
+    puts '📝 Configuring environment variables...'
+    puts
+
+    # First, handle secure variables
+    puts '🔐 Security Variables'
+    puts '-' * 20
+    SECURE_VARIABLES.each do |var_name, generator_type|
+      next unless @env_vars.key?(var_name)
+
+      configure_secure_variable(var_name, generator_type)
+    end
+
+    puts
+    puts '⚙️  Application Variables'
+    puts '-' * 25
+    IMPORTANT_VARIABLES.each do |var_name|
+      next unless @env_vars.key?(var_name)
+
+      configure_regular_variable(var_name)
+    end
+
+    # Handle any remaining variables
+    remaining_vars = @original_order - SECURE_VARIABLES.keys - IMPORTANT_VARIABLES
+    return unless remaining_vars.any?
+
+    puts
+    puts '📋 Other Variables'
+    puts '-' * 15
+    remaining_vars.each do |var_name|
+      configure_regular_variable(var_name)
+    end
+  end
+
+  def configure_secure_variable(var_name, generator_type)
+    current_value = @env_vars[var_name]
+
+    puts "🔑 #{var_name}"
+    puts "   Current: #{mask_value(current_value)}"
+
+    if needs_secure_generation?(current_value)
+      print '   This appears to be a default/insecure value. Generate secure value? (Y/n): '
+      $stdout.flush
+      response = $stdin.gets.chomp.downcase
+
+      if response.empty? || response == 'y' || response == 'yes'
+        generate_and_set_secure_value(var_name, generator_type)
+        return
+      else
+        # User declined auto-generation, ask if they want to keep current or enter manually
+        return if prompt_keep_current_value
+      end
+    else
+      return if prompt_keep_current_value
+    end
+
+    # Manual entry (only reached if user wants to change the value)
+    handle_manual_entry_or_generation(var_name, generator_type)
+  end
+
+  def configure_regular_variable(var_name)
+    current_value = @env_vars[var_name]
+
+    puts "📋 #{var_name}"
+    puts "   Current: #{current_value}"
+    print '   Keep current value? (Y/n): '
+    $stdout.flush # Ensure the prompt is displayed immediately
+
+    response = $stdin.gets.chomp.downcase
+
+    # Only treat explicit 'y' or 'yes' as acceptance, require actual input
+    if %w[y yes].include?(response)
+      puts '   ✅ Keeping current value'
+    elsif %w[n no].include?(response)
+      print '   Enter new value: '
+      $stdout.flush
+      new_value = $stdin.gets.chomp
+      @env_vars[var_name] = new_value
+      puts '   ✅ Updated'
+    elsif response.empty?
+      # Default to keeping current value when just pressing Enter
+      puts '   ✅ Keeping current value'
+    else
+      # Invalid response, default to keeping current value
+      puts '   ❓ Invalid response, keeping current value'
+    end
+  end
+
+  def needs_secure_generation?(value)
+    insecure_patterns = [
+      /your_.*_here/i,
+      /change_this/i,
+      /change_in_production/i,
+      /dev_.*_salt/i,
+      /dev_.*_secret/i,
+      /minimum_required/i,
+      /admin1234/i,
+    ]
+
+    insecure_patterns.any? { |pattern| value.match?(pattern) }
+  end
+
+  def generate_secure_value(type)
+    case type
+    when :secret_key
+      SecureRandom.hex(32) # 64 character hex string
+    when :jwt_secret
+      SecureRandom.base64(48) # Base64 encoded 48 bytes
+    when :license_salt
+      "#{SecureRandom.hex(32)}_salt_#{Time.now.to_i}"
+    when :license_jwt_secret
+      "license_#{SecureRandom.hex(32)}"
+    when :admin_password
+      # Generate a secure 16-character password with mixed case, numbers, and symbols
+      charset = [('a'..'z'), ('A'..'Z'), (0..9), ['!', '@', '#', '$', '%', '^', '&', '*']].map(&:to_a).flatten
+      Array.new(16) { charset.sample }.join
+    when :webhook_secret
+      "whsec_#{SecureRandom.hex(32)}"
+    else
+      SecureRandom.hex(32)
+    end
+  end
+
+  def mask_value(value)
+    return '(empty)' if value.nil? || value.empty?
+    return value if value.length <= 8
+
+    # Show first 4 and last 4 characters, mask the middle
+    "#{value[0..3]}#{'*' * [value.length - 8, 4].max}#{value[-4..]}"
+  end
+
+  # Helper methods to eliminate duplicate branch bodies
+  def generate_and_set_secure_value(var_name, generator_type)
+    new_value = generate_secure_value(generator_type)
+    @env_vars[var_name] = new_value
+    puts '   ✅ Generated new secure value'
+  end
+
+  def prompt_keep_current_value
+    print '   Keep current value? (Y/n): '
+    $stdout.flush
+    keep_response = $stdin.gets.chomp.downcase
+
+    if keep_response.empty? || keep_response == 'y' || keep_response == 'yes'
+      puts '   ✅ Keeping current value'
+      true
+    else
+      false
+    end
+  end
+
+  def handle_manual_entry_or_generation(var_name, generator_type)
+    print '   Enter new value (or press Enter to generate): '
+    $stdout.flush
+    input = $stdin.gets.chomp
+
+    if input.empty?
+      generate_and_set_secure_value(var_name, generator_type)
+    else
+      @env_vars[var_name] = input
+      puts '   ✅ Updated'
+    end
+  end
+
+  def create_backup
+    backup_file = "#{ENV_FILE}#{BACKUP_SUFFIX}"
+    FileUtils.cp(ENV_FILE, backup_file)
+    puts "💾 Created backup: #{backup_file}"
+  end
+
+  def write_env_file
+    File.open(ENV_FILE, 'w') do |file|
+      @original_order.each do |key|
+        # Write any comments associated with this variable
+        file.puts @comments[key] if @comments[key]
+
+        # Write the variable
+        file.puts "#{key}=#{@env_vars[key]}"
+      end
+    end
+
+    puts "✅ Updated #{ENV_FILE}"
+  end
+end
+
+def show_help
+  puts '🔧 Source-License Configuration Tool'
+  puts '=' * 50
+  puts
+  puts 'USAGE:'
+  puts '  ruby ./sl_configure [options]'
+  puts
+  puts 'OPTIONS:'
+  puts '  -h, --help     Show this help message'
+  puts '  -v, --version  Show version information'
+  puts '  -r, --reset    Reset .env to default values from .env.example'
+  puts '      --restore  Restore .env from backup (.env.backup)'
+  puts
+  puts 'DESCRIPTION:'
+  puts '  Interactive tool to configure your Source-License .env file.'
+  puts '  Automatically detects insecure default values and can generate'
+  puts '  cryptographically secure replacements for sensitive variables.'
+  puts
+  puts 'FEATURES:'
+  puts '  🔐 Automatic security generation for secrets, salts, and passwords'
+  puts '  📝 Interactive configuration for all environment variables'
+  puts '  💾 Automatic backup creation before making changes'
+  puts '  🔍 Smart detection of variables needing secure generation'
+  puts '  🔄 Reset to defaults and restore from backup functionality'
+  puts
+  puts 'EXAMPLES:'
+  puts '  ruby ./sl_configure          # Start interactive configuration'
+  puts '  ruby ./sl_configure --help   # Show this help'
+  puts '  ruby ./sl_configure --reset  # Reset .env to defaults'
+  puts '  ruby ./sl_configure --restore # Restore from backup'
+  puts
+end
+
+def show_version
+  puts 'Source-License Configuration Tool v1.0.0'
+  puts 'Part of the Source-License platform'
+end
+
+def reset_to_default
+  unless File.exist?('.env.example')
+    puts '❌ .env.example file not found. Cannot reset to defaults.'
+    exit 1
+  end
+
+  if File.exist?('.env')
+    backup_file = ".env.backup.#{Time.now.to_i}"
+    FileUtils.cp('.env', backup_file)
+    puts "💾 Created backup of current .env: #{backup_file}"
+  end
+
+  FileUtils.cp('.env.example', '.env')
+  puts '✅ Successfully reset .env to default values from .env.example'
+  puts '🔧 Run "ruby ./sl_configure" to configure your settings'
+end
+
+def restore_backup
+  backup_file = '.env.backup'
+
+  unless File.exist?(backup_file)
+    puts '❌ No backup file found (.env.backup)'
+    puts 'ℹ️  Backups are created when you run the configuration tool'
+    exit 1
+  end
+
+  if File.exist?('.env')
+    current_backup = ".env.current.#{Time.now.to_i}"
+    FileUtils.cp('.env', current_backup)
+    puts "💾 Created backup of current .env: #{current_backup}"
+  end
+
+  FileUtils.cp(backup_file, '.env')
+  puts '✅ Successfully restored .env from backup'
+end
+
+# Parse command line arguments
+if __FILE__ == $0
+  options = {}
+
+  OptionParser.new do |opts|
+    opts.banner = 'Usage: ruby ./sl_configure [options]'
+
+    opts.on('-h', '--help', 'Show help message') do
+      show_help
+      exit 0
+    end
+
+    opts.on('-v', '--version', 'Show version') do
+      show_version
+      exit 0
+    end
+
+    opts.on('-r', '--reset', 'Reset .env to default values from .env.example') do
+      options[:reset] = true
+    end
+
+    opts.on('--restore', 'Restore .env from backup (.env.backup)') do
+      options[:restore] = true
+    end
+  end.parse!
+
+  # Handle special commands
+  if options[:reset]
+    reset_to_default
+    exit 0
+  end
+
+  if options[:restore]
+    restore_backup
+    exit 0
+  end
+
+  # Run the main configurator
+  begin
+    configurator = SourceLicenseConfigurator.new
+    configurator.run
+  rescue Interrupt
+    puts
+    puts '❌ Configuration cancelled by user'
+    exit 1
+  rescue StandardError => e
+    puts
+    puts "❌ Error: #{e.message}"
+    puts 'Please check your .env file and try again.'
+    exit 1
+  end
+end

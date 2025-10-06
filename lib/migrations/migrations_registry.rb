@@ -40,6 +40,7 @@ class Migrations::MigrationsRegistry
         Migrations::AddMachineIdSupport,
         Migrations::SecureLicenseSystem,
         Migrations::EnforceMachineIdRequirement,
+        Migrations::AddActivatedAtToLicenseActivations,
       ]
     end
 
@@ -73,6 +74,7 @@ class Migrations::MigrationsRegistry
         024_add_machine_id_support
         025_secure_license_system
         026_enforce_machine_id_requirement
+        027_add_activated_at_to_license_activations
       ]
     end
   end

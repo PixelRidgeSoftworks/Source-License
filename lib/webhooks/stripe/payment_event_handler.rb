@@ -45,7 +45,7 @@ class Webhooks::Stripe::PaymentEventHandler < Webhooks::Stripe::BaseEventHandler
       { success: true, message: 'Payment intent created - tracked for monitoring' }
     end
 
-    # Handle payment intent succeeded (alternative to charge.succeeded for some flows)
+    # Handle payment intent succeeded (ONLY mark order as completed - NO license creation)
     def handle_payment_intent_succeeded(event)
       payment_intent = event.data.object
 
@@ -58,40 +58,17 @@ class Webhooks::Stripe::PaymentEventHandler < Webhooks::Stripe::BaseEventHandler
           return { success: true, message: 'Payment intent succeeded - order already processed' }
         end
 
-        DB.transaction do
-          order.update(status: 'completed', completed_at: Time.now)
+        # ONLY mark order as completed - license creation happens in charge.succeeded
+        order.update(status: 'completed', completed_at: Time.now)
 
-          # Generate licenses if they don't exist yet
-          if order.licenses.empty?
-            ApiController.generate_licenses_for_order(order)
-            order.refresh
-          end
-
-          # Check if any products in this order are subscription-based
-          order.order_items.each do |item|
-            product = item.product
-
-            next unless product&.subscription?
-
-            # Create Stripe subscription for this customer and product
-            stripe_sub = create_stripe_subscription_for_order(order, product, payment_intent)
-            next unless stripe_sub
-
-            log_license_event(order.licenses.first, 'subscription_setup_completed', {
-              stripe_subscription_id: stripe_sub.id,
-              order_id: order.id,
-              product_id: product.id,
-            })
-          end
-        end
-
-        log_license_event(order.licenses.first, 'payment_intent_succeeded_order_completed', {
+        log_license_event(nil, 'payment_intent_succeeded_order_completed', {
           payment_intent_id: payment_intent.id,
           order_id: order.id,
           amount: payment_intent.amount / 100.0,
+          note: 'Order completed - license creation will happen in charge.succeeded'
         })
 
-        return { success: true, message: 'Payment intent succeeded - order completed and licenses generated' }
+        return { success: true, message: 'Payment intent succeeded - order completed (license creation pending charge.succeeded)' }
       end
 
       # Log for monitoring even if no order found
@@ -104,27 +81,63 @@ class Webhooks::Stripe::PaymentEventHandler < Webhooks::Stripe::BaseEventHandler
       { success: true, message: 'Payment intent succeeded - no associated order found' }
     end
 
-    # Handle successful charges (extend/renew/issue license)
+    # Handle successful charges (CREATE licenses for new orders, EXTEND licenses for renewals)
     def handle_charge_succeeded(event)
       charge = event.data.object
 
-      # For perpetual licenses, payment_intent.succeeded already handles license generation
-      # charge.succeeded should only handle subscription renewals and license reactivations
+      # charge.succeeded handles ALL license operations:
+      # - Create licenses for new perpetual purchases
+      # - Extend licenses for subscription renewals
+      # - Reactivate suspended/revoked licenses
 
-      # First, try to find an existing order by payment intent
-      order = nil
+      # First, check if this is for a new completed order (new purchase)
       order = Order.where(payment_intent_id: charge.payment_intent).first if charge.payment_intent
 
-      # If this is a new order that was already processed by payment_intent.succeeded,
-      # just log the successful charge but don't create duplicate licenses
-      if order && !order.licenses.empty? && order.status == 'completed'
-        license = order.licenses.first
+      if order && order.status == 'completed' && order.licenses.empty?
+        # This is a new purchase - create licenses
+        DB.transaction do
+          # Generate licenses for the completed order
+          ApiController.generate_licenses_for_order(order)
+          order.refresh
 
-        # Only process if this is a subscription that needs renewal handling
-        # or if the license was previously revoked/suspended
-        if license.subscription_based? && license.subscription
-          # This is a subscription renewal charge
-          DB.transaction do
+          # Set up Stripe subscriptions for subscription-based products
+          order.order_items.each do |item|
+            product = item.product
+            next unless product&.subscription?
+
+            # Create Stripe subscription for this customer and product
+            stripe_sub = create_stripe_subscription_for_order(order, product, charge)
+            next unless stripe_sub
+
+            log_license_event(order.licenses.first, 'subscription_setup_completed', {
+              stripe_subscription_id: stripe_sub.id,
+              order_id: order.id,
+              product_id: product.id,
+            })
+          end
+
+          # Send confirmation email
+          ApiController.send_order_confirmation_email(order) if ENV['SMTP_HOST']
+        end
+
+        log_license_event(order.licenses.first, 'licenses_created_via_charge', {
+          charge_id: charge.id,
+          order_id: order.id,
+          amount: charge.amount / 100.0,
+          license_count: order.licenses.count
+        })
+
+        return { success: true, message: 'Charge succeeded - new licenses created for order' }
+      end
+
+      # Check if this is for an existing license (subscription renewal or reactivation)
+      license = Webhooks::Stripe::LicenseFinderService.find_license_for_charge(charge)
+
+      if license
+        # Handle existing license operations
+        DB.transaction do
+          if license.subscription_based? && license.subscription
+            # Subscription renewal for existing license
             product = license.product
             if product&.license_duration_days
               license.extend!(product.license_duration_days)
@@ -135,79 +148,39 @@ class Webhooks::Stripe::PaymentEventHandler < Webhooks::Stripe::BaseEventHandler
                 extended_days: product.license_duration_days,
               })
             end
-
-            # Send success notification
-            Webhooks::Stripe::NotificationService.send_charge_success_notification(license, charge)
-          end
-
-          return { success: true, message: 'Charge success processed - subscription license renewed' }
-        elsif license.revoked? || license.suspended?
-          # License needs reactivation
-          DB.transaction do
+          elsif license.revoked? || license.suspended?
+            # License reactivation
             license.reactivate!
             log_license_event(license, 'reactivated_via_charge', {
               charge_id: charge.id,
               amount: charge.amount / 100.0,
             })
-
-            # Send success notification
-            Webhooks::Stripe::NotificationService.send_charge_success_notification(license, charge)
-          end
-
-          return { success: true, message: 'Charge success processed - license reactivated' }
-        else
-          # This is a perpetual license that's already active - just log the successful charge
-          log_license_event(license, 'charge_succeeded_existing_license', {
-            charge_id: charge.id,
-            amount: charge.amount / 100.0,
-            license_id: license.id,
-          })
-
-          return { success: true, message: 'Charge success processed - license already active' }
-        end
-      end
-
-      # Fallback: try to find license by other methods (for older orders or metadata-based lookups)
-      license = Webhooks::Stripe::LicenseFinderService.find_license_for_charge(charge)
-
-      unless license
-        log_license_event(nil, 'charge_succeeded_no_license', {
-          charge_id: charge.id,
-          amount: charge.amount / 100.0,
-          payment_intent_id: charge.payment_intent,
-          customer_id: charge.customer,
-        })
-        return { success: true, message: 'Charge succeeded - no associated license found' }
-      end
-
-      # Handle subscription renewals and reactivations for licenses found via fallback methods
-      DB.transaction do
-        if license.subscription_based? && license.subscription
-          # Subscription renewal
-          product = license.product
-          if product&.license_duration_days
-            license.extend!(product.license_duration_days)
-            license.subscription.update(status: 'active')
-            log_license_event(license, 'renewed_via_charge', {
+          else
+            # License is already active - just log the successful payment
+            log_license_event(license, 'charge_succeeded_license_active', {
               charge_id: charge.id,
               amount: charge.amount / 100.0,
-              extended_days: product.license_duration_days,
+              license_id: license.id,
             })
           end
-        elsif license.revoked? || license.suspended?
-          # License reactivation
-          license.reactivate!
-          log_license_event(license, 'reactivated_via_charge', {
-            charge_id: charge.id,
-            amount: charge.amount / 100.0,
-          })
+
+          # Send success notification
+          Webhooks::Stripe::NotificationService.send_charge_success_notification(license, charge)
         end
 
-        # Send success notification
-        Webhooks::Stripe::NotificationService.send_charge_success_notification(license, charge)
+        return { success: true, message: 'Charge succeeded - existing license processed' }
       end
 
-      { success: true, message: 'Charge success processed - license extended/renewed/reactivated' }
+      # No order or license found - log but don't fail
+      log_license_event(nil, 'charge_succeeded_no_context', {
+        charge_id: charge.id,
+        amount: charge.amount / 100.0,
+        payment_intent_id: charge.payment_intent,
+        customer_id: charge.customer,
+        note: 'No associated order or license found'
+      })
+
+      { success: true, message: 'Charge succeeded - no associated order or license found' }
     end
 
     # Handle failed charges (warn user)
@@ -298,11 +271,11 @@ class Webhooks::Stripe::PaymentEventHandler < Webhooks::Stripe::BaseEventHandler
     end
 
     # Create Stripe subscription for subscription-based product
-    def create_stripe_subscription_for_order(order, product, payment_intent)
+    def create_stripe_subscription_for_order(order, product, charge)
       ::Stripe.api_key = ENV.fetch('STRIPE_SECRET_KEY', nil)
 
       # Get or create Stripe customer
-      customer_id = payment_intent.customer
+      customer_id = charge.customer
       if customer_id.nil?
         # Create a new Stripe customer
         customer = ::Stripe::Customer.create({

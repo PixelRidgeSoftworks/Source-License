@@ -84,7 +84,7 @@ class SecureLicenseService
         license_key_partial: partial_license_key(license_key),
         action: action.to_s,
         ip_address: ip_address,
-        user_agent: user_agent&.truncate(500),
+        user_agent: user_agent&.length && user_agent.length > 500 ? user_agent[0..499] : user_agent,
         machine_fingerprint_partial: partial_machine_data(machine_fingerprint),
         machine_id_partial: partial_machine_data(machine_id),
         success: success,

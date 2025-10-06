@@ -154,13 +154,11 @@ parse_args() {
             -h|--help)
                 log_message "INFO" "Help requested, showing help and exiting"
                 show_help
-                exit 0
                 ;;
             *)
                 log_error "Unknown option: $1"
                 print_error "Unknown option: $1"
                 show_help
-                exit 1
                 ;;
         esac
     done
@@ -708,19 +706,16 @@ preflight_checks() {
     # Check if we're in the right directory
     if [[ ! -f "app.rb" ]] || [[ ! -f "Gemfile" ]] || [[ ! -f "launch.rb" ]]; then
         print_error "Please run this script from the Source-License project root directory"
-        exit 1
     fi
     
     # Check Ruby
     if ! command_exists ruby; then
         print_error "Ruby is not installed. Run ./install first"
-        exit 1
     fi
     
     # Check Bundler
     if ! command_exists bundle; then
         print_error "Bundler is not installed. Run ./install first"
-        exit 1
     fi
     
     # Check if gems are installed
@@ -792,13 +787,11 @@ EOF
         help)
             log_message "INFO" "Showing help and exiting"
             show_help
-            exit 0
             ;;
         *)
             log_error "Unknown action: $ACTION"
             print_error "Unknown action: $ACTION"
             show_help
-            exit 1
             ;;
     esac
     
@@ -817,7 +810,7 @@ EOF
 }
 
 # Handle Ctrl+C gracefully
-trap 'echo -e "\n${YELLOW}Shutting down gracefully...${NC}"; stop_app; exit 0' INT TERM
+trap 'echo -e "\n${YELLOW}Shutting down gracefully...${NC}"; stop_app' INT TERM
 
 # Run main function with all arguments
 main "$@"

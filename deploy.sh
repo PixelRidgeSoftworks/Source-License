@@ -2,7 +2,8 @@
 # Source-License Unified Deploy Script
 # Simplified deployment script for Unix systems (Linux/macOS)
 
-set -e
+# Note: Removed 'set -e' to prevent script from terminating parent shell when sourced
+# Instead, we'll handle errors explicitly in each function
 
 # Default values
 ACTION="help"

@@ -87,6 +87,11 @@ Source License is a complete solution for independent software vendors who need 
    ./install.sh (for linux/macos)
    ```
 
+  2.1. **Run the sl_configure CLI tool to configure the app easier**
+      ```bash
+      ruby ./sl_configure
+      ```
+
 3. **Run the deployment script for your platform**
    ```bash
    .\deploy.ps1 (for windows)

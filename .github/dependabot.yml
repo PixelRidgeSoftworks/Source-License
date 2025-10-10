@@ -26,23 +26,21 @@ updates:
       - dependency-type: "indirect"
     # Removed ignore block to allow major version updates with proper grouping
     groups:
-      # High priority security updates (processed immediately)
-      critical-security:
+      # Security updates - highest priority
+      security-updates:
         patterns:
           - "*"
         update-types:
           - "security"
-        priority: 10
       
-      # Major version updates (grouped together for easier review)
+      # Major version updates - group for careful review
       major-updates:
         patterns:
           - "*"
         update-types:
-          - "version-update:semver-major"
-        priority: 5
+          - "major"
       
-      # Minor and patch updates (grouped by category)
+      # Framework updates - group core dependencies
       framework-updates:
         patterns:
           - "sinatra*"
@@ -51,9 +49,8 @@ updates:
           - "puma*"
           - "thin*"
         update-types:
-          - "version-update:semver-minor"
-          - "version-update:semver-patch"
-        priority: 8
+          - "minor"
+          - "patch"
       
       # Database and ORM updates
       database-updates:
@@ -61,14 +58,12 @@ updates:
           - "sqlite3*"
           - "mysql2*"
           - "pg*"
-          - "sequel*"
         update-types:
-          - "version-update:semver-minor"
-          - "version-update:semver-patch"
-        priority: 7
+          - "minor"
+          - "patch"
       
-      # Payment and API dependencies
-      payment-api-updates:
+      # Payment and security API dependencies
+      payment-security-updates:
         patterns:
           - "stripe*"
           - "paypal*"
@@ -77,12 +72,11 @@ updates:
           - "faraday*"
           - "httparty*"
         update-types:
-          - "version-update:semver-minor"
-          - "version-update:semver-patch"
-        priority: 8
+          - "minor"
+          - "patch"
       
-      # Development and testing dependencies
-      development-dependencies:
+      # Development and testing tools
+      dev-tools:
         dependency-type: "development"
         patterns:
           - "rubocop*"
@@ -90,10 +84,9 @@ updates:
           - "simplecov*"
           - "rack-test*"
           - "factory_bot*"
-        priority: 3
       
-      # Utility and helper gems
-      utility-updates:
+      # Utility and helper gems - safe to update
+      utilities:
         patterns:
           - "dotenv*"
           - "concurrent-ruby*"
@@ -101,18 +94,8 @@ updates:
           - "tilt*"
           - "erubi*"
         update-types:
-          - "version-update:semver-minor"
-          - "version-update:semver-patch"
-        priority: 6
-      
-      # Everything else (catch-all for ungrouped dependencies)
-      other-dependencies:
-        patterns:
-          - "*"
-        update-types:
-          - "version-update:semver-minor"
-          - "version-update:semver-patch"
-        priority: 4
+          - "minor"
+          - "patch"
 
   # GitHub Actions dependencies
   - package-ecosystem: "github-actions"

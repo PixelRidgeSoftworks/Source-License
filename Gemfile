@@ -19,7 +19,7 @@ gem 'sinatra-contrib', '~> 4.2'
 gem 'mysql2', '~> 0.5.5' # MySQL driver
 # gem 'pg', '~> 1.5'             # PostgreSQL driver (temporarily disabled)
 gem 'sequel', '~> 5.97'
-gem 'sqlite3', '~> 1.6' # SQLite driver for development/testing
+gem 'sqlite3', '~> 2.7' # SQLite driver for development/testing
 
 # Authentication & Security
 gem 'bcrypt', '~> 3.1'

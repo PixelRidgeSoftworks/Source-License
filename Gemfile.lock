@@ -87,7 +87,6 @@ GEM
       net-pop
       net-smtp
     mini_mime (1.1.5)
-    mini_portile2 (2.8.9)
     minitest (5.26.0)
     minitest-reporters (1.7.1)
       ansi
@@ -219,8 +218,9 @@ GEM
       sinatra (= 4.2.1)
       tilt (~> 2.0)
     smart_properties (1.17.0)
-    sqlite3 (1.7.3)
-      mini_portile2 (~> 2.8.0)
+    sqlite3 (2.7.4-x64-mingw-ucrt)
+    sqlite3 (2.7.4-x86_64-darwin)
+    sqlite3 (2.7.4-x86_64-linux-gnu)
     stripe (10.15.0)
     terminal-table (4.0.0)
       unicode-display_width (>= 1.1.1, < 4)
@@ -280,7 +280,7 @@ DEPENDENCIES
   simplecov-console (~> 0.9)
   sinatra (~> 4.2)
   sinatra-contrib (~> 4.2)
-  sqlite3 (~> 1.6)
+  sqlite3 (~> 2.7)
   stripe (~> 10.0)
   vcr (~> 6.2)
   webmock (~> 3.19)

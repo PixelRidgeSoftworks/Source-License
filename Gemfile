@@ -6,7 +6,7 @@ source 'https://rubygems.org'
 ruby '3.4.4'
 
 # Core web framework
-gem 'puma', '~> 6.4'
+gem 'puma', '~> 7.0'
 gem 'rack', '~> 3.2.3'
 gem 'rack-cors', '~> 2.0'
 gem 'rack-protection', '~> 4.2.1'

@@ -26,13 +26,6 @@ updates:
       - dependency-type: "indirect"
     # Removed ignore block to allow major version updates with proper grouping
     groups:
-      # Security updates - highest priority
-      security-updates:
-        patterns:
-          - "*"
-        update-types:
-          - "security"
-      
       # Major version updates - group for careful review
       major-updates:
         patterns:

@@ -1,74 +1,74 @@
 # Global Ownership
 # Default owners for everything in the repository
-* @PixelRidge-Softworks
+* @PixelRidgeSoftworks
 
 # Core Application Files
-/app.rb @PixelRidge-Softworks
-/config.ru @PixelRidge-Softworks
-/launch.rb @PixelRidge-Softworks
-/Gemfile @PixelRidge-Softworks
-/Gemfile.lock @PixelRidge-Softworks
+/app.rb @PixelRidgeSoftworks
+/config.ru @PixelRidgeSoftworks
+/launch.rb @PixelRidgeSoftworks
+/Gemfile @PixelRidgeSoftworks
+/Gemfile.lock @PixelRidgeSoftworks
 
 # Library and Core Logic
-/lib/ @PixelRidge-Softworks
-/lib/models.rb @PixelRidge-Softworks
-/lib/database.rb @PixelRidge-Softworks
-/lib/migrations.rb @PixelRidge-Softworks
-/lib/security.rb @PixelRidge-Softworks
-/lib/auth.rb @PixelRidge-Softworks
-/lib/enhanced_auth.rb @PixelRidge-Softworks
-/lib/user_auth.rb @PixelRidge-Softworks
+/lib/ @PixelRidgeSoftworks
+/lib/models.rb @PixelRidgeSoftworks
+/lib/database.rb @PixelRidgeSoftworks
+/lib/migrations.rb @PixelRidgeSoftworks
+/lib/security.rb @PixelRidgeSoftworks
+/lib/auth.rb @PixelRidg-Softworks
+/lib/enhanced_auth.rb @PixelRidg-Softworks
+/lib/user_auth.rb @PixelRidg-Softworks
 
 # Payment Processing (Critical)
-/lib/payment_processor.rb @PixelRidge-Softworks
+/lib/payment_processor.rb @PixelRidgeSoftworks
 
 # License Management (Critical)
-/lib/license_generator.rb @PixelRidge-Softworks
+/lib/license_generator.rb @PixelRidgeSoftworks
 
 # Controllers
-/lib/controllers/ @PixelRidge-Softworks
-/lib/controllers/api_controller.rb @PixelRidge-Softworks
-/lib/controllers/admin_controller.rb @PixelRidge-Softworks
+/lib/controllers/ @PixelRidgeSoftworks
+/lib/controllers/api_controller.rb @PixelRidgeSoftworks
+/lib/controllers/admin_controller.rb @PixelRidgeSoftworks
 
 # Configuration Files
-/.env.example @PixelRidge-Softworks
-/.rubocop.yml @PixelRidge-Softworks
-/Rakefile @PixelRidge-Softworks
+/.env.example @PixelRidgeSoftworks
+/.rubocop.yml @PixelRidgeSoftworks
+/Rakefile @PixelRidgeSoftworks
 
 # Deployment Scripts
-/deploy.sh @PixelRidge-Softworks
-/deploy.ps1 @PixelRidge-Softworks
-/install.sh @PixelRidge-Softworks
-/install.ps1 @PixelRidge-Softworks
-/service_manager.ps1 @PixelRidge-Softworks
+/deploy.sh @PixelRidgeSoftworks
+/deploy.ps1 @PixelRidgeSoftworks
+/install.sh @PixelRidgeSoftworks
+/install.ps1 @PixelRidgeSoftworks
+/service_manager.ps1 @PixelRidgeSoftworks
 
 # Test Suite
-/test/ @PixelRidge-Softworks
-/run_tests.rb @PixelRidge-Softworks
-/test_health_endpoints.rb @PixelRidge-Softworks
+/test/ @PixelRidgeSoftworks
+/run_tests.rb @PixelRidgeSoftworks
+/test_health_endpoints.rb @PixelRidgeSoftworks
 
 # Views and Templates
-/views/ @PixelRidge-Softworks
-/views/admin/ @PixelRidge-Softworks
-/views/layouts/ @PixelRidge-Softworks
+/views/ @PixelRidgeSoftworks
+/views/admin/ @PixelRidgeSoftworks
+/views/layouts/ @PixelRidgeSoftworks
 
 # GitHub Configuration
-/.github/ @PixelRidge-Softworks
-/.github/workflows/ @PixelRidge-Softworks
-/.github/ISSUE_TEMPLATE/ @PixelRidge-Softworks
+/.github/ @PixelRidgeSoftworks
+/.github/workflows/ @PixelRidgeSoftworks
+/.github/ISSUE_TEMPLATE/ @PixelRidgeSoftworks
 
 # Documentation
-/README.md @PixelRidge-Softworks
-/CONTRIBUTING.md @PixelRidge-Softworks
-/SECURITY.md @PixelRidge-Softworks
-/.github/SUPPORT.md @PixelRidge-Softworks
-/.github/CODE_OF_CONDUCT.md @PixelRidge-Softworks
+/README.md @PixelRidgeSoftworks
+/CONTRIBUTING.md @PixelRidgeSoftworks
+/SECURITY.md @PixelRidgeSoftworks
+/.github/SUPPORT.md @PixelRidgeSoftworks
+/.github/CODE_OF_CONDUCT.md @PixelRidgeSoftworks
 
 # License and Legal
-/LICENSE @PixelRidge-Softworks
+/LICENSE @PixelRidgeSoftworks
 
 # Asset Files
-/logo.svg @PixelRidge-Softworks
+/logo.svg @PixelRidgeSoftworks
 
 # Git Configuration
-/.gitignore @PixelRidge-Softworks
+/.gitignore @PixelRidgeSoftworks

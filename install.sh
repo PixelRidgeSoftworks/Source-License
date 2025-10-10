@@ -18,7 +18,7 @@ cleanup() {
 trap cleanup SIGINT SIGTERM
 
 # Default values
-RUBY_MIN_VERSION="3.4.4"
+RUBY_MIN_VERSION="3.4.7"
 SKIP_RUBY_CHECK=false
 SKIP_BUNDLER_CHECK=false
 

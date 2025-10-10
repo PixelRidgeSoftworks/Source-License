@@ -7,7 +7,7 @@
 require 'rbconfig'
 
 class SourceLicenseLauncher
-  REQUIRED_RUBY_VERSION = '3.4.4'
+  REQUIRED_RUBY_VERSION = '3.4.7'
 
   def self.launch
     new.launch

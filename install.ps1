@@ -9,7 +9,7 @@ param(
 )
 
 # Configuration
-$RUBY_MIN_VERSION = "3.4.4"
+$RUBY_MIN_VERSION = "3.4.7"
 
 # Logging setup
 $INSTALLER_LOG_DIR = "./installer-logs"

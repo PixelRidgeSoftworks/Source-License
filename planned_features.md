@@ -17,8 +17,8 @@
 
 ## Miscellaneous Features
 
-- [ ] Make product page a separate page
+- [x] Make product page a separate page
 
-- [ ] Redo homepage to be more homepage-y
+- [x] Redo homepage to be more homepage-y
 
 - [ ] Plugin/Module/Extensions (name still up in the air)

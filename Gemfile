@@ -7,18 +7,18 @@ ruby '3.4.4'
 
 # Core web framework
 gem 'puma', '~> 6.4'
-gem 'rack', '~> 3.0'
+gem 'rack', '~> 3.2.3'
 gem 'rack-cors', '~> 2.0'
-gem 'rack-protection', '~> 4.0'
+gem 'rack-protection', '~> 4.2.1'
 gem 'rack-ssl-enforcer', '~> 0.2'
 gem 'rackup', '~> 2.2'
-gem 'sinatra', '~> 4.0'
-gem 'sinatra-contrib', '~> 4.0'
+gem 'sinatra', '~> 4.2'
+gem 'sinatra-contrib', '~> 4.2'
 
 # Database
 gem 'mysql2', '~> 0.5.5' # MySQL driver
 # gem 'pg', '~> 1.5'             # PostgreSQL driver (temporarily disabled)
-gem 'sequel', '~> 5.75'
+gem 'sequel', '~> 5.97'
 gem 'sqlite3', '~> 1.6' # SQLite driver for development/testing
 
 # Authentication & Security
@@ -27,7 +27,7 @@ gem 'jwt', '~> 2.7'
 gem 'rack-attack', '~> 6.7'
 
 # HTTP & JSON
-gem 'json', '~> 2.7'
+gem 'json', '~> 2.15'
 gem 'net-http', '~> 0.4'
 
 # Email

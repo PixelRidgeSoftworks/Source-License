@@ -100,6 +100,7 @@ ACTIONS:
     migrate                  Run database migrations only
     install-service          Create systemd service (requires sudo)
     remove-service           Remove systemd service (requires sudo)
+    update-service           Update deployed service with latest code (requires sudo)
 
 OPTIONS:
     -e, --environment ENV    Environment (development/production, default: production)
@@ -205,23 +206,75 @@ is_root() {
 # Create systemd service file
 create_systemd_service() {
     local current_dir=$(pwd)
+    local target_dir="/opt/source-license"
     local service_name="source-license"
     local service_file="/etc/systemd/system/$service_name.service"
     
     print_info "Creating systemd service..."
     
+    if ! is_root; then
+        print_warning "Root privileges required to create systemd service"
+        print_info "Run with sudo to enable systemd service management"
+        return 1
+    fi
+    
     # Determine user for service
-    local service_user="$USER"
-    if [[ "$service_user" == "root" ]]; then
-        # Look for a non-root user to run the service
-        if id "www-data" &>/dev/null; then
-            service_user="www-data"
-        elif id "nobody" &>/dev/null; then
+    local service_user="www-data"
+    if ! id "$service_user" &>/dev/null; then
+        if id "nobody" &>/dev/null; then
             service_user="nobody"
         else
-            print_warning "Running service as root is not recommended"
+            print_warning "Neither www-data nor nobody user exists, using root"
             service_user="root"
         fi
+    fi
+    
+    # Create target directory and move application
+    print_info "Moving application to $target_dir..."
+    
+    # Stop any running service first
+    if systemctl list-unit-files | grep -q "$service_name.service"; then
+        print_info "Stopping existing service..."
+        sudo systemctl stop "$service_name" 2>/dev/null || true
+    fi
+    
+    # Create target directory
+    sudo mkdir -p "$target_dir"
+    
+    # Copy application files to target directory
+    print_info "Copying application files..."
+    
+    # Use rsync if available for better copying, otherwise use cp
+    if command_exists rsync; then
+        sudo rsync -av --exclude='deployment-logs/' --exclude='installer-logs/' --exclude='.git/' "$current_dir/" "$target_dir/"
+    else
+        # Create a temporary exclusion list for cp
+        local temp_exclude=$(mktemp)
+        echo "deployment-logs" > "$temp_exclude"
+        echo "installer-logs" >> "$temp_exclude"
+        echo ".git" >> "$temp_exclude"
+        
+        # Copy everything except excluded directories
+        find "$current_dir" -maxdepth 1 -type f -exec sudo cp {} "$target_dir/" \;
+        find "$current_dir" -maxdepth 1 -type d ! -name "deployment-logs" ! -name "installer-logs" ! -name ".git" ! -path "$current_dir" -exec sudo cp -r {} "$target_dir/" \;
+        
+        rm -f "$temp_exclude"
+    fi
+    
+    # Set proper ownership and permissions
+    print_info "Setting permissions for $service_user..."
+    sudo chown -R "$service_user:$service_user" "$target_dir"
+    sudo chmod -R 755 "$target_dir"
+    
+    # Ensure specific directories have proper permissions
+    sudo chmod 755 "$target_dir/logs" 2>/dev/null || sudo mkdir -p "$target_dir/logs" && sudo chown "$service_user:$service_user" "$target_dir/logs"
+    sudo chmod 755 "$target_dir/deployment-logs" 2>/dev/null || sudo mkdir -p "$target_dir/deployment-logs" && sudo chown "$service_user:$service_user" "$target_dir/deployment-logs"
+    
+    # Copy environment file if it exists
+    if [[ -f "$current_dir/.env" ]]; then
+        sudo cp "$current_dir/.env" "$target_dir/"
+        sudo chown "$service_user:$service_user" "$target_dir/.env"
+        sudo chmod 600 "$target_dir/.env"  # Restrict permissions for security
     fi
     
     local service_content="[Unit]
@@ -231,8 +284,9 @@ After=network.target
 [Service]
 Type=simple
 User=$service_user
-WorkingDirectory=$current_dir
-ExecStart=/usr/bin/env ruby $current_dir/launch.rb
+Group=$service_user
+WorkingDirectory=$target_dir
+ExecStart=/usr/bin/env ruby $target_dir/launch.rb
 Restart=always
 RestartSec=5
 Environment=RACK_ENV=$ENVIRONMENT
@@ -243,32 +297,25 @@ Environment=PORT=$PORT
 NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=strict
-ReadWritePaths=$current_dir
+ReadWritePaths=$target_dir
+ReadWritePaths=$target_dir/logs
+ReadWritePaths=$target_dir/deployment-logs
 
 [Install]
 WantedBy=multi-user.target"
-    
-    if ! is_root; then
-        print_warning "Root privileges required to create systemd service"
-        print_info "Run with sudo to enable systemd service management"
-        return 1
-    fi
     
     echo "$service_content" | sudo tee "$service_file" > /dev/null
     sudo systemctl daemon-reload
     sudo systemctl enable "$service_name"
     
-    # Set permissions for service user
-    if [[ "$service_user" != "root" ]] && [[ "$service_user" != "$USER" ]]; then
-        sudo chown -R "$service_user:$service_user" "$current_dir" 2>/dev/null || {
-            print_warning "Could not change ownership to $service_user"
-            print_info "Service may have permission issues"
-        }
-    fi
-    
     print_success "Systemd service created and enabled"
     print_info "Service name: $service_name"
     print_info "Service user: $service_user"
+    print_info "Application moved to: $target_dir"
+    print_info "Original files remain in: $current_dir"
+    print_warning "The service now runs from $target_dir"
+    print_info "To make changes, edit files in $target_dir or redeploy"
+    
     return 0
 }
 
@@ -276,6 +323,7 @@ WantedBy=multi-user.target"
 remove_systemd_service() {
     local service_name="source-license"
     local service_file="/etc/systemd/system/$service_name.service"
+    local target_dir="/opt/source-license"
     
     if [[ -f "$service_file" ]]; then
         if ! is_root; then
@@ -289,7 +337,176 @@ remove_systemd_service() {
         sudo rm -f "$service_file"
         sudo systemctl daemon-reload
         print_success "Systemd service removed"
+        
+        # Ask user if they want to remove the application directory
+        echo
+        print_warning "The application files are still in $target_dir"
+        read -p "Do you want to remove the application directory? [y/N]: " -n 1 -r
+        echo
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
+            print_info "Removing application directory..."
+            sudo rm -rf "$target_dir"
+            print_success "Application directory removed"
+        else
+            print_info "Application directory preserved at $target_dir"
+        fi
+    else
+        print_warning "Systemd service not found"
     fi
+}
+
+# Update systemd service with latest code
+update_systemd_service() {
+    local current_dir=$(pwd)
+    local target_dir="/opt/source-license"
+    local service_name="source-license"
+    local service_file="/etc/systemd/system/$service_name.service"
+    
+    print_info "Updating deployed systemd service..."
+    
+    if ! is_root; then
+        print_warning "Root privileges required to update systemd service"
+        print_info "Run with sudo to update deployed service"
+        return 1
+    fi
+    
+    # Check if service exists
+    if [[ ! -f "$service_file" ]]; then
+        print_error "Systemd service not found. Run 'sudo ./deploy install-service' first"
+        return 1
+    fi
+    
+    # Check if target directory exists
+    if [[ ! -d "$target_dir" ]]; then
+        print_error "Target directory $target_dir not found. Run 'sudo ./deploy install-service' first"
+        return 1
+    fi
+    
+    # Get service user from existing installation
+    local service_user=$(sudo stat -c '%U' "$target_dir" 2>/dev/null || echo "www-data")
+    
+    # Create backup if requested
+    if [[ "$BACKUP_FIRST" == true ]]; then
+        local backup_dir="/opt/source-license-backups/$(date +%Y%m%d-%H%M%S)"
+        print_info "Creating backup at $backup_dir..."
+        
+        sudo mkdir -p "$backup_dir"
+        
+        # Backup important files from deployed directory
+        local files=(".env" "database.db" "Gemfile.lock")
+        for file in "${files[@]}"; do
+            if [[ -f "$target_dir/$file" ]]; then
+                sudo cp "$target_dir/$file" "$backup_dir/"
+            fi
+        done
+        
+        # Backup logs
+        if [[ -d "$target_dir/logs" ]]; then
+            sudo cp -r "$target_dir/logs" "$backup_dir/"
+        fi
+        
+        print_success "Backup created at $backup_dir"
+    fi
+    
+    # Stop the service
+    print_info "Stopping service..."
+    sudo systemctl stop "$service_name" 2>/dev/null || true
+    
+    # Update application files from current directory
+    print_info "Updating application files..."
+    
+    # Preserve important files during update
+    local temp_preserve=$(mktemp -d)
+    
+    # Preserve database and logs
+    [[ -f "$target_dir/database.db" ]] && sudo cp "$target_dir/database.db" "$temp_preserve/"
+    [[ -f "$target_dir/.env" ]] && sudo cp "$target_dir/.env" "$temp_preserve/"
+    [[ -d "$target_dir/logs" ]] && sudo cp -r "$target_dir/logs" "$temp_preserve/"
+    [[ -d "$target_dir/deployment-logs" ]] && sudo cp -r "$target_dir/deployment-logs" "$temp_preserve/"
+    
+    # Update code files
+    if command_exists rsync; then
+        sudo rsync -av --exclude='deployment-logs/' --exclude='installer-logs/' --exclude='.git/' --exclude='database.db' --exclude='.env' --exclude='logs/' "$current_dir/" "$target_dir/"
+    else
+        # Copy all files except preserved ones
+        find "$current_dir" -maxdepth 1 -type f ! -name "database.db" ! -name ".env" -exec sudo cp {} "$target_dir/" \;
+        
+        # Copy directories except excluded ones
+        for dir in "$current_dir"/*/; do
+            [[ ! -d "$dir" ]] && continue
+            dirname=$(basename "$dir")
+            case "$dirname" in
+                "deployment-logs"|"installer-logs"|".git"|"logs") continue ;;
+                *) sudo cp -r "$dir" "$target_dir/" ;;
+            esac
+        done
+    fi
+    
+    # Restore preserved files
+    [[ -f "$temp_preserve/database.db" ]] && sudo cp "$temp_preserve/database.db" "$target_dir/"
+    [[ -f "$temp_preserve/.env" ]] && sudo cp "$temp_preserve/.env" "$target_dir/"
+    [[ -d "$temp_preserve/logs" ]] && sudo cp -r "$temp_preserve/logs" "$target_dir/"
+    [[ -d "$temp_preserve/deployment-logs" ]] && sudo cp -r "$temp_preserve/deployment-logs" "$target_dir/"
+    
+    # Clean up temporary directory
+    sudo rm -rf "$temp_preserve"
+    
+    # Update any new .env from current directory if it exists and target doesn't have one
+    if [[ -f "$current_dir/.env" ]] && [[ ! -f "$target_dir/.env" ]]; then
+        sudo cp "$current_dir/.env" "$target_dir/"
+        sudo chmod 600 "$target_dir/.env"
+    fi
+    
+    # Set proper ownership and permissions
+    print_info "Setting permissions for $service_user..."
+    sudo chown -R "$service_user:$service_user" "$target_dir"
+    sudo chmod -R 755 "$target_dir"
+    
+    # Ensure specific files have proper permissions
+    [[ -f "$target_dir/.env" ]] && sudo chmod 600 "$target_dir/.env"
+    
+    # Ensure directories exist and have proper permissions
+    sudo mkdir -p "$target_dir/logs" "$target_dir/deployment-logs"
+    sudo chown "$service_user:$service_user" "$target_dir/logs" "$target_dir/deployment-logs"
+    
+    # Update dependencies in target directory
+    print_info "Updating dependencies in deployed location..."
+    cd "$target_dir" || return 1
+    if sudo -u "$service_user" bundle install; then
+        print_success "Dependencies updated successfully"
+    else
+        print_warning "Failed to update dependencies, continuing anyway"
+    fi
+    cd "$current_dir" || return 1
+    
+    # Run migrations in target directory
+    print_info "Running database migrations..."
+    cd "$target_dir" || return 1
+    if sudo -u "$service_user" ruby lib/migrations.rb; then
+        print_success "Database migrations completed"
+    else
+        print_warning "Database migration failed, continuing anyway"
+    fi
+    cd "$current_dir" || return 1
+    
+    # Restart the service
+    print_info "Starting service..."
+    sudo systemctl start "$service_name"
+    
+    # Wait for service to start
+    sleep 3
+    
+    if systemctl is-active --quiet "$service_name"; then
+        print_success "Service updated and restarted successfully"
+        print_info "Service status: sudo systemctl status $service_name"
+        print_info "Service logs: sudo journalctl -u $service_name -f"
+    else
+        print_error "Service failed to start after update"
+        print_info "Check logs: sudo journalctl -u $service_name"
+        return 1
+    fi
+    
+    return 0
 }
 
 # Start via systemd or fallback
@@ -784,6 +1001,11 @@ EOF
             log_function_call "remove_systemd_service" "START"
             remove_systemd_service
             log_function_call "remove_systemd_service" "COMPLETE"
+            ;;
+        update-service)
+            log_function_call "update_systemd_service" "START"
+            update_systemd_service
+            log_function_call "update_systemd_service" "COMPLETE"
             ;;
         help)
             log_message "INFO" "Showing help and exiting"

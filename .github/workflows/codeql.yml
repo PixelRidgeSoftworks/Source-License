@@ -38,7 +38,7 @@ on:
   workflow_dispatch:
 
 env:
-  RUBY_VERSION: 3.4.4
+  RUBY_VERSION: 3.4.7
 
 jobs:
   analyze:

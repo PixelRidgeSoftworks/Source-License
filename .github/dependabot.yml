@@ -11,9 +11,9 @@ updates:
     open-pull-requests-limit: 5
     target-branch: "develop"
     reviewers:
-      - "PixelRidge-Softworks"
+      - "PixelRidgeSoftworks"
     assignees:
-      - "PixelRidge-Softworks"
+      - "PixelRidgeSoftworks"
     commit-message:
       prefix: "deps"
       prefix-development: "deps-dev"
@@ -65,9 +65,9 @@ updates:
     open-pull-requests-limit: 3
     target-branch: "develop"
     reviewers:
-      - "PixelRidge-Softworks"
+      - "PixelRidgeSoftworks"
     assignees:
-      - "PixelRidge-Softworks"
+      - "PixelRidgeSoftworks"
     commit-message:
       prefix: "ci"
       include: "scope"

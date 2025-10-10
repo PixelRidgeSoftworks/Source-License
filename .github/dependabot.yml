@@ -4,11 +4,10 @@ updates:
   - package-ecosystem: "bundler"
     directory: "/"
     schedule:
-      interval: "weekly"
-      day: "monday"
+      interval: "daily"  # Changed from weekly to daily for faster security updates
       time: "09:00"
       timezone: "America/Edmonton"
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 10  # Increased from 5 to allow more updates
     target-branch: "develop"
     reviewers:
       - "PixelRidgeSoftworks"
@@ -21,38 +20,99 @@ updates:
     labels:
       - "dependencies"
       - "ruby"
+      - "auto-update"
     allow:
       - dependency-type: "direct"
       - dependency-type: "indirect"
-    ignore:
-      # Ignore major version updates for critical dependencies during alpha
-      - dependency-name: "sinatra"
-        update-types: ["version-update:semver-major"]
-      - dependency-name: "sequel"
-        update-types: ["version-update:semver-major"]
-      - dependency-name: "rack"
-        update-types: ["version-update:semver-major"]
+    # Removed ignore block to allow major version updates with proper grouping
     groups:
-      # Group security-related updates
-      security-updates:
+      # High priority security updates (processed immediately)
+      critical-security:
         patterns:
           - "*"
         update-types:
           - "security"
-      # Group development dependencies
+        priority: 10
+      
+      # Major version updates (grouped together for easier review)
+      major-updates:
+        patterns:
+          - "*"
+        update-types:
+          - "version-update:semver-major"
+        priority: 5
+      
+      # Minor and patch updates (grouped by category)
+      framework-updates:
+        patterns:
+          - "sinatra*"
+          - "rack*"
+          - "sequel*"
+          - "puma*"
+          - "thin*"
+        update-types:
+          - "version-update:semver-minor"
+          - "version-update:semver-patch"
+        priority: 8
+      
+      # Database and ORM updates
+      database-updates:
+        patterns:
+          - "sqlite3*"
+          - "mysql2*"
+          - "pg*"
+          - "sequel*"
+        update-types:
+          - "version-update:semver-minor"
+          - "version-update:semver-patch"
+        priority: 7
+      
+      # Payment and API dependencies
+      payment-api-updates:
+        patterns:
+          - "stripe*"
+          - "paypal*"
+          - "jwt*"
+          - "bcrypt*"
+          - "faraday*"
+          - "httparty*"
+        update-types:
+          - "version-update:semver-minor"
+          - "version-update:semver-patch"
+        priority: 8
+      
+      # Development and testing dependencies
       development-dependencies:
         dependency-type: "development"
         patterns:
           - "rubocop*"
           - "minitest*"
           - "simplecov*"
-      # Group production dependencies
-      production-dependencies:
-        dependency-type: "production"
-        exclude-patterns:
-          - "rubocop*"
-          - "minitest*"
-          - "simplecov*"
+          - "rack-test*"
+          - "factory_bot*"
+        priority: 3
+      
+      # Utility and helper gems
+      utility-updates:
+        patterns:
+          - "dotenv*"
+          - "concurrent-ruby*"
+          - "mail*"
+          - "tilt*"
+          - "erubi*"
+        update-types:
+          - "version-update:semver-minor"
+          - "version-update:semver-patch"
+        priority: 6
+      
+      # Everything else (catch-all for ungrouped dependencies)
+      other-dependencies:
+        patterns:
+          - "*"
+        update-types:
+          - "version-update:semver-minor"
+          - "version-update:semver-patch"
+        priority: 4
 
   # GitHub Actions dependencies
   - package-ecosystem: "github-actions"

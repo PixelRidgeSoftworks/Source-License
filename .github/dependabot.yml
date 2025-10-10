@@ -1,77 +1,9 @@
 version: 2
 updates:
-  # Ruby dependencies
   - package-ecosystem: "bundler"
     directory: "/"
     schedule:
-      interval: "weekly"  # Changed back to weekly to reduce load and errors
-      day: "monday"
+      interval: "daily"
       time: "09:00"
       timezone: "America/Edmonton"
-    open-pull-requests-limit: 5
-    target-branch: "develop"
-    reviewers:
-      - "PixelRidgeSoftworks"
-    assignees:
-      - "PixelRidgeSoftworks"
-    commit-message:
-      prefix: "deps"
-      prefix-development: "deps-dev"
-      include: "scope"
-    labels:
-      - "dependencies"
-      - "ruby"
-    allow:
-      - dependency-type: "direct"
-      - dependency-type: "indirect"
-    # Simplified grouping to reduce complexity
-    groups:
-      # Production dependencies - minor and patch updates
-      production-deps:
-        patterns:
-          - "sinatra*"
-          - "rack*"
-          - "sequel*"
-          - "puma*"
-          - "mysql2*"
-          - "sqlite3*"
-          - "bcrypt*"
-          - "jwt*"
-          - "stripe*"
-          - "mail*"
-          - "dotenv*"
-          - "json*"
-          - "redis*"
-        update-types:
-          - "minor"
-          - "patch"
-      
-      # Development dependencies
-      development-deps:
-        dependency-type: "development"
-
-  # GitHub Actions dependencies
-  - package-ecosystem: "github-actions"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "10:00"
-      timezone: "America/Edmonton"
-    open-pull-requests-limit: 3
-    target-branch: "develop"
-    reviewers:
-      - "PixelRidgeSoftworks"
-    assignees:
-      - "PixelRidgeSoftworks"
-    commit-message:
-      prefix: "ci"
-      include: "scope"
-    labels:
-      - "dependencies"
-      - "github-actions"
-      - "ci"
-    groups:
-      github-actions:
-        patterns:
-          - "*"
+    open-pull-requests-limit: 10

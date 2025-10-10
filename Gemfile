@@ -34,7 +34,7 @@ gem 'net-http', '~> 0.4'
 gem 'mail', '~> 2.8'
 
 # Environment & Configuration
-gem 'dotenv', '~> 2.8'
+gem 'dotenv', '~> 3.1'
 
 # Payment Processing
 gem 'stripe', '~> 10.0'

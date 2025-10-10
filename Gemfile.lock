@@ -48,7 +48,7 @@ GEM
       sequel
     date (3.4.1)
     docile (1.4.1)
-    dotenv (2.8.1)
+    dotenv (3.1.8)
     drb (2.2.3)
     erb_lint (0.9.0)
       activesupport
@@ -247,7 +247,7 @@ PLATFORMS
 DEPENDENCIES
   bcrypt (~> 3.1)
   database_cleaner-sequel (~> 2.0)
-  dotenv (~> 2.8)
+  dotenv (~> 3.1)
   erb_lint (~> 0.9.0)
   factory_bot (~> 6.4)
   faker (~> 3.2)

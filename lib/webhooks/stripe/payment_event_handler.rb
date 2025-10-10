@@ -65,10 +65,11 @@ class Webhooks::Stripe::PaymentEventHandler < Webhooks::Stripe::BaseEventHandler
           payment_intent_id: payment_intent.id,
           order_id: order.id,
           amount: payment_intent.amount / 100.0,
-          note: 'Order completed - license creation will happen in charge.succeeded'
+          note: 'Order completed - license creation will happen in charge.succeeded',
         })
 
-        return { success: true, message: 'Payment intent succeeded - order completed (license creation pending charge.succeeded)' }
+        return { success: true,
+                 message: 'Payment intent succeeded - order completed (license creation pending charge.succeeded)', }
       end
 
       # Log for monitoring even if no order found
@@ -124,7 +125,7 @@ class Webhooks::Stripe::PaymentEventHandler < Webhooks::Stripe::BaseEventHandler
           charge_id: charge.id,
           order_id: order.id,
           amount: charge.amount / 100.0,
-          license_count: order.licenses.count
+          license_count: order.licenses.count,
         })
 
         return { success: true, message: 'Charge succeeded - new licenses created for order' }
@@ -177,7 +178,7 @@ class Webhooks::Stripe::PaymentEventHandler < Webhooks::Stripe::BaseEventHandler
         amount: charge.amount / 100.0,
         payment_intent_id: charge.payment_intent,
         customer_id: charge.customer,
-        note: 'No associated order or license found'
+        note: 'No associated order or license found',
       })
 
       { success: true, message: 'Charge succeeded - no associated order or license found' }

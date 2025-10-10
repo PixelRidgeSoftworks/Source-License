@@ -149,6 +149,289 @@ command_exists() {
     command -v "$1" >/dev/null 2>&1
 }
 
+# Detect package manager
+detect_package_manager() {
+    if command_exists apt-get; then
+        echo "apt"
+    elif command_exists yum; then
+        echo "yum"
+    elif command_exists dnf; then
+        echo "dnf"
+    elif command_exists pacman; then
+        echo "pacman"
+    elif command_exists zypper; then
+        echo "zypper"
+    elif command_exists apk; then
+        echo "apk"
+    elif command_exists brew; then
+        echo "brew"
+    else
+        echo "unknown"
+    fi
+}
+
+# Install system dependencies
+install_system_dependencies() {
+    log_function_call "install_system_dependencies" "START"
+    log_message "INFO" "Installing system dependencies for deploy and update scripts"
+    print_info "Installing system dependencies..."
+    
+    # Required packages for deploy and update scripts
+    local required_packages=("git" "rsync" "curl" "wget")
+    local missing_packages=()
+    
+    # Check which packages are missing
+    for package in "${required_packages[@]}"; do
+        if ! command_exists "$package"; then
+            missing_packages+=("$package")
+            log_message "INFO" "Missing package: $package"
+        else
+            log_message "INFO" "Package already installed: $package"
+        fi
+    done
+    
+    if [[ ${#missing_packages[@]} -eq 0 ]]; then
+        log_message "SUCCESS" "All system dependencies are already installed"
+        print_success "All system dependencies are already installed"
+        log_function_call "install_system_dependencies" "COMPLETE - ALREADY_INSTALLED"
+        return 0
+    fi
+    
+    print_info "Missing packages: ${missing_packages[*]}"
+    
+    local package_manager=$(detect_package_manager)
+    log_message "INFO" "Detected package manager: $package_manager"
+    print_info "Detected package manager: $package_manager"
+    
+    # Check if we have sudo privileges
+    local has_sudo=false
+    if command_exists sudo && sudo -n true 2>/dev/null; then
+        has_sudo=true
+        log_message "INFO" "Sudo privileges available"
+    elif [[ $EUID -eq 0 ]]; then
+        has_sudo=true
+        log_message "INFO" "Running as root"
+    else
+        log_message "WARNING" "No sudo privileges detected"
+    fi
+    
+    case "$package_manager" in
+        apt)
+            print_info "Using APT package manager (Debian/Ubuntu)"
+            if [[ "$has_sudo" == true ]]; then
+                log_message "INFO" "Updating package lists"
+                print_info "Updating package lists..."
+                log_command "sudo apt-get update"
+                if ! sudo apt-get update -qq; then
+                    log_message "WARNING" "Failed to update package lists, continuing anyway"
+                    print_warning "Failed to update package lists, continuing anyway"
+                fi
+                
+                log_message "INFO" "Installing packages: ${missing_packages[*]}"
+                print_info "Installing: ${missing_packages[*]}"
+                log_command "sudo apt-get install -y ${missing_packages[*]}"
+                if sudo apt-get install -y "${missing_packages[@]}"; then
+                    log_message "SUCCESS" "System dependencies installed successfully"
+                    print_success "System dependencies installed successfully"
+                else
+                    log_error "Failed to install some system dependencies"
+                    print_error "Failed to install some system dependencies"
+                    print_info "You may need to install manually: sudo apt-get install ${missing_packages[*]}"
+                    log_function_call "install_system_dependencies" "FAILED"
+                    return 1
+                fi
+            else
+                print_warning "No sudo privileges detected"
+                print_info "Please install manually: sudo apt-get install ${missing_packages[*]}"
+                log_function_call "install_system_dependencies" "COMPLETE - MANUAL_REQUIRED"
+                return 0
+            fi
+            ;;
+        yum)
+            print_info "Using YUM package manager (CentOS/RHEL)"
+            if [[ "$has_sudo" == true ]]; then
+                log_message "INFO" "Installing packages: ${missing_packages[*]}"
+                print_info "Installing: ${missing_packages[*]}"
+                log_command "sudo yum install -y ${missing_packages[*]}"
+                if sudo yum install -y "${missing_packages[@]}"; then
+                    log_message "SUCCESS" "System dependencies installed successfully"
+                    print_success "System dependencies installed successfully"
+                else
+                    log_error "Failed to install some system dependencies"
+                    print_error "Failed to install some system dependencies"
+                    print_info "You may need to install manually: sudo yum install ${missing_packages[*]}"
+                    log_function_call "install_system_dependencies" "FAILED"
+                    return 1
+                fi
+            else
+                print_warning "No sudo privileges detected"
+                print_info "Please install manually: sudo yum install ${missing_packages[*]}"
+                log_function_call "install_system_dependencies" "COMPLETE - MANUAL_REQUIRED"
+                return 0
+            fi
+            ;;
+        dnf)
+            print_info "Using DNF package manager (Fedora)"
+            if [[ "$has_sudo" == true ]]; then
+                log_message "INFO" "Installing packages: ${missing_packages[*]}"
+                print_info "Installing: ${missing_packages[*]}"
+                log_command "sudo dnf install -y ${missing_packages[*]}"
+                if sudo dnf install -y "${missing_packages[@]}"; then
+                    log_message "SUCCESS" "System dependencies installed successfully"
+                    print_success "System dependencies installed successfully"
+                else
+                    log_error "Failed to install some system dependencies"
+                    print_error "Failed to install some system dependencies"
+                    print_info "You may need to install manually: sudo dnf install ${missing_packages[*]}"
+                    log_function_call "install_system_dependencies" "FAILED"
+                    return 1
+                fi
+            else
+                print_warning "No sudo privileges detected"
+                print_info "Please install manually: sudo dnf install ${missing_packages[*]}"
+                log_function_call "install_system_dependencies" "COMPLETE - MANUAL_REQUIRED"
+                return 0
+            fi
+            ;;
+        pacman)
+            print_info "Using Pacman package manager (Arch Linux)"
+            if [[ "$has_sudo" == true ]]; then
+                log_message "INFO" "Updating package database"
+                print_info "Updating package database..."
+                log_command "sudo pacman -Sy"
+                sudo pacman -Sy --noconfirm
+                
+                log_message "INFO" "Installing packages: ${missing_packages[*]}"
+                print_info "Installing: ${missing_packages[*]}"
+                log_command "sudo pacman -S --noconfirm ${missing_packages[*]}"
+                if sudo pacman -S --noconfirm "${missing_packages[@]}"; then
+                    log_message "SUCCESS" "System dependencies installed successfully"
+                    print_success "System dependencies installed successfully"
+                else
+                    log_error "Failed to install some system dependencies"
+                    print_error "Failed to install some system dependencies"
+                    print_info "You may need to install manually: sudo pacman -S ${missing_packages[*]}"
+                    log_function_call "install_system_dependencies" "FAILED"
+                    return 1
+                fi
+            else
+                print_warning "No sudo privileges detected"
+                print_info "Please install manually: sudo pacman -S ${missing_packages[*]}"
+                log_function_call "install_system_dependencies" "COMPLETE - MANUAL_REQUIRED"
+                return 0
+            fi
+            ;;
+        zypper)
+            print_info "Using Zypper package manager (openSUSE)"
+            if [[ "$has_sudo" == true ]]; then
+                log_message "INFO" "Installing packages: ${missing_packages[*]}"
+                print_info "Installing: ${missing_packages[*]}"
+                log_command "sudo zypper install -y ${missing_packages[*]}"
+                if sudo zypper install -y "${missing_packages[@]}"; then
+                    log_message "SUCCESS" "System dependencies installed successfully"
+                    print_success "System dependencies installed successfully"
+                else
+                    log_error "Failed to install some system dependencies"
+                    print_error "Failed to install some system dependencies"
+                    print_info "You may need to install manually: sudo zypper install ${missing_packages[*]}"
+                    log_function_call "install_system_dependencies" "FAILED"
+                    return 1
+                fi
+            else
+                print_warning "No sudo privileges detected"
+                print_info "Please install manually: sudo zypper install ${missing_packages[*]}"
+                log_function_call "install_system_dependencies" "COMPLETE - MANUAL_REQUIRED"
+                return 0
+            fi
+            ;;
+        apk)
+            print_info "Using APK package manager (Alpine Linux)"
+            if [[ "$has_sudo" == true ]]; then
+                log_message "INFO" "Updating package index"
+                print_info "Updating package index..."
+                log_command "sudo apk update"
+                sudo apk update
+                
+                log_message "INFO" "Installing packages: ${missing_packages[*]}"
+                print_info "Installing: ${missing_packages[*]}"
+                log_command "sudo apk add ${missing_packages[*]}"
+                if sudo apk add "${missing_packages[@]}"; then
+                    log_message "SUCCESS" "System dependencies installed successfully"
+                    print_success "System dependencies installed successfully"
+                else
+                    log_error "Failed to install some system dependencies"
+                    print_error "Failed to install some system dependencies"
+                    print_info "You may need to install manually: sudo apk add ${missing_packages[*]}"
+                    log_function_call "install_system_dependencies" "FAILED"
+                    return 1
+                fi
+            else
+                print_warning "No sudo privileges detected"
+                print_info "Please install manually: sudo apk add ${missing_packages[*]}"
+                log_function_call "install_system_dependencies" "COMPLETE - MANUAL_REQUIRED"
+                return 0
+            fi
+            ;;
+        brew)
+            print_info "Using Homebrew package manager (macOS)"
+            log_message "INFO" "Installing packages: ${missing_packages[*]}"
+            print_info "Installing: ${missing_packages[*]}"
+            log_command "brew install ${missing_packages[*]}"
+            if brew install "${missing_packages[@]}"; then
+                log_message "SUCCESS" "System dependencies installed successfully"
+                print_success "System dependencies installed successfully"
+            else
+                log_error "Failed to install some system dependencies"
+                print_error "Failed to install some system dependencies"
+                print_info "You may need to install manually: brew install ${missing_packages[*]}"
+                log_function_call "install_system_dependencies" "FAILED"
+                return 1
+            fi
+            ;;
+        unknown)
+            log_message "WARNING" "Unknown package manager"
+            print_warning "Could not detect package manager"
+            print_info "Please install the following packages manually:"
+            for package in "${missing_packages[@]}"; do
+                print_info "  - $package"
+            done
+            print_info ""
+            print_info "Common installation methods:"
+            print_info "  Debian/Ubuntu: sudo apt-get install ${missing_packages[*]}"
+            print_info "  CentOS/RHEL:   sudo yum install ${missing_packages[*]}"
+            print_info "  Fedora:        sudo dnf install ${missing_packages[*]}"
+            print_info "  Arch:          sudo pacman -S ${missing_packages[*]}"
+            print_info "  macOS:         brew install ${missing_packages[*]}"
+            log_function_call "install_system_dependencies" "COMPLETE - MANUAL_REQUIRED"
+            return 0
+            ;;
+    esac
+    
+    # Verify installation
+    local failed_packages=()
+    for package in "${missing_packages[@]}"; do
+        if ! command_exists "$package"; then
+            failed_packages+=("$package")
+            log_message "ERROR" "Package still missing after installation: $package"
+        else
+            log_message "SUCCESS" "Package successfully installed: $package"
+        fi
+    done
+    
+    if [[ ${#failed_packages[@]} -eq 0 ]]; then
+        log_message "SUCCESS" "All system dependencies installed and verified"
+        print_success "All system dependencies installed and verified"
+        log_function_call "install_system_dependencies" "COMPLETE"
+        return 0
+    else
+        log_error "Some packages failed to install: ${failed_packages[*]}"
+        print_error "Some packages failed to install: ${failed_packages[*]}"
+        print_info "The deploy and update scripts may not work properly without these packages"
+        log_function_call "install_system_dependencies" "PARTIAL_FAILURE"
+        return 1
+    fi
+}
+
 # Check Ruby version
 check_ruby_version() {
     log_function_call "check_ruby_version" "START"
@@ -375,6 +658,16 @@ main() {
     local success=true
     
     log_message "INFO" "Starting installation steps"
+    
+    # Install system dependencies first (git, rsync, etc.)
+    if ! install_system_dependencies; then
+        print_warning "Some system dependencies could not be installed"
+        print_info "This may affect the functionality of deploy and update scripts"
+        print_info "You can install them manually later"
+        log_message "WARNING" "System dependencies installation had issues, continuing anyway"
+    else
+        log_message "SUCCESS" "System dependencies installation completed"
+    fi
     
     if ! check_ruby_version; then
         success=false

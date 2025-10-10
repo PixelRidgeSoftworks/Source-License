@@ -35,6 +35,9 @@ class SourceLicenseLauncher
 
     puts "✅ Ruby version check passed (#{@ruby_version})"
 
+    # Check for pending updates
+    check_for_updates unless skip_update_check?
+
     # Check if bundler is installed
     unless bundler_installed?
       puts '❌ Bundler is not installed.'
@@ -74,6 +77,257 @@ class SourceLicenseLauncher
   end
 
   private
+
+  def skip_update_check?
+    # Load .env file early to check SKIP_UPDATE_CHECK setting
+    load_env_file_early unless @env_loaded_early
+
+    # Check for override flags (prioritized order)
+    ENV['SKIP_UPDATE_CHECK']&.downcase == 'true' ||
+      ARGV.include?('--skip-update-check') ||
+      ARGV.include?('--force-start') ||
+      ENV['APP_ENV'] == 'development'
+  end
+
+  def load_env_file_early
+    return if @env_loaded_early
+
+    env_file = File.join(@script_dir, '.env')
+    if File.exist?(env_file)
+      File.readlines(env_file).each do |line|
+        line = line.strip
+        next if line.empty? || line.start_with?('#')
+
+        key, value = line.split('=', 2)
+        next unless key && value
+
+        # Only set essential variables early, and only if not already set
+        ENV[key] = value if %w[SKIP_UPDATE_CHECK APP_ENV].include?(key) && !ENV.key?(key)
+      end
+    end
+
+    @env_loaded_early = true
+  end
+
+  def git_available?
+    system('git --version > /dev/null 2>&1') || system('git --version > NUL 2>&1')
+  end
+
+  def in_git_repository?
+    File.exist?(File.join(@script_dir, '.git'))
+  end
+
+  def check_for_updates
+    puts
+    puts 'Update Check:'
+    puts '-------------'
+
+    # Check if git is available
+    unless git_available?
+      puts '⚠️  Git not found - skipping update check'
+      puts '💡 Install Git to enable automatic update checking'
+      return
+    end
+
+    # Check if we're in a git repository
+    unless in_git_repository?
+      puts '⚠️  Not in a Git repository - skipping update check'
+      puts '💡 Initialize Git repository to enable update checking'
+      return
+    end
+
+    begin
+      # Get current branch
+      current_branch = `git rev-parse --abbrev-ref HEAD 2>/dev/null`.strip
+      if current_branch.empty?
+        puts '⚠️  Could not determine current Git branch - skipping update check'
+        return
+      end
+
+      puts "🔍 Checking for updates on branch '#{current_branch}'..."
+
+      # Check if we have a remote origin
+      remote_url = `git remote get-url origin 2>/dev/null`.strip
+      if remote_url.empty?
+        puts '⚠️  No remote origin configured - skipping update check'
+        puts '💡 Add a remote origin to enable update checking'
+        return
+      end
+
+      puts "📡 Remote: #{remote_url}"
+
+      # Fetch latest changes (with timeout)
+      puts '📥 Fetching latest changes from remote...'
+
+      fetch_success = system("timeout 30 git fetch origin #{current_branch} 2>/dev/null") ||
+                      system("git fetch origin #{current_branch} 2>/dev/null")
+
+      unless fetch_success
+        puts '⚠️  Failed to fetch from remote - continuing anyway'
+        puts '💡 Check your internet connection and Git credentials'
+        return
+      end
+
+      # Compare local and remote commits
+      local_commit = `git rev-parse HEAD 2>/dev/null`.strip
+      remote_commit = `git rev-parse origin/#{current_branch} 2>/dev/null`.strip
+
+      if local_commit.empty? || remote_commit.empty?
+        puts '⚠️  Could not compare local and remote commits - continuing anyway'
+        return
+      end
+
+      if local_commit == remote_commit
+        puts '✅ Repository is up to date'
+        return
+      end
+
+      # Check if local is ahead of remote
+      ahead_count = `git rev-list --count origin/#{current_branch}..HEAD 2>/dev/null`.strip.to_i
+      behind_count = `git rev-list --count HEAD..origin/#{current_branch} 2>/dev/null`.strip.to_i
+
+      if ahead_count.positive? && behind_count.zero?
+        puts "✅ Local repository is #{ahead_count} commit(s) ahead of remote"
+        return
+      end
+
+      if behind_count.positive?
+        puts
+        puts '🚨 PENDING UPDATES DETECTED!'
+        puts '=' * 50
+        puts "Your local repository is #{behind_count} commit(s) behind the remote."
+        puts
+        puts 'Recent changes available:'
+
+        # Show recent commits
+        recent_commits = `git log --oneline HEAD..origin/#{current_branch} 2>/dev/null | head -5`.strip
+        unless recent_commits.empty?
+          recent_commits.split("\n").each do |commit|
+            puts "  • #{commit}"
+          end
+
+          total_commits = `git rev-list --count HEAD..origin/#{current_branch} 2>/dev/null`.strip.to_i
+          puts "  ... and #{total_commits - 5} more commit(s)" if total_commits > 5
+        end
+
+        puts
+        puts '🔧 RECOMMENDED ACTIONS:'
+        puts '1. Run the update script: ./update.sh'
+        puts "2. Or update manually: git pull origin #{current_branch}"
+        puts '3. For deployed services: sudo ./deploy.sh update-service'
+        puts
+        puts '⚠️  SECURITY NOTICE:'
+        puts 'Running outdated software may expose your system to security vulnerabilities.'
+        puts 'It is strongly recommended to update before proceeding.'
+        puts
+
+        # Check for security-related keywords in commits
+        security_commits = `git log --oneline HEAD..origin/#{current_branch} 2>/dev/null`.downcase
+        has_security_updates = security_commits.match?(/security|vulnerability|cve|patch|fix|urgent/)
+
+        if has_security_updates
+          puts '🔴 CRITICAL: Security updates detected in pending changes!'
+          puts 'Please update immediately before starting the application.'
+          puts
+        end
+
+        handle_update_prompt(current_branch, has_security_updates)
+      end
+    rescue StandardError => e
+      puts "⚠️  Update check failed: #{e.message}"
+      puts '💡 Continuing with application startup anyway'
+    end
+  end
+
+  def handle_update_prompt(branch, has_security_updates)
+    if has_security_updates
+      puts '❌ STARTUP BLOCKED: Critical security updates are available.'
+      puts
+      puts 'To continue anyway (NOT RECOMMENDED), use one of these options:'
+      puts '1. Set environment variable: SKIP_UPDATE_CHECK=true'
+      puts '2. Use command line flag: ruby launch.rb --force-start'
+      puts '3. Set APP_ENV=development in your .env file'
+      puts
+      puts 'To update now:'
+      puts '  ./update.sh    (recommended - automated update)'
+      puts "  git pull origin #{branch} && bundle install    (manual update)"
+      puts
+      exit 1
+    else
+      puts 'Choose an action:'
+      puts '  [1] Update now and restart (recommended)'
+      puts '  [2] Continue without updating (not recommended)'
+      puts '  [3] Exit and update manually'
+      puts
+      print 'Enter your choice [1-3]: '
+
+      begin
+        # Use a timeout for the input to avoid hanging in non-interactive environments
+        choice = nil
+        if $stdin.tty?
+          choice = $stdin.gets&.chomp
+        else
+          # Non-interactive environment - default to exit
+          puts '3 (non-interactive mode)'
+          choice = '3'
+        end
+
+        puts
+        case choice
+        when '1'
+          puts '🔄 Starting automatic update...'
+
+          if File.exist?(File.join(@script_dir, 'update.sh'))
+            puts 'Using update.sh script...'
+            system("chmod +x #{File.join(@script_dir, 'update.sh')}")
+
+            if system(File.join(@script_dir, 'update.sh'))
+              puts '✅ Update completed successfully!'
+              puts '🔄 Restarting application...'
+              exec("ruby #{__FILE__}")
+            else
+              puts '❌ Update failed. Please update manually and try again.'
+              exit 1
+            end
+          else
+            puts 'Update script not found. Trying manual git pull...'
+            if system("git pull origin #{branch}")
+              puts '✅ Code updated successfully!'
+              puts '📦 Installing/updating dependencies...'
+              system('bundle install')
+              puts '🔄 Restarting application...'
+              exec("ruby #{__FILE__}")
+            else
+              puts '❌ Git pull failed. Please resolve conflicts and try again.'
+              exit 1
+            end
+          end
+
+        when '2'
+          puts '⚠️  Continuing with outdated version...'
+          puts '💡 Remember to update soon to get the latest features and security fixes.'
+          puts
+
+        when '3', '', nil
+          puts '👋 Exiting for manual update...'
+          puts
+          puts 'To update, run one of these commands:'
+          puts '  ./update.sh'
+          puts "  git pull origin #{branch} && bundle install"
+          puts
+          exit 0
+
+        else
+          puts '❌ Invalid choice. Exiting for safety.'
+          puts 'Use --force-start flag to bypass this check.'
+          exit 1
+        end
+      rescue Interrupt
+        puts "\n\n👋 Update cancelled by user. Exiting..."
+        exit 0
+      end
+    end
+  end
 
   def detect_os
     case RbConfig::CONFIG['host_os']

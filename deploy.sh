@@ -121,6 +121,11 @@ SYSTEMD USAGE:
     sudo systemctl stop source-license      # Stop service
     sudo systemctl status source-license    # Show status
     sudo journalctl -u source-license -f    # Follow logs
+
+AUTOMATED UPDATES:
+    ./update.sh                              # Pull git changes and update service
+    ./update.sh --backup                     # Update with backup
+    ./update.sh --branch develop             # Update from specific branch
 EOF
 }
 
@@ -246,19 +251,11 @@ create_systemd_service() {
     
     # Use rsync if available for better copying, otherwise use cp
     if command_exists rsync; then
-        sudo rsync -av --exclude='deployment-logs/' --exclude='installer-logs/' --exclude='.git/' "$current_dir/" "$target_dir/"
+        sudo rsync -av --exclude='deployment-logs/' --exclude='installer-logs/' "$current_dir/" "$target_dir/"
     else
-        # Create a temporary exclusion list for cp
-        local temp_exclude=$(mktemp)
-        echo "deployment-logs" > "$temp_exclude"
-        echo "installer-logs" >> "$temp_exclude"
-        echo ".git" >> "$temp_exclude"
-        
-        # Copy everything except excluded directories
+        # Copy everything including .git directory for update functionality
         find "$current_dir" -maxdepth 1 -type f -exec sudo cp {} "$target_dir/" \;
-        find "$current_dir" -maxdepth 1 -type d ! -name "deployment-logs" ! -name "installer-logs" ! -name ".git" ! -path "$current_dir" -exec sudo cp -r {} "$target_dir/" \;
-        
-        rm -f "$temp_exclude"
+        find "$current_dir" -maxdepth 1 -type d ! -name "deployment-logs" ! -name "installer-logs" ! -path "$current_dir" -exec sudo cp -r {} "$target_dir/" \;
     fi
     
     # Set proper ownership and permissions
@@ -424,19 +421,19 @@ update_systemd_service() {
     [[ -d "$target_dir/logs" ]] && sudo cp -r "$target_dir/logs" "$temp_preserve/"
     [[ -d "$target_dir/deployment-logs" ]] && sudo cp -r "$target_dir/deployment-logs" "$temp_preserve/"
     
-    # Update code files
+    # Update code files (including .git directory for update functionality)
     if command_exists rsync; then
-        sudo rsync -av --exclude='deployment-logs/' --exclude='installer-logs/' --exclude='.git/' --exclude='database.db' --exclude='.env' --exclude='logs/' "$current_dir/" "$target_dir/"
+        sudo rsync -av --exclude='deployment-logs/' --exclude='installer-logs/' --exclude='database.db' --exclude='.env' --exclude='logs/' "$current_dir/" "$target_dir/"
     else
         # Copy all files except preserved ones
         find "$current_dir" -maxdepth 1 -type f ! -name "database.db" ! -name ".env" -exec sudo cp {} "$target_dir/" \;
         
-        # Copy directories except excluded ones
+        # Copy directories except excluded ones (but include .git for update checking)
         for dir in "$current_dir"/*/; do
             [[ ! -d "$dir" ]] && continue
             dirname=$(basename "$dir")
             case "$dirname" in
-                "deployment-logs"|"installer-logs"|".git"|"logs") continue ;;
+                "deployment-logs"|"installer-logs"|"logs") continue ;;
                 *) sudo cp -r "$dir" "$target_dir/" ;;
             esac
         done

@@ -8,10 +8,10 @@ class Migrations::AddActivatedAtToLicenseActivations < Migrations::BaseMigration
 
   def up
     # Check if column already exists before adding it
-    unless DB.schema(:license_activations).any? { |col| col[0] == :activated_at }
-      DB.alter_table :license_activations do
-        add_column :activated_at, DateTime
-      end
+    return if DB.schema(:license_activations).any? { |col| col[0] == :activated_at }
+
+    DB.alter_table :license_activations do
+      add_column :activated_at, DateTime
     end
   end
 

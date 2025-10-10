@@ -4,10 +4,11 @@ updates:
   - package-ecosystem: "bundler"
     directory: "/"
     schedule:
-      interval: "daily"  # Changed from weekly to daily for faster security updates
+      interval: "weekly"  # Changed back to weekly to reduce load and errors
+      day: "monday"
       time: "09:00"
       timezone: "America/Edmonton"
-    open-pull-requests-limit: 10  # Increased from 5 to allow more updates
+    open-pull-requests-limit: 5
     target-branch: "develop"
     reviewers:
       - "PixelRidgeSoftworks"
@@ -20,75 +21,34 @@ updates:
     labels:
       - "dependencies"
       - "ruby"
-      - "auto-update"
     allow:
       - dependency-type: "direct"
       - dependency-type: "indirect"
-    # Removed ignore block to allow major version updates with proper grouping
+    # Simplified grouping to reduce complexity
     groups:
-      # Major version updates - group for careful review
-      major-updates:
-        patterns:
-          - "*"
-        update-types:
-          - "major"
-      
-      # Framework updates - group core dependencies
-      framework-updates:
+      # Production dependencies - minor and patch updates
+      production-deps:
         patterns:
           - "sinatra*"
           - "rack*"
           - "sequel*"
           - "puma*"
-          - "thin*"
-        update-types:
-          - "minor"
-          - "patch"
-      
-      # Database and ORM updates
-      database-updates:
-        patterns:
-          - "sqlite3*"
           - "mysql2*"
-          - "pg*"
-        update-types:
-          - "minor"
-          - "patch"
-      
-      # Payment and security API dependencies
-      payment-security-updates:
-        patterns:
-          - "stripe*"
-          - "paypal*"
-          - "jwt*"
+          - "sqlite3*"
           - "bcrypt*"
-          - "faraday*"
-          - "httparty*"
-        update-types:
-          - "minor"
-          - "patch"
-      
-      # Development and testing tools
-      dev-tools:
-        dependency-type: "development"
-        patterns:
-          - "rubocop*"
-          - "minitest*"
-          - "simplecov*"
-          - "rack-test*"
-          - "factory_bot*"
-      
-      # Utility and helper gems - safe to update
-      utilities:
-        patterns:
-          - "dotenv*"
-          - "concurrent-ruby*"
+          - "jwt*"
+          - "stripe*"
           - "mail*"
-          - "tilt*"
-          - "erubi*"
+          - "dotenv*"
+          - "json*"
+          - "redis*"
         update-types:
           - "minor"
           - "patch"
+      
+      # Development dependencies
+      development-deps:
+        dependency-type: "development"
 
   # GitHub Actions dependencies
   - package-ecosystem: "github-actions"

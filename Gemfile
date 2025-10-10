@@ -37,7 +37,7 @@ gem 'mail', '~> 2.8'
 gem 'dotenv', '~> 2.8'
 
 # Payment Processing
-gem 'stripe', '~> 10.0'
+gem 'stripe', '~> 17.0'
 
 # Utilities
 gem 'securerandom', '~> 0.3'

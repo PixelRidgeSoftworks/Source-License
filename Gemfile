@@ -8,7 +8,7 @@ ruby '3.4.4'
 # Core web framework
 gem 'puma', '~> 6.4'
 gem 'rack', '~> 3.2.3'
-gem 'rack-cors', '~> 2.0'
+gem 'rack-cors', '~> 3.0'
 gem 'rack-protection', '~> 4.2.1'
 gem 'rack-ssl-enforcer', '~> 0.2'
 gem 'rackup', '~> 2.2'

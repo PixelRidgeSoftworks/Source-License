@@ -258,11 +258,22 @@ create_systemd_service() {
     # Set proper ownership and permissions
     print_info "Setting permissions for $service_user..."
     sudo chown -R "$service_user:$service_user" "$target_dir"
-    sudo chmod -R 755 "$target_dir"
     
-    # Ensure specific directories have proper permissions
-    sudo chmod 755 "$target_dir/logs" 2>/dev/null || sudo mkdir -p "$target_dir/logs" && sudo chown "$service_user:$service_user" "$target_dir/logs"
-    sudo chmod 755 "$target_dir/deployment-logs" 2>/dev/null || sudo mkdir -p "$target_dir/deployment-logs" && sudo chown "$service_user:$service_user" "$target_dir/deployment-logs"
+    # Set directory permissions (755 = rwxr-xr-x)
+    sudo find "$target_dir" -type d -exec chmod 755 {} \;
+    
+    # Set file permissions (644 = rw-r--r-- for most files)
+    sudo find "$target_dir" -type f -exec chmod 644 {} \;
+    
+    # Make Ruby files and scripts executable
+    sudo chmod 755 "$target_dir/launch.rb" 2>/dev/null
+    sudo find "$target_dir" -name "*.rb" -path "*/bin/*" -exec chmod 755 {} \; 2>/dev/null
+    sudo find "$target_dir" -name "*.sh" -exec chmod 755 {} \; 2>/dev/null
+    
+    # Ensure writable directories for the service user
+    sudo mkdir -p "$target_dir/logs" "$target_dir/deployment-logs" "$target_dir/tmp"
+    sudo chown "$service_user:$service_user" "$target_dir/logs" "$target_dir/deployment-logs" "$target_dir/tmp"
+    sudo chmod 755 "$target_dir/logs" "$target_dir/deployment-logs" "$target_dir/tmp"
     
     # Copy environment file if it exists
     if [[ -f "$current_dir/.env" ]]; then
@@ -454,14 +465,25 @@ update_systemd_service() {
     # Set proper ownership and permissions
     print_info "Setting permissions..."
     sudo chown -R "$service_user:$service_user" "$target_dir" 2>/dev/null
-    sudo chmod -R 755 "$target_dir" 2>/dev/null
+    
+    # Set directory permissions (755 = rwxr-xr-x)
+    sudo find "$target_dir" -type d -exec chmod 755 {} \; 2>/dev/null
+    
+    # Set file permissions (644 = rw-r--r-- for most files)
+    sudo find "$target_dir" -type f -exec chmod 644 {} \; 2>/dev/null
+    
+    # Make Ruby files and scripts executable
+    sudo chmod 755 "$target_dir/launch.rb" 2>/dev/null
+    sudo find "$target_dir" -name "*.rb" -path "*/bin/*" -exec chmod 755 {} \; 2>/dev/null
+    sudo find "$target_dir" -name "*.sh" -exec chmod 755 {} \; 2>/dev/null
     
     # Ensure specific files have proper permissions
     [[ -f "$target_dir/.env" ]] && sudo chmod 600 "$target_dir/.env" 2>/dev/null
     
-    # Ensure directories exist and have proper permissions
-    sudo mkdir -p "$target_dir/logs" "$target_dir/deployment-logs" 2>/dev/null
-    sudo chown "$service_user:$service_user" "$target_dir/logs" "$target_dir/deployment-logs" 2>/dev/null
+    # Ensure writable directories exist and have proper permissions
+    sudo mkdir -p "$target_dir/logs" "$target_dir/deployment-logs" "$target_dir/tmp" 2>/dev/null
+    sudo chown "$service_user:$service_user" "$target_dir/logs" "$target_dir/deployment-logs" "$target_dir/tmp" 2>/dev/null
+    sudo chmod 755 "$target_dir/logs" "$target_dir/deployment-logs" "$target_dir/tmp" 2>/dev/null
     
     # Update dependencies in target directory
     print_info "Updating dependencies..."

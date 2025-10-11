@@ -420,10 +420,10 @@ update_systemd_service() {
     
     # Update code files (including .git directory for update functionality)
     if command_exists rsync; then
-        sudo rsync -av --exclude='deployment-logs/' --exclude='installer-logs/' --exclude='database.db' --exclude='.env' --exclude='logs/' "$current_dir/" "$target_dir/"
+        sudo rsync -a --exclude='deployment-logs/' --exclude='installer-logs/' --exclude='database.db' --exclude='.env' --exclude='logs/' "$current_dir/" "$target_dir/" >/dev/null 2>&1
     else
         # Copy all files except preserved ones
-        find "$current_dir" -maxdepth 1 -type f ! -name "database.db" ! -name ".env" -exec sudo cp {} "$target_dir/" \;
+        find "$current_dir" -maxdepth 1 -type f ! -name "database.db" ! -name ".env" -exec sudo cp {} "$target_dir/" \; 2>/dev/null
         
         # Copy directories except excluded ones (but include .git for update checking)
         for dir in "$current_dir"/*/; do
@@ -431,7 +431,7 @@ update_systemd_service() {
             dirname=$(basename "$dir")
             case "$dirname" in
                 "deployment-logs"|"installer-logs"|"logs") continue ;;
-                *) sudo cp -r "$dir" "$target_dir/" ;;
+                *) sudo cp -r "$dir" "$target_dir/" 2>/dev/null ;;
             esac
         done
     fi
@@ -452,34 +452,24 @@ update_systemd_service() {
     fi
     
     # Set proper ownership and permissions
-    print_info "Setting permissions for $service_user..."
-    sudo chown -R "$service_user:$service_user" "$target_dir"
-    sudo chmod -R 755 "$target_dir"
+    print_info "Setting permissions..."
+    sudo chown -R "$service_user:$service_user" "$target_dir" 2>/dev/null
+    sudo chmod -R 755 "$target_dir" 2>/dev/null
     
     # Ensure specific files have proper permissions
-    [[ -f "$target_dir/.env" ]] && sudo chmod 600 "$target_dir/.env"
+    [[ -f "$target_dir/.env" ]] && sudo chmod 600 "$target_dir/.env" 2>/dev/null
     
     # Ensure directories exist and have proper permissions
-    sudo mkdir -p "$target_dir/logs" "$target_dir/deployment-logs"
-    sudo chown "$service_user:$service_user" "$target_dir/logs" "$target_dir/deployment-logs"
+    sudo mkdir -p "$target_dir/logs" "$target_dir/deployment-logs" 2>/dev/null
+    sudo chown "$service_user:$service_user" "$target_dir/logs" "$target_dir/deployment-logs" 2>/dev/null
     
     # Update dependencies in target directory
-    print_info "Updating dependencies in deployed location..."
+    print_info "Updating dependencies..."
     cd "$target_dir" || return 1
-    if sudo -u "$service_user" bundle install; then
-        print_success "Dependencies updated successfully"
+    if sudo -u "$service_user" bundle install --quiet >/dev/null 2>&1; then
+        print_success "Dependencies updated"
     else
         print_warning "Failed to update dependencies, continuing anyway"
-    fi
-    cd "$current_dir" || return 1
-    
-    # Run migrations in target directory
-    print_info "Running database migrations..."
-    cd "$target_dir" || return 1
-    if sudo -u "$service_user" ruby lib/migrations.rb; then
-        print_success "Database migrations completed"
-    else
-        print_warning "Database migration failed, continuing anyway"
     fi
     cd "$current_dir" || return 1
     
@@ -858,9 +848,10 @@ update_app() {
     if command_exists git && [[ -d ".git" ]]; then
         log_message "INFO" "Git repository detected, pulling latest changes"
         print_info "Pulling latest changes..."
-        log_command "git pull origin main"
-        if git pull origin main; then
+        log_command "git pull origin main --quiet"
+        if git pull origin main --quiet >/dev/null 2>&1; then
             log_message "SUCCESS" "Git pull completed successfully"
+            print_success "Code updated from repository"
         else
             log_message "WARNING" "Git pull failed, continuing anyway"
             print_warning "Git pull failed, continuing anyway"

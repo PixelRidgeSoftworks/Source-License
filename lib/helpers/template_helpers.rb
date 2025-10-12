@@ -22,6 +22,7 @@ module TemplateHelpers
 
   # Truncate text with ellipsis
   def truncate(text, length = 100, suffix = '...')
+    return '' unless text
     return text if text.length <= length
 
     text[0..(length - 1)] + suffix

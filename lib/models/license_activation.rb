@@ -25,6 +25,11 @@ class LicenseActivation < Sequel::Model
     self.system_info = hash.to_json
   end
 
+  # Check if activation is active
+  def active?
+    !!active
+  end
+
   # Deactivate this activation
   def deactivate!
     update(active: false, deactivated_at: Time.now)

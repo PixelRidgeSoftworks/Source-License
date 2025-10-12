@@ -384,7 +384,7 @@ class LicenseValidator
           return SecureLicenseService.secure_error_response(failure_reason)
         end
 
-        # Create activation record with hashed machine data
+        # Create activation record with both original and hashed machine data
         activation_data = {
           license_id: license[:id],
           active: true,
@@ -393,12 +393,16 @@ class LicenseValidator
           user_agent: request_info[:user_agent],
         }
 
-        # Hash machine data before storage
+        # Store both original and hashed machine data
         if machine_fingerprint
+          activation_data[:machine_fingerprint] = machine_fingerprint
           activation_data[:machine_fingerprint_hash] = SecureLicenseService.hash_machine_data(machine_fingerprint)
         end
 
-        activation_data[:machine_id_hash] = SecureLicenseService.hash_machine_data(machine_id) if machine_id
+        if machine_id
+          activation_data[:machine_id] = machine_id
+          activation_data[:machine_id_hash] = SecureLicenseService.hash_machine_data(machine_id)
+        end
 
         # Insert activation and update license counter
         DB.transaction do

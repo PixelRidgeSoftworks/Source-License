@@ -63,8 +63,6 @@ GEM
     faker (3.5.2)
       i18n (>= 1.8.11, < 2)
     ffi (1.17.2-x64-mingw-ucrt)
-    ffi (1.17.2-x86_64-darwin)
-    ffi (1.17.2-x86_64-linux-gnu)
     fiddle (1.1.8)
     hashdiff (1.2.1)
     i18n (1.14.7)
@@ -87,6 +85,7 @@ GEM
       net-pop
       net-smtp
     mini_mime (1.1.5)
+    mini_portile2 (2.8.9)
     minitest (5.26.0)
     minitest-reporters (1.7.1)
       ansi
@@ -111,10 +110,6 @@ GEM
       net-protocol
     nio4r (2.7.4)
     nokogiri (1.18.10-x64-mingw-ucrt)
-      racc (~> 1.4)
-    nokogiri (1.18.10-x86_64-darwin)
-      racc (~> 1.4)
-    nokogiri (1.18.10-x86_64-linux-gnu)
       racc (~> 1.4)
     parallel (1.27.0)
     parser (3.3.9.0)
@@ -219,9 +214,8 @@ GEM
       sinatra (= 4.2.1)
       tilt (~> 2.0)
     smart_properties (1.17.0)
-    sqlite3 (2.7.4-x64-mingw-ucrt)
-    sqlite3 (2.7.4-x86_64-darwin)
-    sqlite3 (2.7.4-x86_64-linux-gnu)
+    sqlite3 (1.6.9)
+      mini_portile2 (~> 2.8.0)
     stripe (17.0.0)
     terminal-table (4.0.0)
       unicode-display_width (>= 1.1.1, < 4)
@@ -242,8 +236,6 @@ GEM
 
 PLATFORMS
   x64-mingw-ucrt
-  x86_64-darwin
-  x86_64-linux
 
 DEPENDENCIES
   bcrypt
@@ -281,7 +273,7 @@ DEPENDENCIES
   simplecov-console
   sinatra
   sinatra-contrib
-  sqlite3
+  sqlite3 (~> 1.6.9)
   stripe
   vcr
   webmock

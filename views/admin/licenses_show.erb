@@ -278,9 +278,15 @@ end %> mb-4">
                                 </td>
                                 <td>
                                     <% if activation.active? %>
-                                    <button class="btn btn-outline-danger btn-sm" onclick="deactivateLicense('<%= activation.machine_fingerprint %>')">
-                                        <i class="fas fa-times"></i> Deactivate
-                                    </button>
+                                        <% if activation.machine_fingerprint && !activation.machine_fingerprint.strip.empty? %>
+                                        <button class="btn btn-outline-danger btn-sm" onclick="deactivateLicense('<%= activation.machine_fingerprint %>')">
+                                            <i class="fas fa-times"></i> Deactivate
+                                        </button>
+                                        <% else %>
+                                        <button class="btn btn-outline-danger btn-sm" onclick="deactivateActivation(<%= activation.id %>)">
+                                            <i class="fas fa-times"></i> Deactivate
+                                        </button>
+                                        <% end %>
                                     <% end %>
                                 </td>
                             </tr>
@@ -510,6 +516,32 @@ function deactivateLicense(machineFingerprint) {
         .catch(error => {
             console.error('Error:', error);
             alert('An error occurred while deactivating the license.');
+        });
+    }
+}
+
+// Deactivate specific activation by ID
+function deactivateActivation(activationId) {
+    if (confirm('Are you sure you want to deactivate this activation?')) {
+        fetch(`/admin/licenses/<%= @license.id %>/deactivate`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({ activation_id: activationId })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while deactivating the activation.');
         });
     }
 }

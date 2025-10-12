@@ -19,7 +19,8 @@ gem 'sinatra-contrib'
 gem 'mysql2' # MySQL driver
 # gem 'pg', '~> 1.5'             # PostgreSQL driver (temporarily disabled)
 gem 'sequel'
-gem 'sqlite3' # SQLite driver for development/testing
+# SQLite3 - using specific version that compiles properly on Ruby 3.4
+gem 'sqlite3', '~> 1.6.9'
 
 # Authentication & Security
 gem 'bcrypt'

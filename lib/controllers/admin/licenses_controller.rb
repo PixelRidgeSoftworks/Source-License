@@ -152,6 +152,78 @@ module AdminControllers::LicensesController
       end
     end
 
+    # Deactivate license on specific machine (AJAX)
+    app.post '/admin/licenses/:id/deactivate' do
+      require_secure_admin_auth
+      content_type :json
+
+      license = License[params[:id]]
+      unless license
+        status 404
+        return { success: false, error: 'License not found' }.to_json
+      end
+
+      begin
+        data = JSON.parse(request.body.read)
+        machine_fingerprint = data['machine_fingerprint']
+        activation_id = data['activation_id']
+
+        # Handle deactivation by activation ID (for activations without machine fingerprints)
+        if activation_id
+          activation = license.license_activations_dataset.where(
+            id: activation_id,
+            active: true
+          ).first
+
+          unless activation
+            status 400
+            return { success: false, error: 'Active activation not found' }.to_json
+          end
+
+          # Deactivate the specific activation
+          activation.deactivate!
+          
+          # Update license activation count
+          license.update(activation_count: [0, license.activation_count - 1].max)
+
+          return { success: true, message: 'Activation deactivated successfully' }.to_json
+        end
+
+        # Handle deactivation by machine fingerprint (original functionality)
+        unless machine_fingerprint
+          status 400
+          return { success: false, error: 'Machine fingerprint or activation ID is required' }.to_json
+        end
+
+        # Find the activation to deactivate
+        activation = license.license_activations_dataset.where(
+          machine_fingerprint: machine_fingerprint,
+          active: true
+        ).first
+
+        unless activation
+          status 400
+          return { success: false, error: 'Active activation not found for this machine' }.to_json
+        end
+
+        # Deactivate the license on this machine
+        success = license.deactivate!(machine_fingerprint)
+
+        if success
+          { success: true, message: 'License deactivated successfully' }.to_json
+        else
+          status 400
+          { success: false, error: 'Failed to deactivate license' }.to_json
+        end
+      rescue JSON::ParserError
+        status 400
+        { success: false, error: 'Invalid JSON' }.to_json
+      rescue StandardError => e
+        status 500
+        { success: false, error: e.message }.to_json
+      end
+    end
+
     # Bulk license actions
     app.post '/admin/licenses/bulk-action' do
       require_secure_admin_auth

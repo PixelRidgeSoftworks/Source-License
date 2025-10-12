@@ -257,6 +257,12 @@ create_systemd_service() {
     
     # Set proper ownership and permissions
     print_info "Setting permissions for $service_user..."
+    
+    # Ensure parent directories have proper permissions for service user to access
+    sudo chmod 755 /opt 2>/dev/null || true
+    sudo chmod 755 "$target_dir"
+    
+    # Set ownership of the entire application directory
     sudo chown -R "$service_user:$service_user" "$target_dir"
     
     # Set directory permissions (755 = rwxr-xr-x)
@@ -464,6 +470,12 @@ update_systemd_service() {
     
     # Set proper ownership and permissions
     print_info "Setting permissions..."
+    
+    # Ensure parent directories have proper permissions for service user to access
+    sudo chmod 755 /opt 2>/dev/null || true
+    sudo chmod 755 "$target_dir"
+    
+    # Set ownership of the entire application directory
     sudo chown -R "$service_user:$service_user" "$target_dir" 2>/dev/null
     
     # Set directory permissions (755 = rwxr-xr-x)

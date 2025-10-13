@@ -79,31 +79,12 @@ jobs:
         echo "JWT_SECRET=codeql_test_jwt_secret" >> $GITHUB_ENV
         bundle install
 
-    - name: Set up Node.js
-      if: matrix.language == 'javascript'
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
-
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v3
       with:
         languages: ${{ matrix.language }}
         queries: security-extended
         config-file: ./.github/codeql/codeql-config.yml
-
-    - name: Setup test DB for Ruby analysis
-      if: matrix.language == 'ruby'
-      run: |
-        bundle exec ruby -e "
-          require './lib/database'
-          begin
-            SourceLicense::Database.setup
-            puts 'Database setup complete'
-          rescue => e
-            puts 'Database setup failed: #{e.message}'
-          end
-        " || echo "Continuing without database setup"
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v3

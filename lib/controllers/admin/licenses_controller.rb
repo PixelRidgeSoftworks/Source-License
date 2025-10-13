@@ -182,7 +182,7 @@ module AdminControllers::LicensesController
 
           # Deactivate the specific activation
           activation.deactivate!
-          
+
           # Update license activation count
           license.update(activation_count: [0, license.activation_count - 1].max)
 

@@ -261,5 +261,13 @@ map '/ready' do
   }
 end
 
-# Run the main application
-run SourceLicenseApp
+# Mount the secure API controller as the primary license API
+map '/api/license' do
+  run SecureApiController
+end
+
+# Mount the Swagger documentation controller
+map '/' do
+  use SwaggerController
+  run SourceLicenseApp
+end

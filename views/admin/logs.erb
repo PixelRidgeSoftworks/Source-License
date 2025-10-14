@@ -1,0 +1,571 @@
+<!-- System Logs Page -->
+<div class="container-fluid py-4">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 fw-bold text-light mb-0">
+            <i class="fas fa-file-alt me-2"></i>
+            System Logs
+        </h1>
+        <div class="d-flex gap-2">
+            <a href="/admin/logs/download" class="btn btn-outline-success">
+                <i class="fas fa-download me-1"></i>
+                Download Logs
+            </a>
+            <button class="btn btn-outline-primary" onclick="refreshLogs()">
+                <i class="fas fa-sync-alt me-1"></i>
+                Refresh
+            </button>
+        </div>
+    </div>
+
+    <!-- Log File Information -->
+    <% if @log_files && @log_files.any? %>
+    <div class="card bg-dark border-secondary mb-4">
+        <div class="card-header">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-folder me-2"></i>
+                Available Log Files
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <% @log_files.each do |log_file| %>
+                <div class="col-md-6 col-lg-4 mb-3">
+                    <div class="log-file-card p-3 border rounded">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="fw-bold text-light mb-1"><%= log_file[:name] %></h6>
+                                <small class="text-muted">
+                                    Size: <%= log_file[:size_formatted] %><br>
+                                    Modified: <%= log_file[:modified_formatted] %>
+                                </small>
+                            </div>
+                            <div class="text-end">
+                                <button class="btn btn-sm btn-outline-info" onclick="viewLogFile('<%= log_file[:name] %>')">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <% end %>
+            </div>
+        </div>
+    </div>
+    <% end %>
+
+    <!-- Log Controls -->
+    <div class="card bg-dark border-secondary mb-4">
+        <div class="card-body">
+            <div class="row align-items-end">
+                <div class="col-md-3">
+                    <label for="log-type" class="form-label text-light">Log Type</label>
+                    <select class="form-select" id="log-type" onchange="filterLogs()">
+                        <option value="all">All Logs</option>
+                        <option value="application">Application</option>
+                        <option value="error">Error</option>
+                        <option value="access">Access</option>
+                        <option value="payment">Payment</option>
+                        <option value="security">Security</option>
+                        <option value="license">License</option>
+                        <option value="system">System</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="log-level" class="form-label text-light">Log Level</label>
+                    <select class="form-select" id="log-level" onchange="filterLogs()">
+                        <option value="all">All Levels</option>
+                        <option value="DEBUG">Debug</option>
+                        <option value="INFO">Info</option>
+                        <option value="WARN">Warning</option>
+                        <option value="ERROR">Error</option>
+                        <option value="FATAL">Fatal</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="log-search" class="form-label text-light">Search</label>
+                    <input type="text" class="form-control" id="log-search" placeholder="Search messages..." onkeyup="searchLogs()" autocomplete="off">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label text-light">&nbsp;</label>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-primary" onclick="loadLogs()">
+                            <i class="fas fa-search me-1"></i>
+                            Filter
+                        </button>
+                        <button class="btn btn-secondary" onclick="clearFilters()">
+                            <i class="fas fa-times me-1"></i>
+                            Clear
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Log Entries -->
+    <div class="card bg-dark border-secondary">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-list me-2"></i>
+                Recent Log Entries
+            </h5>
+            <div class="d-flex align-items-center gap-3">
+                <small class="text-muted">
+                    <span id="log-count">0</span> entries
+                </small>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="auto-refresh">
+                    <label class="form-check-label text-light" for="auto-refresh">
+                        Auto-refresh
+                    </label>
+                </div>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div id="loading-indicator" class="text-center py-4 d-none">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="text-muted mt-2">Loading log entries...</p>
+            </div>
+
+            <div id="log-entries" class="log-entries-container">
+                <% if @recent_logs && @recent_logs.any? %>
+                    <% @recent_logs.each do |log_entry| %>
+                    <div class="log-entry" data-level="<%= log_entry[:level] %>" data-type="<%= log_entry[:log_type] %>">
+                        <div class="d-flex align-items-start p-3 border-bottom border-secondary">
+                            <div class="log-timestamp me-3">
+                                <small class="text-muted"><%= log_entry[:timestamp_formatted] %></small>
+                            </div>
+                            <div class="log-level me-3">
+                                <span class="badge bg-<%= log_entry[:level_class] %>"><%= log_entry[:level] %></span>
+                            </div>
+                            <div class="log-type me-3">
+                                <small class="text-info"><%= log_entry[:log_type] %></small>
+                            </div>
+                            <div class="log-message flex-grow-1">
+                                <code class="text-light"><%= log_entry[:message] %></code>
+                            </div>
+                            <div class="log-actions">
+                                <button class="btn btn-sm btn-outline-secondary" onclick="toggleLogDetails(this)" title="Toggle details">
+                                    <i class="fas fa-chevron-down"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="log-details d-none p-3 bg-black">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <small class="text-muted">
+                                        <strong>Timestamp:</strong> <%= log_entry[:timestamp_formatted] %><br>
+                                        <strong>Level:</strong> <%= log_entry[:level] %><br>
+                                        <strong>Type:</strong> <%= log_entry[:log_type] %>
+                                    </small>
+                                </div>
+                                <div class="col-md-6">
+                                    <small class="text-muted">
+                                        <strong>Line:</strong> <%= log_entry[:line_number] %><br>
+                                        <strong>Full Message:</strong><br>
+                                        <code class="text-light d-block mt-1"><%= log_entry[:message] %></code>
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <% end %>
+                <% else %>
+                    <div class="text-center py-5">
+                        <i class="fas fa-file-alt fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No log entries found</h5>
+                        <p class="text-muted">No log files are available or no entries match your criteria.</p>
+                    </div>
+                <% end %>
+            </div>
+
+            <!-- Load More Button -->
+            <div class="text-center py-3 border-top border-secondary" id="load-more-section" style="display: none;">
+                <button class="btn btn-outline-primary" onclick="loadMoreLogs()">
+                    <i class="fas fa-chevron-down me-1"></i>
+                    Load More Entries
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.log-entries-container {
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+.log-entry {
+    transition: background-color 0.2s ease;
+}
+
+.log-entry:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.log-file-card {
+    background-color: rgba(255, 255, 255, 0.05);
+    border-color: #495057 !important;
+    transition: all 0.2s ease;
+}
+
+.log-file-card:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-color: #6c757d !important;
+}
+
+.log-message code {
+    background: none;
+    border: none;
+    padding: 0;
+    font-size: 0.9rem;
+    word-wrap: break-word;
+    white-space: pre-wrap;
+}
+
+.log-timestamp {
+    min-width: 120px;
+    font-family: monospace;
+}
+
+.log-level {
+    min-width: 80px;
+}
+
+.log-type {
+    min-width: 100px;
+}
+
+/* Scrollbar styling for dark theme */
+.log-entries-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+.log-entries-container::-webkit-scrollbar-track {
+    background: #2c3e50;
+}
+
+.log-entries-container::-webkit-scrollbar-thumb {
+    background: #495057;
+    border-radius: 4px;
+}
+
+.log-entries-container::-webkit-scrollbar-thumb:hover {
+    background: #6c757d;
+}
+</style>
+
+<script>
+let currentOffset = 0;
+let isLoading = false;
+let autoRefreshInterval = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    updateLogCount();
+    setupAutoRefresh();
+});
+
+function loadLogs() {
+    if (isLoading) return;
+
+    isLoading = true;
+    currentOffset = 0;
+
+    showLoading(true);
+
+    const logType = document.getElementById('log-type').value;
+    const logLevel = document.getElementById('log-level').value;
+    const searchTerm = document.getElementById('log-search').value;
+
+    const params = new URLSearchParams();
+    if (logType !== 'all') params.append('type', logType);
+    if (logLevel !== 'all') params.append('level', logLevel);
+    if (searchTerm) params.append('search', searchTerm);
+    params.append('limit', '50');
+    params.append('offset', currentOffset.toString());
+
+    fetch(`/admin/logs/api?${params.toString()}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                renderLogEntries(data.logs, false);
+                currentOffset = data.logs.length;
+
+                // Show load more button if we got a full page
+                const loadMoreSection = document.getElementById('load-more-section');
+                if (data.logs.length >= 50) {
+                    loadMoreSection.style.display = 'block';
+                } else {
+                    loadMoreSection.style.display = 'none';
+                }
+            } else {
+                console.error('Failed to load logs:', data.error);
+                showError('Failed to load logs: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error loading logs:', error);
+            showError('Error loading logs: ' + error.message);
+        })
+        .finally(() => {
+            isLoading = false;
+            showLoading(false);
+        });
+}
+
+function loadMoreLogs() {
+    if (isLoading) return;
+
+    isLoading = true;
+    showLoading(true);
+
+    const logType = document.getElementById('log-type').value;
+    const logLevel = document.getElementById('log-level').value;
+    const searchTerm = document.getElementById('log-search').value;
+
+    const params = new URLSearchParams();
+    if (logType !== 'all') params.append('type', logType);
+    if (logLevel !== 'all') params.append('level', logLevel);
+    if (searchTerm) params.append('search', searchTerm);
+    params.append('limit', '50');
+    params.append('offset', currentOffset.toString());
+
+    fetch(`/admin/logs/api?${params.toString()}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                renderLogEntries(data.logs, true);
+                currentOffset += data.logs.length;
+
+                // Hide load more button if we got less than a full page
+                const loadMoreSection = document.getElementById('load-more-section');
+                if (data.logs.length < 50) {
+                    loadMoreSection.style.display = 'none';
+                }
+            } else {
+                console.error('Failed to load more logs:', data.error);
+                showError('Failed to load more logs: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error loading more logs:', error);
+            showError('Error loading more logs: ' + error.message);
+        })
+        .finally(() => {
+            isLoading = false;
+            showLoading(false);
+        });
+}
+
+function renderLogEntries(logs, append = false) {
+    const container = document.getElementById('log-entries');
+
+    if (!append) {
+        container.innerHTML = '';
+    }
+
+    if (logs.length === 0 && !append) {
+        container.innerHTML = `
+            <div class="text-center py-5">
+                <i class="fas fa-file-alt fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">No log entries found</h5>
+                <p class="text-muted">No entries match your current filter criteria.</p>
+            </div>
+        `;
+        updateLogCount();
+        return;
+    }
+
+    logs.forEach(log => {
+        const logElement = document.createElement('div');
+        logElement.className = 'log-entry';
+        logElement.setAttribute('data-level', log.level);
+        logElement.setAttribute('data-type', log.log_type);
+
+        logElement.innerHTML = `
+            <div class="d-flex align-items-start p-3 border-bottom border-secondary">
+                <div class="log-timestamp me-3">
+                    <small class="text-muted">${log.timestamp_formatted}</small>
+                </div>
+                <div class="log-level me-3">
+                    <span class="badge bg-${log.level_class}">${log.level}</span>
+                </div>
+                <div class="log-type me-3">
+                    <small class="text-info">${log.log_type}</small>
+                </div>
+                <div class="log-message flex-grow-1">
+                    <code class="text-light">${escapeHtml(log.message)}</code>
+                </div>
+                <div class="log-actions">
+                    <button class="btn btn-sm btn-outline-secondary" onclick="toggleLogDetails(this)" title="Toggle details">
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="log-details d-none p-3 bg-black">
+                <div class="row">
+                    <div class="col-md-6">
+                        <small class="text-muted">
+                            <strong>Timestamp:</strong> ${log.timestamp_formatted}<br>
+                            <strong>Level:</strong> ${log.level}<br>
+                            <strong>Type:</strong> ${log.log_type}
+                        </small>
+                    </div>
+                    <div class="col-md-6">
+                        <small class="text-muted">
+                            <strong>Line:</strong> ${log.line_number}<br>
+                            <strong>Full Message:</strong><br>
+                            <code class="text-light d-block mt-1">${escapeHtml(log.message)}</code>
+                        </small>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        container.appendChild(logElement);
+    });
+
+    updateLogCount();
+}
+
+function filterLogs() {
+    const logLevel = document.getElementById('log-level').value;
+    const logEntries = document.querySelectorAll('.log-entry');
+
+    logEntries.forEach(entry => {
+        const entryLevel = entry.getAttribute('data-level');
+        const levelMatch = logLevel === 'all' || entryLevel === logLevel;
+
+        if (levelMatch) {
+            entry.style.display = '';
+        } else {
+            entry.style.display = 'none';
+        }
+    });
+
+    updateLogCount();
+}
+
+function searchLogs() {
+    const searchTerm = document.getElementById('log-search').value.toLowerCase();
+    const logEntries = document.querySelectorAll('.log-entry');
+
+    logEntries.forEach(entry => {
+        const message = entry.querySelector('.log-message code').textContent.toLowerCase();
+        const messageMatch = !searchTerm || message.includes(searchTerm);
+
+        if (messageMatch && entry.style.display !== 'none') {
+            entry.style.display = '';
+        } else if (!messageMatch) {
+            entry.style.display = 'none';
+        }
+    });
+
+    updateLogCount();
+}
+
+function clearFilters() {
+    document.getElementById('log-type').value = 'all';
+    document.getElementById('log-level').value = 'all';
+    document.getElementById('log-search').value = '';
+
+    const logEntries = document.querySelectorAll('.log-entry');
+    logEntries.forEach(entry => {
+        entry.style.display = '';
+    });
+
+    updateLogCount();
+}
+
+function refreshLogs() {
+    loadLogs();
+}
+
+function toggleLogDetails(button) {
+    const logEntry = button.closest('.log-entry');
+    const details = logEntry.querySelector('.log-details');
+    const icon = button.querySelector('i');
+
+    if (details.classList.contains('d-none')) {
+        details.classList.remove('d-none');
+        icon.classList.remove('fa-chevron-down');
+        icon.classList.add('fa-chevron-up');
+    } else {
+        details.classList.add('d-none');
+        icon.classList.remove('fa-chevron-up');
+        icon.classList.add('fa-chevron-down');
+    }
+}
+
+function viewLogFile(filename) {
+    alert(`Viewing ${filename} - This feature could open a modal or separate page with the full log file content.`);
+}
+
+function updateLogCount() {
+    const visibleEntries = document.querySelectorAll('.log-entry[style=""], .log-entry:not([style])').length;
+    document.getElementById('log-count').textContent = visibleEntries;
+}
+
+function setupAutoRefresh() {
+    const autoRefreshCheckbox = document.getElementById('auto-refresh');
+
+    autoRefreshCheckbox.addEventListener('change', function() {
+        if (this.checked) {
+            autoRefreshInterval = setInterval(refreshLogs, 30000); // Refresh every 30 seconds
+        } else {
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+                autoRefreshInterval = null;
+            }
+        }
+    });
+}
+
+function showLoading(show) {
+    const indicator = document.getElementById('loading-indicator');
+    if (show) {
+        indicator.classList.remove('d-none');
+    } else {
+        indicator.classList.add('d-none');
+    }
+}
+
+function showError(message) {
+    // Create a temporary alert
+    const alert = document.createElement('div');
+    alert.className = 'alert alert-danger alert-dismissible fade show position-fixed';
+    alert.style.cssText = 'top: 20px; right: 20px; z-index: 9999; max-width: 400px;';
+    alert.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+
+    document.body.appendChild(alert);
+
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+        if (alert.parentNode) {
+            alert.remove();
+        }
+    }, 5000);
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// Initialize logs on page load
+document.addEventListener('DOMContentLoaded', function() {
+    // Only load logs if we don't have any pre-rendered logs
+    const logEntries = document.querySelectorAll('.log-entry');
+    if (logEntries.length === 0) {
+        loadLogs();
+    }
+});
+</script>

@@ -10,6 +10,7 @@ class User < Sequel::Model
 
   set_dataset :users
   one_to_many :licenses
+  one_to_many :billing_addresses
 
   # Hash password before saving
   def password=(new_password)

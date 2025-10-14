@@ -1,0 +1,312 @@
+<% @page_title = "Two-Factor Authentication" %>
+
+<div class="container my-4">
+    <div class="row justify-content-center">
+        <div class="col-xl-10 col-lg-12">
+            <!-- Back Navigation -->
+            <div class="mb-3">
+                <a href="/dashboard" class="btn btn-outline-secondary btn-sm">
+                    <i class="fas fa-arrow-left me-2"></i>
+                    Back to Dashboard
+                </a>
+            </div>
+
+            <!-- Header -->
+            <div class="d-flex align-items-center justify-content-between mb-4">
+                <div>
+                    <h1 class="h2 mb-1">
+                        <i class="fas fa-shield-alt text-primary"></i>
+                        Two-Factor Authentication
+                    </h1>
+                    <p class="text-muted mb-0">Secure your account with additional verification methods</p>
+                </div>
+                <div class="text-end">
+                    <% if user_has_2fa?(@current_user[:id]) %>
+                        <span class="badge bg-success fs-6">
+                            <i class="bi bi-check-circle"></i>
+                            2FA Enabled
+                        </span>
+                    <% else %>
+                        <span class="badge bg-warning fs-6">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            2FA Disabled
+                        </span>
+                    <% end %>
+                </div>
+            </div>
+
+            <!-- Flash Messages -->
+            <% if params[:error] %>
+                <div class="alert alert-danger alert-dismissible fade show">
+                    <i class="bi bi-exclamation-circle"></i>
+                    <%= h(params[:error]) %>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            <% end %>
+
+            <% if params[:message] %>
+                <div class="alert alert-success alert-dismissible fade show">
+                    <i class="bi bi-check-circle"></i>
+                    <%= h(params[:message]) %>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            <% end %>
+
+            <!-- 2FA Methods Overview -->
+            <div class="row mb-5">
+                <!-- TOTP Authenticator -->
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header d-flex align-items-center justify-content-between">
+                            <h5 class="mb-0">
+                                <i class="bi bi-phone text-primary"></i>
+                                Authenticator App
+                            </h5>
+                            <% if @totp_settings && @totp_settings[:enabled] %>
+                                <span class="badge bg-success">Enabled</span>
+                            <% else %>
+                                <span class="badge bg-secondary">Disabled</span>
+                            <% end %>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-muted mb-3">
+                                Use apps like Google Authenticator or Microsoft Authenticator to generate time-based codes.
+                            </p>
+
+                            <% if @totp_settings && @totp_settings[:enabled] %>
+                                <!-- TOTP is enabled -->
+                                <div class="mb-3">
+                                    <small class="text-success d-block mb-2">
+                                        <i class="bi bi-check-circle"></i>
+                                        Enabled on <%= @totp_settings[:enabled_at]&.strftime("%B %d, %Y") %>
+                                    </small>
+                                    <% if @totp_settings[:last_used_at] %>
+                                        <small class="text-muted d-block">
+                                            Last used: <%= time_ago(@totp_settings[:last_used_at]) %>
+                                        </small>
+                                    <% end %>
+                                </div>
+
+                                <div class="d-grid gap-2">
+                                    <!-- Disable TOTP Button -->
+                                    <button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#disableTotpModal">
+                                        <i class="bi bi-x-circle"></i>
+                                        Disable Authenticator
+                                    </button>
+                                </div>
+                            <% else %>
+                                <!-- TOTP is disabled -->
+                                <div class="d-grid">
+                                    <a href="/2fa/totp/setup" class="btn btn-primary">
+                                        <i class="bi bi-plus-circle"></i>
+                                        Set Up Authenticator
+                                    </a>
+                                </div>
+                            <% end %>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- WebAuthn Security Keys -->
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header d-flex align-items-center justify-content-between">
+                            <h5 class="mb-0">
+                                <i class="bi bi-key text-primary"></i>
+                                Security Keys
+                            </h5>
+                            <% if @webauthn_credentials && @webauthn_credentials.length > 0 %>
+                                <span class="badge bg-success"><%= @webauthn_credentials.length %></span>
+                            <% else %>
+                                <span class="badge bg-secondary">None</span>
+                            <% end %>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-muted mb-3">
+                                Hardware security keys, Windows Hello, Touch ID, and other FIDO2/WebAuthn devices.
+                            </p>
+
+                            <% if @webauthn_credentials && @webauthn_credentials.length > 0 %>
+                                <!-- Show registered keys -->
+                                <div class="mb-3">
+                                    <% @webauthn_credentials.each do |credential| %>
+                                        <div class="d-flex align-items-center justify-content-between mb-2 p-2 bg-body-secondary rounded">
+                                            <div>
+                                                <div class="fw-medium text-sm">
+                                                    <i class="bi bi-key-fill text-primary"></i>
+                                                    <%= h(credential[:nickname]) %>
+                                                </div>
+                                                <small class="text-muted">
+                                                    Added <%= credential[:created_at]&.strftime("%b %d, %Y") %>
+                                                    <% if credential[:last_used_at] %>
+                                                        • Last used <%= time_ago(credential[:last_used_at]) %>
+                                                    <% end %>
+                                                </small>
+                                            </div>
+                                            <form method="post" action="/2fa/webauthn/credentials/<%= credential[:id] %>" class="d-inline" onsubmit="return confirm('Remove this security key?')">
+                                                <input type="hidden" name="_method" value="delete">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    <% end %>
+                                </div>
+                            <% end %>
+
+                            <div class="d-grid">
+                                <a href="/2fa/webauthn/register" class="btn btn-primary">
+                                    <i class="bi bi-plus-circle"></i>
+                                    Add Security Key
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Backup Codes Section -->
+            <% if @totp_settings && @totp_settings[:enabled] %>
+                <div class="card mb-4">
+                    <div class="card-header d-flex align-items-center justify-content-between">
+                        <h5 class="mb-0">
+                            <i class="bi bi-list-ol text-warning"></i>
+                            Backup Codes
+                        </h5>
+                        <span class="badge bg-info"><%= @backup_codes_count %> remaining</span>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted mb-3">
+                            Backup codes can be used to access your account if you lose access to your other 2FA methods.
+                            Each code can only be used once.
+                        </p>
+
+                        <% if @backup_codes_count <= 2 %>
+                            <div class="alert alert-warning">
+                                <i class="bi bi-exclamation-triangle"></i>
+                                <strong>Low backup codes!</strong>
+                                You only have <%= @backup_codes_count %> backup codes remaining. Consider generating new ones.
+                            </div>
+                        <% end %>
+
+                        <button type="button" class="btn btn-outline-warning" data-bs-toggle="modal" data-bs-target="#regenerateBackupCodesModal">
+                            <i class="bi bi-arrow-clockwise"></i>
+                            Generate New Backup Codes
+                        </button>
+                    </div>
+                </div>
+            <% end %>
+
+            <!-- Security Information -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-info-circle text-info"></i>
+                        Security Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Why use 2FA?</h6>
+                            <ul class="text-muted small mb-3">
+                                <li>Protects against password breaches</li>
+                                <li>Prevents unauthorized access</li>
+                                <li>Meets enterprise security requirements</li>
+                                <li>Supports hardware security keys</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Supported Methods</h6>
+                            <ul class="text-muted small mb-3">
+                                <li><strong>TOTP:</strong> Google/Microsoft Authenticator</li>
+                                <li><strong>WebAuthn:</strong> Hardware keys, Windows Hello</li>
+                                <li><strong>Backup Codes:</strong> Emergency access</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <% if @current_user[:last_2fa_used_at] %>
+                        <div class="text-muted small">
+                            <i class="bi bi-clock"></i>
+                            Last 2FA verification: <%= time_ago(@current_user[:last_2fa_used_at]) %>
+                        </div>
+                    <% end %>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Disable TOTP Modal -->
+<% if @totp_settings && @totp_settings[:enabled] %>
+<div class="modal fade" id="disableTotpModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="/2fa/totp/disable">
+                <div class="modal-header">
+                    <h5 class="modal-title">Disable Authenticator App</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        <strong>Warning:</strong> This will disable your authenticator app and remove all backup codes.
+                        <% if @webauthn_credentials.empty? %>
+                            You will no longer have 2FA protection on your account.
+                        <% end %>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="current_password" class="form-label">Current Password</label>
+                        <input type="password" class="form-control" id="current_password" name="current_password" required autocomplete="off">
+                        <div class="form-text">Enter your current password to confirm this action.</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">Disable Authenticator</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<% end %>
+
+<!-- Regenerate Backup Codes Modal -->
+<% if @totp_settings && @totp_settings[:enabled] %>
+<div class="modal fade" id="regenerateBackupCodesModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="/2fa/backup-codes/regenerate">
+                <div class="modal-header">
+                    <h5 class="modal-title">Generate New Backup Codes</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i>
+                        This will generate new backup codes and invalidate all existing ones.
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="regenerate_password" class="form-label">Current Password</label>
+                        <input type="password" class="form-control" id="regenerate_password" name="current_password" required autocompletete="off">
+                        <div class="form-text">Enter your current password to confirm this action.</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning">Generate New Codes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<% end %>
+
+<style>
+.bg-body-secondary {
+    background-color: var(--surface-tertiary) !important;
+}
+</style>

@@ -27,6 +27,11 @@ gem 'bcrypt'
 gem 'jwt'
 gem 'rack-attack'
 
+# Two-Factor Authentication
+gem 'rotp'           # TOTP (Time-based One-Time Password)
+gem 'rqrcode'        # QR Code generation for TOTP setup
+gem 'webauthn'       # WebAuthn for hardware keys and biometric auth
+
 # HTTP & JSON
 gem 'json'
 gem 'net-http'
@@ -42,6 +47,11 @@ gem 'stripe'
 
 # Utilities
 gem 'securerandom'
+
+# API Documentation
+gem 'rswag'
+gem 'rswag-api'
+gem 'rswag-ui'
 
 # Optional caching and session storage
 gem 'redis', require: false

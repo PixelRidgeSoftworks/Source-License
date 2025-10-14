@@ -1,0 +1,371 @@
+<% @page_title = "Set Up Authenticator App" %>
+
+<div class="container my-4">
+    <div class="row justify-content-center">
+        <div class="col-xl-8 col-lg-10 col-md-12">
+            <!-- Header -->
+            <div class="text-center mb-4">
+                <h1 class="h2 mb-2">
+                    <i class="bi bi-phone text-primary"></i>
+                    Set Up Authenticator App
+                </h1>
+                <p class="text-muted">Add an extra layer of security to your account</p>
+            </div>
+
+            <!-- Error Message -->
+            <% if @error %>
+                <div class="alert alert-danger alert-dismissible fade show mb-4">
+                    <i class="bi bi-exclamation-circle"></i>
+                    <%= h(@error) %>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            <% end %>
+
+            <!-- Setup Steps -->
+            <div class="card">
+                <div class="card-body p-4">
+                    <!-- Step 1: Download App -->
+                    <div class="setup-step mb-5">
+                        <div class="d-flex align-items-start mb-3">
+                            <div class="step-number me-3">1</div>
+                            <div>
+                                <h5 class="mb-2">Download an Authenticator App</h5>
+                                <p class="text-muted mb-3">
+                                    Install one of these apps on your phone or tablet:
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-4">
+                                <div class="auth-app-card p-3 border rounded text-center">
+                                    <i class="fab fa-google text-primary fs-2 mb-2"></i>
+                                    <h6 class="mb-1">Google Authenticator</h6>
+                                    <small class="text-muted">iOS & Android</small>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="auth-app-card p-3 border rounded text-center">
+                                    <i class="fab fa-microsoft text-primary fs-2 mb-2"></i>
+                                    <h6 class="mb-1">Microsoft Authenticator</h6>
+                                    <small class="text-muted">iOS & Android</small>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="auth-app-card p-3 border rounded text-center">
+                                    <i class="bi bi-shield-check text-primary fs-2 mb-2"></i>
+                                    <h6 class="mb-1">Authy</h6>
+                                    <small class="text-muted">iOS & Android</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 2: Scan QR Code -->
+                    <div class="setup-step mb-5">
+                        <div class="d-flex align-items-start mb-3">
+                            <div class="step-number me-3">2</div>
+                            <div class="flex-grow-1">
+                                <h5 class="mb-2">Scan QR Code</h5>
+                                <p class="text-muted mb-3">
+                                    Open your authenticator app and scan this QR code:
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="row align-items-center">
+                            <div class="col-md-6 text-center">
+                                <!-- QR Code -->
+                                <div class="qr-container mb-3">
+                                    <div class="qr-code-wrapper p-3 bg-white rounded d-inline-block">
+                                        <%= @qr_code %>
+                                    </div>
+                                </div>
+                                <small class="text-muted">Scan with your authenticator app</small>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="manual-entry-card p-3 bg-body-secondary rounded">
+                                    <h6 class="mb-2">Can't scan? Enter manually:</h6>
+                                    <div class="mb-2">
+                                        <small class="text-muted d-block">Secret Key:</small>
+                                        <div class="d-flex align-items-center">
+                                            <code class="flex-grow-1 user-select-all bg-dark text-light p-2 rounded small" id="secretKey"><%= @secret %></code>
+                                            <button type="button" class="btn btn-sm btn-outline-primary ms-2" onclick="copySecret()" title="Copy to clipboard">
+                                                <i class="bi bi-clipboard"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="mb-2">
+                                        <small class="text-muted d-block">Account:</small>
+                                        <code class="small"><%= @current_user[:email] %></code>
+                                    </div>
+                                    <div>
+                                        <small class="text-muted d-block">Issuer:</small>
+                                        <code class="small">Source-License</code>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 3: Verify -->
+                    <div class="setup-step">
+                        <div class="d-flex align-items-start mb-3">
+                            <div class="step-number me-3">3</div>
+                            <div>
+                                <h5 class="mb-2">Verify Setup</h5>
+                                <p class="text-muted mb-3">
+                                    Enter the 6-digit code from your authenticator app:
+                                </p>
+                            </div>
+                        </div>
+
+                        <form method="post" action="/2fa/totp/enable" id="totpVerifyForm">
+                            <div class="row align-items-end">
+                                <div class="col-md-8">
+                                    <label for="token" class="form-label">Verification Code</label>
+                                    <input type="text"
+                                           class="form-control form-control-lg text-center"
+                                           id="token"
+                                           name="token"
+                                           placeholder="000000"
+                                           maxlength="6"
+                                           pattern="[0-9]{6}"
+                                           autocomplete="off"
+                                           required>
+                                    <div class="form-text">Enter the 6-digit code from your app</div>
+                                </div>
+                                <div class="col-md-4">
+                                    <button type="submit" class="btn btn-primary btn-lg w-100" id="verifyButton">
+                                        <i class="bi bi-check-circle"></i>
+                                        Verify & Enable
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="card-footer bg-body-secondary">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <small class="text-muted">
+                                <i class="bi bi-info-circle"></i>
+                                The code changes every 30 seconds. Make sure your device's time is correct.
+                            </small>
+                        </div>
+                        <div class="col-auto">
+                            <a href="/2fa" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left"></i>
+                                Back to 2FA Settings
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Help Section -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="bi bi-question-circle text-info"></i>
+                        Need Help?
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Troubleshooting</h6>
+                            <ul class="small text-muted mb-0">
+                                <li>Make sure your device's time is synchronized</li>
+                                <li>Check that you entered the code correctly</li>
+                                <li>Wait for a new code if the current one expired</li>
+                                <li>Ensure the app is properly configured</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Recommended Apps</h6>
+                            <ul class="small text-muted mb-0">
+                                <li><strong>Google Authenticator:</strong> Simple and reliable</li>
+                                <li><strong>Microsoft Authenticator:</strong> Cloud backup support</li>
+                                <li><strong>Authy:</strong> Multi-device sync</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.step-number {
+    width: 40px;
+    height: 40px;
+    background: var(--gradient-primary);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+
+.auth-app-card {
+    transition: all 0.3s ease;
+    background: var(--surface-secondary);
+    border: 1px solid var(--border-default) !important;
+}
+
+.auth-app-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow);
+    border-color: var(--accent-primary) !important;
+}
+
+.qr-code-wrapper {
+    display: inline-block;
+    box-shadow: var(--shadow);
+}
+
+.qr-code-wrapper svg {
+    display: block;
+    max-width: 200px;
+    height: auto;
+}
+
+.manual-entry-card {
+    background: var(--surface-tertiary) !important;
+    border: 1px solid var(--border-default);
+}
+
+.bg-body-secondary {
+    background-color: var(--surface-tertiary) !important;
+}
+
+#token {
+    font-family: 'Courier New', monospace;
+    letter-spacing: 0.1em;
+    font-size: 1.5rem;
+}
+
+.user-select-all {
+    user-select: all;
+}
+
+/* Loading state for verify button */
+.btn-loading {
+    position: relative;
+    color: transparent !important;
+}
+
+.btn-loading::after {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    top: 50%;
+    left: 50%;
+    margin-left: -10px;
+    margin-top: -10px;
+    border: 2px solid #ffffff;
+    border-radius: 50%;
+    border-top-color: transparent;
+    animation: spin 1s ease-in-out infinite;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const tokenInput = document.getElementById('token');
+    const verifyForm = document.getElementById('totpVerifyForm');
+    const verifyButton = document.getElementById('verifyButton');
+
+    // Auto-format token input (add spaces for readability)
+    tokenInput.addEventListener('input', function(e) {
+        let value = e.target.value.replace(/\D/g, ''); // Remove non-digits
+        if (value.length > 6) {
+            value = value.substring(0, 6);
+        }
+        e.target.value = value;
+    });
+
+    // Auto-submit when 6 digits are entered
+    tokenInput.addEventListener('input', function(e) {
+        if (e.target.value.length === 6) {
+            // Small delay to allow user to see the complete code
+            setTimeout(() => {
+                if (document.activeElement === tokenInput) {
+                    verifyForm.submit();
+                }
+            }, 500);
+        }
+    });
+
+    // Form submission handling
+    verifyForm.addEventListener('submit', function(e) {
+        verifyButton.classList.add('btn-loading');
+        verifyButton.disabled = true;
+    });
+
+    // Focus on token input
+    tokenInput.focus();
+
+    // Countdown timer for code refresh (visual indicator)
+    function updateCountdown() {
+        const now = Math.floor(Date.now() / 1000);
+        const timeLeft = 30 - (now % 30);
+        const progress = (timeLeft / 30) * 100;
+
+        // Update any progress indicators if needed
+        // This could be enhanced with a visual countdown
+    }
+
+    setInterval(updateCountdown, 1000);
+    updateCountdown();
+});
+
+// Copy secret key to clipboard
+function copySecret() {
+    const secretKey = document.getElementById('secretKey');
+    const text = secretKey.textContent;
+
+    navigator.clipboard.writeText(text).then(() => {
+        // Show success feedback
+        const button = event.target.closest('button');
+        const originalIcon = button.innerHTML;
+        button.innerHTML = '<i class="bi bi-check"></i>';
+        button.classList.remove('btn-outline-primary');
+        button.classList.add('btn-success');
+
+        setTimeout(() => {
+            button.innerHTML = originalIcon;
+            button.classList.remove('btn-success');
+            button.classList.add('btn-outline-primary');
+        }, 2000);
+
+        // Show toast notification
+        showNotification('Secret key copied to clipboard!', 'success');
+    }).catch(() => {
+        showNotification('Failed to copy to clipboard', 'error');
+    });
+}
+
+// Simple notification function
+function showNotification(message, type) {
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type === 'success' ? 'success' : 'danger'} position-fixed`;
+    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; max-width: 300px;';
+    notification.innerHTML = `<i class="bi bi-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i> ${message}`;
+
+    document.body.appendChild(notification);
+
+    setTimeout(() => {
+        notification.style.transition = 'opacity 0.5s ease';
+        notification.style.opacity = '0';
+        setTimeout(() => notification.remove(), 500);
+    }, 3000);
+}
+</script>

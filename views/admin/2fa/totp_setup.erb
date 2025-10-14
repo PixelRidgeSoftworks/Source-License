@@ -1,0 +1,352 @@
+<!-- Admin TOTP Setup Page -->
+<div class="container-fluid">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <!-- Header -->
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+          <h2 class="mb-1">
+            <i class="fas fa-mobile-alt text-primary me-2"></i>Set Up Authenticator App (TOTP)
+          </h2>
+          <p class="text-muted mb-0">Configure your authenticator app to generate verification codes</p>
+        </div>
+        <a href="/admin/2fa/personal" class="btn btn-outline-secondary">
+          <i class="fas fa-arrow-left me-2"></i>Back to 2FA Settings
+        </a>
+      </div>
+
+      <!-- Error Messages -->
+      <% if @error %>
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+          <i class="fas fa-exclamation-triangle me-2"></i>
+          <%= h(@error) %>
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+      <% end %>
+
+      <!-- Main Setup Card -->
+      <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+          <h5 class="mb-0">
+            <i class="fas fa-qrcode me-2"></i>Admin TOTP Configuration
+          </h5>
+        </div>
+        <div class="card-body">
+          <div class="row g-4">
+            <!-- Left Column: QR Code -->
+            <div class="col-md-6">
+              <h6 class="mb-3">
+                <i class="fas fa-camera me-2"></i>Step 1: Scan QR Code
+              </h6>
+              <div class="text-center mb-3">
+                <div class="border rounded p-3 bg-white d-inline-block">
+                  <%= @qr_code %>
+                </div>
+              </div>
+              <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                <strong>Scan this QR code</strong> with your authenticator app:
+                <ul class="mb-0 mt-2 small">
+                  <li>Google Authenticator</li>
+                  <li>Microsoft Authenticator</li>
+                  <li>Authy</li>
+                  <li>1Password</li>
+                  <li>Any compatible TOTP app</li>
+                </ul>
+              </div>
+            </div>
+
+            <!-- Right Column: Manual Entry & Verification -->
+            <div class="col-md-6">
+              <h6 class="mb-3">
+                <i class="fas fa-keyboard me-2"></i>Step 2: Manual Entry (Optional)
+              </h6>
+
+              <div class="alert alert-secondary">
+                <strong>Can't scan the QR code?</strong><br>
+                Manually enter this secret in your authenticator app:
+                <div class="mt-2">
+                  <code class="bg-light p-2 rounded d-block text-center" style="font-size: 0.9rem; word-break: break-all;">
+                    <%= @secret %>
+                  </code>
+                </div>
+                <div class="mt-2 small">
+                  <strong>Account:</strong> Admin - <%= @current_admin[:email] %><br>
+                  <strong>Type:</strong> Time-based (TOTP)<br>
+                  <strong>Period:</strong> 30 seconds
+                </div>
+              </div>
+
+              <h6 class="mb-3 mt-4">
+                <i class="fas fa-check-circle me-2"></i>Step 3: Verify Setup
+              </h6>
+
+              <form method="post" action="/admin/2fa/totp/enable">
+                <div class="mb-3">
+                  <label for="token" class="form-label">Verification Code</label>
+                  <input type="text"
+                         class="form-control form-control-lg text-center"
+                         id="token"
+                         name="token"
+                         placeholder="000000"
+                         maxlength="6"
+                         pattern="[0-9]{6}"
+                         autocomplete="off"
+                         required>
+                  <div class="form-text">
+                    Enter the 6-digit code from your authenticator app
+                  </div>
+                </div>
+
+                <div class="d-grid gap-2">
+                  <button type="submit" class="btn btn-success btn-lg">
+                    <i class="fas fa-shield-alt me-2"></i>Enable TOTP Authentication
+                  </button>
+                  <a href="/admin/2fa/personal" class="btn btn-outline-secondary">
+                    Cancel Setup
+                  </a>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Security Information -->
+      <div class="row g-4 mt-2">
+        <div class="col-md-6">
+          <div class="card border-success">
+            <div class="card-header bg-success text-white">
+              <h6 class="mb-0">
+                <i class="fas fa-shield-check me-2"></i>Security Benefits
+              </h6>
+            </div>
+            <div class="card-body">
+              <ul class="list-unstyled mb-0 small">
+                <li class="mb-2">
+                  <i class="fas fa-check text-success me-2"></i>
+                  Protects against password-only attacks
+                </li>
+                <li class="mb-2">
+                  <i class="fas fa-check text-success me-2"></i>
+                  Works offline once configured
+                </li>
+                <li class="mb-2">
+                  <i class="fas fa-check text-success me-2"></i>
+                  Codes change every 30 seconds
+                </li>
+                <li class="mb-2">
+                  <i class="fas fa-check text-success me-2"></i>
+                  Industry standard security
+                </li>
+                <li>
+                  <i class="fas fa-check text-success me-2"></i>
+                  Compatible with multiple apps
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-6">
+          <div class="card border-info">
+            <div class="card-header bg-info text-white">
+              <h6 class="mb-0">
+                <i class="fas fa-lightbulb me-2"></i>Setup Tips
+              </h6>
+            </div>
+            <div class="card-body">
+              <ul class="list-unstyled mb-0 small">
+                <li class="mb-2">
+                  <i class="fas fa-arrow-right text-info me-2"></i>
+                  Set up on multiple devices for backup
+                </li>
+                <li class="mb-2">
+                  <i class="fas fa-arrow-right text-info me-2"></i>
+                  Keep your secret key safe and private
+                </li>
+                <li class="mb-2">
+                  <i class="fas fa-arrow-right text-info me-2"></i>
+                  Test the codes before finishing setup
+                </li>
+                <li class="mb-2">
+                  <i class="fas fa-arrow-right text-info me-2"></i>
+                  Generate backup codes after enabling
+                </li>
+                <li>
+                  <i class="fas fa-arrow-right text-info me-2"></i>
+                  Sync device time for accurate codes
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Important Notes -->
+      <div class="alert alert-warning mt-4">
+        <h6 class="alert-heading">
+          <i class="fas fa-exclamation-triangle me-2"></i>Important Notes
+        </h6>
+        <ul class="mb-0 small">
+          <li class="mb-2">
+            <strong>Keep your secret safe:</strong> Anyone with access to the QR code or secret key can generate codes for your account.
+          </li>
+          <li class="mb-2">
+            <strong>Device time sync:</strong> Ensure your device's time is accurate for codes to work properly.
+          </li>
+          <li class="mb-2">
+            <strong>Multiple devices:</strong> You can set up the same account on multiple authenticator apps using the same secret.
+          </li>
+          <li>
+            <strong>Backup plan:</strong> After enabling TOTP, make sure to generate backup recovery codes in case you lose access to your authenticator app.
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Auto-focus and input formatting -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const tokenInput = document.getElementById('token');
+
+  // Auto-focus the input
+  tokenInput.focus();
+
+  // Format input to only accept digits and limit to 6 characters
+  tokenInput.addEventListener('input', function(e) {
+    // Remove non-digits
+    let value = e.target.value.replace(/\D/g, '');
+
+    // Limit to 6 digits
+    if (value.length > 6) {
+      value = value.substring(0, 6);
+    }
+
+    e.target.value = value;
+  });
+
+  // Submit form when 6 digits are entered
+  tokenInput.addEventListener('input', function(e) {
+    if (e.target.value.length === 6) {
+      // Small delay to ensure user sees the complete input
+      setTimeout(function() {
+        e.target.form.submit();
+      }, 500);
+    }
+  });
+
+  // Handle paste events
+  tokenInput.addEventListener('paste', function(e) {
+    e.preventDefault();
+    const paste = (e.clipboardData || window.clipboardData).getData('text');
+    const digits = paste.replace(/\D/g, '').substring(0, 6);
+    e.target.value = digits;
+
+    if (digits.length === 6) {
+      setTimeout(function() {
+        e.target.form.submit();
+      }, 500);
+    }
+  });
+});
+</script>
+
+<!-- Custom Styles -->
+<style>
+.card {
+  border: 1px solid rgba(0,0,0,.125);
+  box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,.075);
+}
+
+.border-success {
+  border-color: #198754 !important;
+}
+
+.border-info {
+  border-color: #0dcaf0 !important;
+}
+
+#token {
+  font-family: 'Courier New', monospace;
+  font-size: 1.5rem;
+  letter-spacing: 0.2rem;
+  font-weight: bold;
+}
+
+#token::placeholder {
+  letter-spacing: 0.1rem;
+  opacity: 0.5;
+}
+
+.bg-light {
+  background-color: #f8f9fa !important;
+}
+
+code {
+  font-size: 0.875rem;
+}
+
+.alert {
+  border-radius: 0.375rem;
+}
+
+.btn-lg {
+  font-size: 1.125rem;
+  padding: 0.75rem 1.5rem;
+}
+
+@media (max-width: 768px) {
+  .container-fluid {
+    padding: 1rem;
+  }
+
+  .card-body {
+    padding: 1rem;
+  }
+
+  .row.g-4 {
+    --bs-gutter-x: 1rem;
+  }
+
+  #token {
+    font-size: 1.25rem;
+  }
+}
+
+/* QR Code styling */
+.card-body .border {
+  box-shadow: 0 0 0 1px rgba(0,0,0,.1);
+}
+
+/* Form focus states */
+#token:focus {
+  box-shadow: 0 0 0 0.2rem rgba(25, 135, 84, 0.25);
+  border-color: #198754;
+}
+
+/* Button hover effects */
+.btn:hover {
+  transform: translateY(-1px);
+  transition: transform 0.2s ease;
+}
+
+.btn-success:hover {
+  background-color: #157347;
+  border-color: #146c43;
+}
+
+/* Loading state for form submission */
+.btn[type="submit"]:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Success animation for complete code */
+#token.complete {
+  background-color: #d1e7dd;
+  border-color: #a3cfbb;
+}
+</style>

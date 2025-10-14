@@ -14,18 +14,53 @@ module ApiController
     # API ROUTES - Secure REST API
     # ==================================================
 
-    # Simple test endpoint for performance testing
+    # Basic API endpoints
+    test_endpoint_route(app)
+    ping_endpoint_route(app)
+    get_products_route(app)
+
+    # Order management routes
+    create_order_route(app)
+    create_free_order_route(app)
+    paypal_capture_route(app)
+    get_order_status_route(app)
+
+    # Authentication routes
+    api_auth_route(app)
+
+    # Webhook routes
+    webhook_route(app)
+
+    # Settings API routes
+    settings_categories_route(app)
+    settings_category_route(app)
+    setting_value_route(app)
+    update_setting_route(app)
+    bulk_update_settings_route(app)
+    test_configuration_route(app)
+    export_settings_route(app)
+    import_settings_route(app)
+    generate_env_route(app)
+    web_editable_settings_route(app)
+  end
+
+  # Simple test endpoint for performance testing
+  def self.test_endpoint_route(app)
     app.get '/api/test' do
       content_type :json
       '{"test":true,"fast":true}'
     end
+  end
 
-    # Minimal endpoint with no helpers or processing
+  # Minimal endpoint with no helpers or processing
+  def self.ping_endpoint_route(app)
     app.get '/api/ping' do
       'pong'
     end
+  end
 
-    # Get all products (for cart/checkout)
+  # Get all products (for cart/checkout)
+  def self.get_products_route(app)
     app.get '/api/products' do
       content_type :json
 
@@ -33,8 +68,10 @@ module ApiController
       products = Product.where(active: true).select(:id, :name, :price, :description).order(:name).all
       products.map(&:values).to_json
     end
+  end
 
-    # Create order (for checkout)
+  # Create order (for checkout)
+  def self.create_order_route(app)
     app.post '/api/orders' do
       content_type :json
 
@@ -133,8 +170,10 @@ module ApiController
         { success: false, error: e.message }.to_json
       end
     end
+  end
 
-    # Free order processing (for $0.00 orders)
+  # Free order processing (for $0.00 orders)
+  def self.create_free_order_route(app)
     app.post '/api/orders/free' do
       content_type :json
 
@@ -210,8 +249,10 @@ module ApiController
         { success: false, error: e.message }.to_json
       end
     end
+  end
 
-    # PayPal payment capture
+  # PayPal payment capture
+  def self.paypal_capture_route(app)
     app.post '/api/payment/paypal/capture' do
       content_type :json
 
@@ -258,8 +299,10 @@ module ApiController
         { success: false, error: e.message }.to_json
       end
     end
+  end
 
-    # API Authentication endpoint
+  # API Authentication endpoint
+  def self.api_auth_route(app)
     app.post '/api/auth' do
       content_type :json
 
@@ -271,93 +314,10 @@ module ApiController
         { success: false, error: 'Invalid credentials' }.to_json
       end
     end
+  end
 
-    # License validation API - Now using secure controller
-    app.get '/api/license/:key/validate' do
-      content_type :json
-
-      begin
-        # Extract request parameters
-        machine_fingerprint = params[:machine_fingerprint]
-        machine_id = params[:machine_id]
-        request_info = LicenseController.extract_request_info(request)
-
-        # Use secure license controller
-        result = LicenseController.validate_license(
-          params[:key],
-          machine_fingerprint,
-          machine_id,
-          request_info
-        )
-
-        # Set rate limit headers if available
-        if result[:rate_limit]
-          headers 'X-RateLimit-Remaining' => result[:rate_limit][:remaining].to_s,
-                  'X-RateLimit-Reset' => result[:rate_limit][:reset_at].to_s
-        end
-
-        # Set appropriate HTTP status
-        unless result[:valid]
-          status 400 if result[:error] && result[:error] != 'License not found'
-          status 404 if result[:error] == 'License not found'
-          status 429 if result[:error]&.include?('Rate limit')
-        end
-
-        result.to_json
-      rescue StandardError
-        status 500
-        { valid: false, error: 'Internal server error', timestamp: Time.now.iso8601 }.to_json
-      end
-    end
-
-    # License activation API - Now using secure controller
-    app.post '/api/license/:key/activate' do
-      content_type :json
-
-      begin
-        # Parse request body for machine_id and other data
-        request_body = request.body.read
-        request.body.rewind
-
-        activation_data = {}
-        activation_data = JSON.parse(request_body) unless request_body.empty?
-
-        machine_fingerprint = activation_data['machine_fingerprint'] || params[:machine_fingerprint]
-        machine_id = activation_data['machine_id'] || params[:machine_id]
-        request_info = LicenseController.extract_request_info(request)
-
-        # Use secure license controller
-        result = LicenseController.activate_license(
-          params[:key],
-          machine_fingerprint,
-          machine_id,
-          request_info
-        )
-
-        # Set rate limit headers if available
-        if result[:rate_limit]
-          headers 'X-RateLimit-Remaining' => result[:rate_limit][:remaining].to_s,
-                  'X-RateLimit-Reset' => result[:rate_limit][:reset_at].to_s
-        end
-
-        # Set appropriate HTTP status
-        unless result[:success]
-          status 404 if result[:error] == 'Invalid license'
-          status 400 if result[:error] && !result[:error].include?('Rate limit') && result[:error] != 'Invalid license'
-          status 429 if result[:error]&.include?('Rate limit')
-        end
-
-        result.to_json
-      rescue JSON::ParserError
-        status 400
-        { success: false, error: 'Invalid JSON in request body', timestamp: Time.now.iso8601 }.to_json
-      rescue StandardError
-        status 500
-        { success: false, error: 'Internal server error', timestamp: Time.now.iso8601 }.to_json
-      end
-    end
-
-    # Process payment webhook
+  # Process payment webhook
+  def self.webhook_route(app)
     app.post '/api/webhook/:provider' do
       content_type :json
 
@@ -373,8 +333,10 @@ module ApiController
 
       { success: true }.to_json
     end
+  end
 
-    # Get order status
+  # Get order status
+  def self.get_order_status_route(app)
     app.get '/api/orders/:id' do
       content_type :json
 
@@ -405,12 +367,10 @@ module ApiController
         license_keys: license_keys,
       }.to_json
     end
+  end
 
-    # ==================================================
-    # SETTINGS API ROUTES
-    # ==================================================
-
-    # Get all settings categories
+  # Get all settings categories
+  def self.settings_categories_route(app)
     app.get '/api/settings/categories' do
       require_secure_admin_auth
       content_type :json
@@ -425,8 +385,10 @@ module ApiController
 
       { success: true, categories: categories }.to_json
     end
+  end
 
-    # Get settings for a specific category
+  # Get settings for a specific category
+  def self.settings_category_route(app)
     app.get '/api/settings/:category' do
       require_secure_admin_auth
       content_type :json
@@ -441,8 +403,10 @@ module ApiController
 
       { success: true, category: category, settings: settings }.to_json
     end
+  end
 
-    # Get a specific setting value
+  # Get a specific setting value
+  def self.setting_value_route(app)
     app.get '/api/settings/:category/:key' do
       require_secure_admin_auth
       content_type :json
@@ -452,8 +416,10 @@ module ApiController
 
       { success: true, key: full_key, value: value }.to_json
     end
+  end
 
-    # Update a specific setting
+  # Update a specific setting
+  def self.update_setting_route(app)
     app.put '/api/settings/:category/:key' do
       require_secure_admin_auth
       content_type :json
@@ -476,8 +442,10 @@ module ApiController
         { success: false, error: e.message }.to_json
       end
     end
+  end
 
-    # Update multiple settings at once
+  # Update multiple settings at once
+  def self.bulk_update_settings_route(app)
     app.post '/api/settings/bulk-update' do
       require_secure_admin_auth
       content_type :json
@@ -516,8 +484,10 @@ module ApiController
         { success: false, error: e.message }.to_json
       end
     end
+  end
 
-    # Test configuration for a category
+  # Test configuration for a category
+  def self.test_configuration_route(app)
     app.post '/api/settings/:category/test' do
       require_secure_admin_auth
       content_type :json
@@ -527,8 +497,10 @@ module ApiController
 
       { success: true, category: category, test_results: test_results }.to_json
     end
+  end
 
-    # Export settings as YAML
+  # Export settings as YAML
+  def self.export_settings_route(app)
     app.get '/api/settings/export' do
       require_secure_admin_auth
       content_type 'application/x-yaml'
@@ -536,8 +508,10 @@ module ApiController
 
       SettingsManager.export_to_yaml
     end
+  end
 
-    # Import settings from YAML
+  # Import settings from YAML
+  def self.import_settings_route(app)
     app.post '/api/settings/import' do
       require_secure_admin_auth
       content_type :json
@@ -560,8 +534,10 @@ module ApiController
         { success: false, error: e.message }.to_json
       end
     end
+  end
 
-    # Generate .env file content
+  # Generate .env file content
+  def self.generate_env_route(app)
     app.get '/api/settings/generate-env' do
       require_secure_admin_auth
       content_type 'text/plain'
@@ -569,8 +545,10 @@ module ApiController
 
       SettingsManager.generate_env_file
     end
+  end
 
-    # Get web-editable settings only
+  # Get web-editable settings only
+  def self.web_editable_settings_route(app)
     app.get '/api/settings/web-editable' do
       require_secure_admin_auth
       content_type :json

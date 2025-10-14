@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative '../route_primitive'
+
 # Admin Customers Controller
 # Handles customer management operations
 
@@ -10,7 +12,18 @@ module AdminControllers::CustomersController
   end
 
   def self.setup_routes(app)
-    # Customer management
+    # Customer management routes
+    customers_list_route(app)
+    customer_details_route(app)
+    customer_toggle_status_route(app)
+    customer_edit_page_route(app)
+    customer_update_route(app)
+    customers_bulk_action_route(app)
+    customers_export_route(app)
+  end
+
+  # Customer management list with pagination and filters
+  def self.customers_list_route(app)
     app.get '/admin/customers' do
       require_secure_admin_auth
 
@@ -68,8 +81,10 @@ module AdminControllers::CustomersController
       @page_title = 'Manage Customers'
       erb :'admin/customers', layout: :'layouts/admin_layout'
     end
+  end
 
-    # View customer details
+  # View customer details
+  def self.customer_details_route(app)
     app.get '/admin/customers/:id' do
       require_secure_admin_auth
       @customer = User[params[:id]]
@@ -77,8 +92,10 @@ module AdminControllers::CustomersController
       @page_title = "Customer: #{@customer.display_name}"
       erb :'admin/customers_show', layout: :'layouts/admin_layout'
     end
+  end
 
-    # Toggle customer status (AJAX)
+  # Toggle customer status (AJAX)
+  def self.customer_toggle_status_route(app)
     app.post '/admin/customers/:id/toggle-status' do
       require_secure_admin_auth
       content_type :json
@@ -108,8 +125,10 @@ module AdminControllers::CustomersController
         { success: false, error: e.message }.to_json
       end
     end
+  end
 
-    # Edit customer form
+  # Edit customer form
+  def self.customer_edit_page_route(app)
     app.get '/admin/customers/:id/edit' do
       require_secure_admin_auth
       @customer = User[params[:id]]
@@ -117,8 +136,10 @@ module AdminControllers::CustomersController
       @page_title = "Edit Customer: #{@customer.display_name}"
       erb :'admin/customers_edit', layout: :'layouts/admin_layout'
     end
+  end
 
-    # Update customer details
+  # Update customer details
+  def self.customer_update_route(app)
     app.put '/admin/customers/:id' do
       require_secure_admin_auth
       require_csrf_token unless ENV['APP_ENV'] == 'test' || ENV['RACK_ENV'] == 'test'
@@ -163,8 +184,10 @@ module AdminControllers::CustomersController
         erb :'admin/customers_edit', layout: :'layouts/admin_layout'
       end
     end
+  end
 
-    # Bulk customer actions
+  # Bulk customer actions
+  def self.customers_bulk_action_route(app)
     app.post '/admin/customers/bulk-action' do
       require_secure_admin_auth
       content_type :json
@@ -230,8 +253,10 @@ module AdminControllers::CustomersController
         { success: false, error: e.message }.to_json
       end
     end
+  end
 
-    # Export customers
+  # Export customers
+  def self.customers_export_route(app)
     app.get '/admin/customers/export' do
       require_secure_admin_auth
       content_type 'text/csv'

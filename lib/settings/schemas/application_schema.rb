@@ -68,7 +68,7 @@ class Settings::Schemas::ApplicationSchema
       default: '1.0.0',
       category: 'application',
       description: 'Application version number',
-      web_editable: true,
+      web_editable: false,
     },
     'app.secret' => {
       type: 'password',
@@ -90,6 +90,15 @@ class Settings::Schemas::ApplicationSchema
       default: 4567,
       category: 'application',
       description: 'Application port number',
+      web_editable: true,
+    },
+
+    # Update Management
+    'app.skip_update_check' => {
+      type: 'boolean',
+      default: false,
+      category: 'application',
+      description: 'Skip automatic update checks on startup (WARNING: May expose security vulnerabilities)',
       web_editable: true,
     },
   }.freeze

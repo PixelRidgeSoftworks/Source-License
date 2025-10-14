@@ -25,8 +25,8 @@ module Auth::SecureAuth
 
     # Check for progressive ban
     if account_locked?(email)
-      ban_info = get_current_ban(email)
-      time_remaining = get_ban_time_remaining(email)
+      ban_info = current_ban(email)
+      time_remaining = ban_time_remaining(email)
       duration_text = format_ban_duration(time_remaining)
 
       log_auth_event('login_attempt_banned_account', {
@@ -90,7 +90,7 @@ module Auth::SecureAuth
         email: email,
         admin_id: admin.id,
         ip: request_info[:ip],
-        failed_attempts: get_failed_attempt_count(email),
+        failed_attempts: failed_attempt_count(email),
       })
       return security_response(false, 'Invalid credentials')
     end
@@ -131,8 +131,8 @@ module Auth::SecureAuth
 
     # Check for progressive ban
     if account_locked?(email)
-      ban_info = get_current_ban(email)
-      time_remaining = get_ban_time_remaining(email)
+      ban_info = current_ban(email)
+      time_remaining = ban_time_remaining(email)
       duration_text = format_ban_duration(time_remaining)
 
       log_auth_event('login_attempt_banned_account', {
@@ -186,7 +186,7 @@ module Auth::SecureAuth
         email: email,
         user_id: user.id,
         ip: request_info[:ip],
-        failed_attempts: get_failed_attempt_count(email),
+        failed_attempts: failed_attempt_count(email),
       })
       return security_response(false, 'Invalid credentials')
     end
@@ -216,7 +216,7 @@ module Auth::SecureAuth
   # Enhanced rate limiting
   def login_rate_exceeded?(email, ip)
     # Check both email and IP-based rate limiting
-    email_attempts = get_failed_attempts(email)
+    email_attempts = failed_attempts(email)
     recent_email_attempts = email_attempts.select do |attempt|
       Time.now - attempt[:timestamp] < LOGIN_ATTEMPT_WINDOW
     end

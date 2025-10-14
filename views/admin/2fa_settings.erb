@@ -1,0 +1,758 @@
+<% @page_title = "Two-Factor Authentication Settings" %>
+
+<!-- Modern 2FA Settings Header -->
+<div class="mb-5">
+    <div class="row align-items-center">
+        <div class="col">
+            <h1 class="display-6 fw-bold text-gradient mb-2">
+                <i class="fas fa-shield-alt me-3"></i>Two-Factor Authentication
+            </h1>
+            <p class="lead text-muted mb-0">Manage security settings and enforce 2FA policies</p>
+        </div>
+        <div class="col-auto">
+            <div class="btn-group" role="group">
+                <button class="btn btn-outline-info" onclick="generateSecurityReport()" data-bs-toggle="tooltip" title="Security Report">
+                    <i class="fas fa-chart-pie"></i>
+                </button>
+                <button class="btn btn-outline-warning" onclick="bulkResetUsers()" data-bs-toggle="tooltip" title="Bulk Reset">
+                    <i class="fas fa-users-cog"></i>
+                </button>
+                <button class="btn btn-outline-success" onclick="loadSettings()" data-bs-toggle="tooltip" title="Refresh">
+                    <i class="fas fa-sync-alt"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 2FA Statistics Dashboard -->
+<div class="row mb-4 g-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title opacity-75">Total Users</h6>
+                        <h3 class="mb-0" id="totalUsers">--</h3>
+                    </div>
+                    <i class="fas fa-users fa-2x opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card bg-success text-white h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title opacity-75">2FA Enabled</h6>
+                        <h3 class="mb-0" id="users2FAEnabled">--</h3>
+                        <small class="opacity-75" id="users2FAEnabledPercent">--</small>
+                    </div>
+                    <i class="fas fa-shield-check fa-2x opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card bg-info text-white h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title opacity-75">TOTP Users</h6>
+                        <h3 class="mb-0" id="totpUsers">--</h3>
+                    </div>
+                    <i class="fas fa-mobile-alt fa-2x opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card bg-warning text-white h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title opacity-75">WebAuthn Users</h6>
+                        <h3 class="mb-0" id="webauthnUsers">--</h3>
+                    </div>
+                    <i class="fas fa-key fa-2x opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main 2FA Settings -->
+<div class="row g-4">
+    <!-- Global 2FA Policies -->
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-cog me-2"></i>Global 2FA Policies
+                </h5>
+            </div>
+            <div class="card-body">
+                <form id="policyForm">
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">2FA Enforcement</label>
+                        <div class="form-check form-switch mb-2">
+                            <input class="form-check-input" type="checkbox" id="enforce2FAAllUsers">
+                            <label class="form-check-label" for="enforce2FAAllUsers">
+                                Require 2FA for all users
+                            </label>
+                        </div>
+                        <div class="form-check form-switch mb-2">
+                            <input class="form-check-input" type="checkbox" id="enforce2FANewUsers">
+                            <label class="form-check-label" for="enforce2FANewUsers">
+                                Require 2FA for new user registrations
+                            </label>
+                        </div>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="enforce2FAAdmins">
+                            <label class="form-check-label" for="enforce2FAAdmins">
+                                Require 2FA for all administrators
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="gracePeriod" class="form-label fw-bold">Grace Period (Days)</label>
+                        <input type="number" class="form-control" id="gracePeriod" min="0" max="90" value="7" autocomplete="off">
+                        <div class="form-text">Days users have to set up 2FA after it becomes required</div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Allowed 2FA Methods</label>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="allowTOTP" checked>
+                            <label class="form-check-label" for="allowTOTP">
+                                TOTP (Authenticator Apps)
+                            </label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="allowWebAuthn" checked>
+                            <label class="form-check-label" for="allowWebAuthn">
+                                WebAuthn (Security Keys & Biometrics)
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="allowBackupCodes" checked>
+                            <label class="form-check-label" for="allowBackupCodes">
+                                Backup Codes
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="backupCodeCount" class="form-label fw-bold">Backup Codes Count</label>
+                        <select class="form-select" id="backupCodeCount">
+                            <option value="8">8 codes</option>
+                            <option value="10" selected>10 codes</option>
+                            <option value="12">12 codes</option>
+                            <option value="16">16 codes</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i>Save Policies
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- WebAuthn Configuration -->
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-key me-2"></i>WebAuthn Configuration
+                </h5>
+            </div>
+            <div class="card-body">
+                <form id="webauthnForm">
+                    <div class="mb-3">
+                        <label for="webauthnOrigin" class="form-label fw-bold">Origin</label>
+                        <input type="url" class="form-control" id="webauthnOrigin"
+                               value="<%= request.base_url %>" readonly autocomplete="off">
+                        <div class="form-text">Automatically detected from current domain</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="webauthnRpName" class="form-label fw-bold">Relying Party Name</label>
+                        <input type="text" class="form-control" id="webauthnRpName"
+                               value="Source-License" autocomplete="off">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="webauthnTimeout" class="form-label fw-bold">Authentication Timeout (seconds)</label>
+                        <input type="number" class="form-control" id="webauthnTimeout"
+                               min="30" max="300" value="60" autocomplete="off">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">User Verification</label>
+                        <select class="form-select" id="webauthnUserVerification">
+                            <option value="preferred" selected>Preferred</option>
+                            <option value="required">Required</option>
+                            <option value="discouraged">Discouraged</option>
+                        </select>
+                        <div class="form-text">Whether to require user verification (PIN, biometric, etc.)</div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i>Save WebAuthn Config
+                    </button>
+                </form>
+
+                <hr>
+
+                <div class="mt-3">
+                    <h6 class="fw-bold mb-3">Test WebAuthn Configuration</h6>
+                    <button type="button" class="btn btn-outline-info" onclick="testWebAuthn()">
+                        <i class="fas fa-flask me-2"></i>Test WebAuthn Setup
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- User Management -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-users me-2"></i>User 2FA Management
+                </h5>
+                <div>
+                    <input type="search" class="form-control d-inline-block w-auto me-2"
+                           id="userSearch" placeholder="Search users..." autocomplete="off">
+                    <button class="btn btn-outline-primary" onclick="refreshUserList()">
+                        <i class="fas fa-refresh"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover" id="usersTable">
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>2FA Status</th>
+                                <th>Methods</th>
+                                <th>Last Login</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersTableBody">
+                            <!-- Users will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <nav id="usersPagination" class="mt-3">
+                    <!-- Pagination will be loaded here -->
+                </nav>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Security Audit Log -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-history me-2"></i>Recent 2FA Security Events
+                </h5>
+                <button class="btn btn-outline-info btn-sm" onclick="exportSecurityLog()">
+                    <i class="fas fa-download me-2"></i>Export Log
+                </button>
+            </div>
+            <div class="card-body">
+                <div id="securityEvents">
+                    <!-- Security events will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bulk Action Modal -->
+<div class="modal fade" id="bulkActionModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-users-cog me-2"></i>Bulk User Actions
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Action</label>
+                    <select class="form-select" id="bulkAction">
+                        <option value="">Select an action...</option>
+                        <option value="require_2fa">Require 2FA for all users</option>
+                        <option value="remove_2fa_requirement">Remove 2FA requirement</option>
+                        <option value="reset_2fa">Reset 2FA for all users</option>
+                        <option value="send_reminder">Send 2FA setup reminders</option>
+                    </select>
+                </div>
+
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Warning:</strong> Bulk actions affect all users. Please review carefully.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-warning" onclick="executeBulkAction()">Execute Action</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Security Report Modal -->
+<div class="modal fade" id="securityReportModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-chart-pie me-2"></i>2FA Security Report
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="securityReportContent">
+                <!-- Report content will be loaded here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="downloadSecurityReport()">
+                    <i class="fas fa-download me-2"></i>Download PDF
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.text-gradient {
+    background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.card {
+    border: 1px solid var(--border-default);
+    border-radius: 1rem;
+    box-shadow: var(--shadow);
+}
+
+.form-check-input:checked {
+    background-color: var(--accent-primary);
+    border-color: var(--accent-primary);
+}
+
+.table-hover tbody tr:hover {
+    background-color: var(--surface-tertiary);
+}
+
+.badge-2fa-enabled {
+    background: linear-gradient(135deg, #28a745, #20c997);
+}
+
+.badge-2fa-disabled {
+    background: linear-gradient(135deg, #ffc107, #fd7e14);
+}
+
+.badge-2fa-required {
+    background: linear-gradient(135deg, #dc3545, #e83e8c);
+}
+</style>
+
+<script>
+// Global variables
+let currentPage = 1;
+let usersPerPage = 10;
+let currentFilter = '';
+
+// Load page data
+document.addEventListener('DOMContentLoaded', function() {
+    loadDashboardStats();
+    loadSettings();
+    loadUsers();
+    loadSecurityEvents();
+});
+
+// Load dashboard statistics
+async function loadDashboardStats() {
+    try {
+        const response = await fetch('/admin/2fa/stats');
+        const data = await response.json();
+
+        if (data.success) {
+            document.getElementById('totalUsers').textContent = data.stats.total_users;
+            document.getElementById('users2FAEnabled').textContent = data.stats.users_2fa_enabled;
+            document.getElementById('users2FAEnabledPercent').textContent =
+                `${Math.round((data.stats.users_2fa_enabled / data.stats.total_users) * 100)}%`;
+            document.getElementById('totpUsers').textContent = data.stats.totp_users;
+            document.getElementById('webauthnUsers').textContent = data.stats.webauthn_users;
+        }
+    } catch (error) {
+        console.error('Error loading dashboard stats:', error);
+    }
+}
+
+// Load current settings
+async function loadSettings() {
+    try {
+        const response = await fetch('/admin/2fa/settings');
+        const data = await response.json();
+
+        if (data.success) {
+            const settings = data.settings;
+
+            // Update form fields
+            document.getElementById('enforce2FAAllUsers').checked = settings.enforce_all_users || false;
+            document.getElementById('enforce2FANewUsers').checked = settings.enforce_new_users || false;
+            document.getElementById('enforce2FAAdmins').checked = settings.enforce_admins || false;
+            document.getElementById('gracePeriod').value = settings.grace_period_days || 7;
+            document.getElementById('allowTOTP').checked = settings.allow_totp !== false;
+            document.getElementById('allowWebAuthn').checked = settings.allow_webauthn !== false;
+            document.getElementById('allowBackupCodes').checked = settings.allow_backup_codes !== false;
+            document.getElementById('backupCodeCount').value = settings.backup_code_count || 10;
+
+            // WebAuthn settings
+            document.getElementById('webauthnRpName').value = settings.webauthn_rp_name || 'Source-License';
+            document.getElementById('webauthnTimeout').value = settings.webauthn_timeout || 60;
+            document.getElementById('webauthnUserVerification').value =
+                settings.webauthn_user_verification || 'preferred';
+        }
+    } catch (error) {
+        console.error('Error loading settings:', error);
+    }
+}
+
+// Save policy settings
+document.getElementById('policyForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const settings = {
+        enforce_all_users: document.getElementById('enforce2FAAllUsers').checked,
+        enforce_new_users: document.getElementById('enforce2FANewUsers').checked,
+        enforce_admins: document.getElementById('enforce2FAAdmins').checked,
+        grace_period_days: parseInt(document.getElementById('gracePeriod').value),
+        allow_totp: document.getElementById('allowTOTP').checked,
+        allow_webauthn: document.getElementById('allowWebAuthn').checked,
+        allow_backup_codes: document.getElementById('allowBackupCodes').checked,
+        backup_code_count: parseInt(document.getElementById('backupCodeCount').value)
+    };
+
+    try {
+        const response = await fetch('/admin/2fa/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(settings)
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            AdminUtils.showNotification('2FA policies saved successfully', 'success');
+        } else {
+            AdminUtils.showNotification('Failed to save settings', 'danger');
+        }
+    } catch (error) {
+        AdminUtils.showNotification('Error saving settings', 'danger');
+    }
+});
+
+// Save WebAuthn settings
+document.getElementById('webauthnForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const settings = {
+        webauthn_rp_name: document.getElementById('webauthnRpName').value,
+        webauthn_timeout: parseInt(document.getElementById('webauthnTimeout').value),
+        webauthn_user_verification: document.getElementById('webauthnUserVerification').value
+    };
+
+    try {
+        const response = await fetch('/admin/2fa/webauthn-settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(settings)
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            AdminUtils.showNotification('WebAuthn settings saved successfully', 'success');
+        } else {
+            AdminUtils.showNotification('Failed to save WebAuthn settings', 'danger');
+        }
+    } catch (error) {
+        AdminUtils.showNotification('Error saving WebAuthn settings', 'danger');
+    }
+});
+
+// Load users list
+async function loadUsers() {
+    try {
+        const params = new URLSearchParams({
+            page: currentPage,
+            per_page: usersPerPage,
+            search: currentFilter
+        });
+
+        const response = await fetch(`/admin/2fa/users?${params}`);
+        const data = await response.json();
+
+        if (data.success) {
+            renderUsersTable(data.users);
+            renderPagination(data.pagination);
+        }
+    } catch (error) {
+        console.error('Error loading users:', error);
+    }
+}
+
+// Render users table
+function renderUsersTable(users) {
+    const tbody = document.getElementById('usersTableBody');
+
+    tbody.innerHTML = users.map(user => `
+        <tr>
+            <td>
+                <div>
+                    <strong>${escapeHtml(user.name || user.email)}</strong>
+                    <br>
+                    <small class="text-muted">${escapeHtml(user.email)}</small>
+                </div>
+            </td>
+            <td>
+                ${render2FAStatusBadge(user)}
+            </td>
+            <td>
+                ${render2FAMethods(user)}
+            </td>
+            <td>
+                ${user.last_login_at ? formatDate(user.last_login_at) : 'Never'}
+            </td>
+            <td>
+                <div class="btn-group btn-group-sm">
+                    <button class="btn btn-outline-primary" onclick="viewUser(${user.id})" title="View Details">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                    <button class="btn btn-outline-warning" onclick="toggleUser2FARequirement(${user.id}, ${!user.require_2fa})"
+                            title="${user.require_2fa ? 'Remove 2FA Requirement' : 'Require 2FA'}">
+                        <i class="fas fa-${user.require_2fa ? 'unlock' : 'lock'}"></i>
+                    </button>
+                    <button class="btn btn-outline-danger" onclick="resetUser2FA(${user.id})" title="Reset 2FA">
+                        <i class="fas fa-redo"></i>
+                    </button>
+                </div>
+            </td>
+        </tr>
+    `).join('');
+}
+
+// Render 2FA status badge
+function render2FAStatusBadge(user) {
+    if (user.two_factor_enabled) {
+        return '<span class="badge badge-2fa-enabled">Enabled</span>';
+    } else if (user.require_2fa) {
+        return '<span class="badge badge-2fa-required">Required</span>';
+    } else {
+        return '<span class="badge badge-2fa-disabled">Disabled</span>';
+    }
+}
+
+// Render 2FA methods
+function render2FAMethods(user) {
+    const methods = [];
+    if (user.totp_enabled) methods.push('<i class="fas fa-mobile-alt" title="TOTP"></i>');
+    if (user.webauthn_count > 0) methods.push(`<i class="fas fa-key" title="WebAuthn (${user.webauthn_count})"></i>`);
+    if (user.backup_codes_count > 0) methods.push('<i class="fas fa-list-ol" title="Backup Codes"></i>');
+
+    return methods.length > 0 ? methods.join(' ') : '<span class="text-muted">None</span>';
+}
+
+// Load security events
+async function loadSecurityEvents() {
+    try {
+        const response = await fetch('/admin/2fa/events?limit=10');
+        const data = await response.json();
+
+        if (data.success) {
+            renderSecurityEvents(data.events);
+        }
+    } catch (error) {
+        console.error('Error loading security events:', error);
+    }
+}
+
+// Render security events
+function renderSecurityEvents(events) {
+    const container = document.getElementById('securityEvents');
+
+    if (events.length === 0) {
+        container.innerHTML = '<p class="text-muted">No recent security events.</p>';
+        return;
+    }
+
+    container.innerHTML = events.map(event => `
+        <div class="d-flex align-items-center mb-3 p-3 bg-body-secondary rounded">
+            <i class="${getEventIcon(event.event_type)} me-3 text-${getEventColor(event.event_type)}"></i>
+            <div class="flex-grow-1">
+                <strong>${getEventDescription(event)}</strong>
+                <div class="small text-muted">
+                    ${formatDate(event.created_at)} • User: ${escapeHtml(event.user_email || 'Unknown')}
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+// User action functions
+async function toggleUser2FARequirement(userId, require2FA) {
+    if (!confirm(`${require2FA ? 'Require' : 'Remove'} 2FA requirement for this user?`)) {
+        return;
+    }
+
+    try {
+        const action = require2FA ? 'require-2fa' : 'remove-2fa-requirement';
+        const response = await fetch(`/admin/users/${userId}/${action}`, {
+            method: 'POST'
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            AdminUtils.showNotification(data.message, 'success');
+            loadUsers();
+        } else {
+            AdminUtils.showNotification('Failed to update user', 'danger');
+        }
+    } catch (error) {
+        AdminUtils.showNotification('Error updating user', 'danger');
+    }
+}
+
+async function resetUser2FA(userId) {
+    if (!confirm('Reset all 2FA methods for this user? They will need to set up 2FA again.')) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`/admin/users/${userId}/reset-2fa`, {
+            method: 'POST'
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            AdminUtils.showNotification('User 2FA reset successfully', 'success');
+            loadUsers();
+        } else {
+            AdminUtils.showNotification('Failed to reset user 2FA', 'danger');
+        }
+    } catch (error) {
+        AdminUtils.showNotification('Error resetting user 2FA', 'danger');
+    }
+}
+
+// Utility functions
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function formatDate(dateStr) {
+    return new Date(dateStr).toLocaleString();
+}
+
+function getEventIcon(eventType) {
+    const icons = {
+        'totp_enabled': 'fas fa-mobile-alt',
+        'totp_disabled': 'fas fa-mobile-alt',
+        'webauthn_registered': 'fas fa-key',
+        'webauthn_removed': 'fas fa-key',
+        'backup_codes_generated': 'fas fa-list-ol',
+        'admin_force_2fa': 'fas fa-user-shield',
+        'admin_reset_2fa': 'fas fa-redo'
+    };
+    return icons[eventType] || 'fas fa-info-circle';
+}
+
+function getEventColor(eventType) {
+    if (eventType.includes('enabled') || eventType.includes('registered') || eventType.includes('generated')) {
+        return 'success';
+    } else if (eventType.includes('disabled') || eventType.includes('removed') || eventType.includes('reset')) {
+        return 'warning';
+    } else {
+        return 'info';
+    }
+}
+
+function getEventDescription(event) {
+    const descriptions = {
+        'totp_enabled': 'TOTP authentication enabled',
+        'totp_disabled': 'TOTP authentication disabled',
+        'webauthn_registered': 'Security key registered',
+        'webauthn_removed': 'Security key removed',
+        'backup_codes_generated': 'Backup codes generated',
+        'admin_force_2fa': 'Administrator required 2FA',
+        'admin_reset_2fa': 'Administrator reset 2FA'
+    };
+    return descriptions[event.event_type] || 'Unknown security event';
+}
+
+// Additional functions (stubs for now)
+function generateSecurityReport() {
+    // Implementation for security report generation
+    AdminUtils.showNotification('Feature coming soon', 'info');
+}
+
+function bulkResetUsers() {
+    const modal = new bootstrap.Modal(document.getElementById('bulkActionModal'));
+    modal.show();
+}
+
+function executeBulkAction() {
+    // Implementation for bulk actions
+    AdminUtils.showNotification('Feature coming soon', 'info');
+}
+
+function testWebAuthn() {
+    // Implementation for WebAuthn testing
+    AdminUtils.showNotification('Testing WebAuthn configuration...', 'info');
+}
+
+function refreshUserList() {
+    loadUsers();
+    loadDashboardStats();
+}
+
+function exportSecurityLog() {
+    // Implementation for security log export
+    AdminUtils.showNotification('Feature coming soon', 'info');
+}
+
+// Search functionality
+document.getElementById('userSearch').addEventListener('input', function(e) {
+    currentFilter = e.target.value;
+    currentPage = 1;
+    loadUsers();
+});
+</script>

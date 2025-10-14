@@ -1,0 +1,439 @@
+<!-- Admin Personal 2FA Management Dashboard -->
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-12">
+      <!-- Header -->
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+          <h2 class="mb-1">
+            <i class="fas fa-shield-alt text-primary me-2"></i>Personal Two-Factor Authentication
+          </h2>
+          <p class="text-muted mb-0">Secure your administrator account with additional authentication methods</p>
+        </div>
+        <a href="/admin/profile" class="btn btn-outline-secondary">
+          <i class="fas fa-arrow-left me-2"></i>Back to Profile
+        </a>
+      </div>
+
+      <!-- Success/Error Messages -->
+      <% if params[:message] %>
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+          <%= h(params[:message]) %>
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+      <% end %>
+
+      <% if params[:error] %>
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+          <%= h(params[:error]) %>
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+      <% end %>
+
+      <!-- Main Content Row -->
+      <div class="row g-4">
+        <!-- 2FA Methods -->
+        <div class="col-lg-8">
+          <!-- Overall Status Card -->
+          <div class="card shadow-sm mb-4">
+            <div class="card-body">
+              <% if @available_methods.any? %>
+                <div class="d-flex align-items-center">
+                  <div class="flex-shrink-0">
+                    <div class="bg-success rounded-circle d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                      <i class="fas fa-shield-alt fa-2x text-white"></i>
+                    </div>
+                  </div>
+                  <div class="flex-grow-1 ms-3">
+                    <h5 class="mb-1 text-success">Two-Factor Authentication is Active</h5>
+                    <p class="mb-1">Your administrator account is protected with <%= @available_methods.length %> authentication method<%= @available_methods.length == 1 ? '' : 's' %>.</p>
+                    <small class="text-muted">Active methods: <%= @available_methods.map(&:upcase).join(', ') %></small>
+                  </div>
+                </div>
+              <% else %>
+                <div class="d-flex align-items-center">
+                  <div class="flex-shrink-0">
+                    <div class="bg-warning rounded-circle d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                      <i class="fas fa-exclamation-triangle fa-2x text-white"></i>
+                    </div>
+                  </div>
+                  <div class="flex-grow-1 ms-3">
+                    <h5 class="mb-1 text-warning">Two-Factor Authentication is Disabled</h5>
+                    <p class="mb-1">Your administrator account would benefit from additional security.</p>
+                    <small class="text-muted">Set up at least one authentication method below to secure your account.</small>
+                  </div>
+                </div>
+              <% end %>
+            </div>
+          </div>
+
+          <!-- TOTP (Authenticator App) -->
+          <div class="card shadow-sm mb-4">
+            <div class="card-header">
+              <h6 class="mb-0">
+                <i class="fas fa-mobile-alt me-2"></i>Authenticator App (TOTP)
+              </h6>
+            </div>
+            <div class="card-body">
+              <p class="text-muted mb-3">
+                Use Google Authenticator, Microsoft Authenticator, Authy, or any compatible TOTP app to generate time-based codes.
+              </p>
+
+              <% if @totp_settings && @totp_settings[:enabled] %>
+                <!-- TOTP is enabled -->
+                <div class="d-flex justify-content-between align-items-center p-3 bg-success-subtle rounded mb-3">
+                  <div>
+                    <span class="badge bg-success mb-2">
+                      <i class="fas fa-check me-1"></i>Active
+                    </span>
+                    <div class="small text-muted">
+                      Configured on <%= @totp_settings[:created_at]&.strftime('%B %d, %Y at %I:%M %p') || 'Unknown date' %>
+                    </div>
+                  </div>
+                  <div>
+                    <button class="btn btn-outline-danger btn-sm" onclick="showDisableModal('totp')">
+                      <i class="fas fa-times me-1"></i>Disable
+                    </button>
+                  </div>
+                </div>
+              <% else %>
+                <!-- TOTP is not enabled -->
+                <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded mb-3">
+                  <div>
+                    <span class="badge bg-secondary mb-2">Not Configured</span>
+                    <div class="small text-muted">Set up your authenticator app to generate verification codes</div>
+                  </div>
+                  <div>
+                    <a href="/admin/2fa/totp/setup" class="btn btn-success btn-sm">
+                      <i class="fas fa-plus me-1"></i>Set Up TOTP
+                    </a>
+                  </div>
+                </div>
+              <% end %>
+            </div>
+          </div>
+
+          <!-- WebAuthn (Security Keys & Biometrics) -->
+          <div class="card shadow-sm mb-4">
+            <div class="card-header">
+              <h6 class="mb-0">
+                <i class="fas fa-key me-2"></i>Security Keys & Biometrics (WebAuthn)
+              </h6>
+            </div>
+            <div class="card-body">
+              <p class="text-muted mb-3">
+                Use hardware security keys, Windows Hello, Touch ID, Face ID, or other WebAuthn-compatible devices.
+              </p>
+
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                  <span class="fw-bold">Registered Devices</span>
+                  <small class="text-muted d-block">
+                    <%= @webauthn_credentials.length %> device<%= @webauthn_credentials.length == 1 ? '' : 's' %> registered
+                  </small>
+                </div>
+                <a href="/admin/2fa/webauthn/register" class="btn btn-primary btn-sm">
+                  <i class="fas fa-plus me-1"></i>Add Device
+                </a>
+              </div>
+
+              <% if @webauthn_credentials.any? %>
+                <div class="list-group list-group-flush">
+                  <% @webauthn_credentials.each do |credential| %>
+                    <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                      <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0 me-3">
+                          <i class="fas fa-key fa-lg text-primary"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                          <div class="fw-bold"><%= h(credential[:name] || 'Security Key') %></div>
+                          <small class="text-muted">
+                            Added <%= credential[:created_at]&.strftime('%B %d, %Y') || 'recently' %>
+                            <% if credential[:last_used_at] %>
+                              • Last used <%= credential[:last_used_at].strftime('%B %d, %Y') %>
+                            <% end %>
+                          </small>
+                        </div>
+                      </div>
+                      <button class="btn btn-outline-danger btn-sm" onclick="removeWebAuthnCredential('<%= credential[:id] %>')">
+                        <i class="fas fa-trash"></i>
+                      </button>
+                    </div>
+                  <% end %>
+                </div>
+              <% else %>
+                <div class="text-center py-4 bg-light rounded">
+                  <i class="fas fa-key fa-3x text-muted mb-3"></i>
+                  <p class="text-muted mb-0">No security devices registered yet</p>
+                </div>
+              <% end %>
+            </div>
+          </div>
+
+          <!-- Backup Codes -->
+          <div class="card shadow-sm">
+            <div class="card-header">
+              <h6 class="mb-0">
+                <i class="fas fa-list-ol me-2"></i>Backup Recovery Codes
+              </h6>
+            </div>
+            <div class="card-body">
+              <p class="text-muted mb-3">
+                Backup codes allow you to access your account if you lose access to your other 2FA methods.
+                Each code can only be used once.
+              </p>
+
+              <div class="d-flex justify-content-between align-items-center">
+                <div>
+                  <span class="fw-bold">Recovery Codes</span>
+                  <div class="small text-muted">
+                    <% if @backup_codes_count && @backup_codes_count > 0 %>
+                      You have <strong><%= @backup_codes_count %></strong> unused backup codes
+                      <% if @backup_codes_count <= 2 %>
+                        <span class="text-warning">
+                          <i class="fas fa-exclamation-triangle ms-1"></i>
+                          Running low - consider regenerating
+                        </span>
+                      <% end %>
+                    <% else %>
+                      <span class="text-muted">No backup codes generated yet</span>
+                    <% end %>
+                  </div>
+                </div>
+                <div>
+                  <% if @backup_codes_count && @backup_codes_count > 0 %>
+                    <button class="btn btn-outline-warning btn-sm me-2" onclick="showRegenerateModal()">
+                      <i class="fas fa-sync me-1"></i>Regenerate
+                    </button>
+                  <% else %>
+                    <button class="btn btn-outline-secondary btn-sm" onclick="showRegenerateModal()">
+                      <i class="fas fa-plus me-1"></i>Generate Codes
+                    </button>
+                  <% end %>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+          <!-- Security Status -->
+          <div class="card shadow-sm mb-4">
+            <div class="card-header">
+              <h6 class="mb-0">
+                <i class="fas fa-chart-pie me-2"></i>Security Overview
+              </h6>
+            </div>
+            <div class="card-body">
+              <div class="mb-3">
+                <div class="d-flex justify-content-between mb-1">
+                  <span class="small">Overall Security</span>
+                  <% if @available_methods.any? %>
+                    <span class="small text-success fw-bold">Strong</span>
+                  <% else %>
+                    <span class="small text-warning fw-bold">Basic</span>
+                  <% end %>
+                </div>
+                <div class="progress" style="height: 8px;">
+                  <div class="progress-bar <%= @available_methods.any? ? 'bg-success' : 'bg-warning' %>"
+                       style="width: <%= @available_methods.any? ? '85' : '45' %>%"></div>
+                </div>
+              </div>
+
+              <div class="small">
+                <div class="d-flex justify-content-between mb-2">
+                  <span>TOTP App:</span>
+                  <span class="<%= @totp_settings ? 'text-success' : 'text-muted' %>">
+                    <i class="fas fa-<%= @totp_settings ? 'check' : 'times' %>"></i>
+                  </span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                  <span>Security Keys:</span>
+                  <span class="<%= @webauthn_credentials.any? ? 'text-success' : 'text-muted' %>">
+                    <i class="fas fa-<%= @webauthn_credentials.any? ? 'check' : 'times' %>"></i>
+                  </span>
+                </div>
+                <div class="d-flex justify-content-between">
+                  <span>Backup Codes:</span>
+                  <span class="<%= @backup_codes_count && @backup_codes_count > 0 ? 'text-success' : 'text-muted' %>">
+                    <i class="fas fa-<%= @backup_codes_count && @backup_codes_count > 0 ? 'check' : 'times' %>"></i>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Security Tips -->
+          <div class="card shadow-sm">
+            <div class="card-header">
+              <h6 class="mb-0">
+                <i class="fas fa-lightbulb me-2"></i>Security Recommendations
+              </h6>
+            </div>
+            <div class="card-body">
+              <ul class="list-unstyled mb-0 small">
+                <% unless @totp_settings %>
+                  <li class="mb-2">
+                    <i class="fas fa-arrow-right text-primary me-2"></i>
+                    Set up an authenticator app for secure access
+                  </li>
+                <% end %>
+                <% if @webauthn_credentials.empty? %>
+                  <li class="mb-2">
+                    <i class="fas fa-arrow-right text-primary me-2"></i>
+                    Add a security key for the strongest protection
+                  </li>
+                <% end %>
+                <% unless @backup_codes_count && @backup_codes_count > 0 %>
+                  <li class="mb-2">
+                    <i class="fas fa-arrow-right text-primary me-2"></i>
+                    Generate backup codes for emergency access
+                  </li>
+                <% end %>
+                <li class="mb-2">
+                  <i class="fas fa-info-circle text-info me-2"></i>
+                  Keep backup codes in a safe place
+                </li>
+                <li>
+                  <i class="fas fa-info-circle text-info me-2"></i>
+                  Test your 2FA methods regularly
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TOTP Disable Modal -->
+<div class="modal fade" id="disableModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Disable Two-Factor Authentication</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="post" action="/admin/2fa/totp/disable">
+        <div class="modal-body">
+          <div class="alert alert-warning">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            <strong>Warning:</strong> Disabling 2FA will reduce your account security.
+          </div>
+          <div class="mb-3">
+            <label for="current_password" class="form-label">Current Password</label>
+            <input type="password" class="form-control" id="current_password" name="current_password" required autocomplete="off">
+            <div class="form-text">Enter your current admin password to confirm this action.</div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-danger">Disable 2FA</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Backup Codes Regenerate Modal -->
+<div class="modal fade" id="regenerateModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Generate New Backup Codes</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="post" action="/admin/2fa/backup-codes/regenerate">
+        <div class="modal-body">
+          <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i>
+            <strong>Note:</strong> Generating new backup codes will invalidate all existing codes.
+          </div>
+          <div class="mb-3">
+            <label for="regen_current_password" class="form-label">Current Password</label>
+            <input type="password" class="form-control" id="regen_current_password" name="current_password" required autocomplete="off">
+            <div class="form-text">Enter your current admin password to confirm this action.</div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Generate New Codes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- JavaScript -->
+<script>
+function showDisableModal(method) {
+  const modal = new bootstrap.Modal(document.getElementById('disableModal'));
+  modal.show();
+}
+
+function showRegenerateModal() {
+  const modal = new bootstrap.Modal(document.getElementById('regenerateModal'));
+  modal.show();
+}
+
+async function removeWebAuthnCredential(credentialId) {
+  if (!confirm('Are you sure you want to remove this security device?')) {
+    return;
+  }
+
+  try {
+    const response = await fetch(`/admin/2fa/webauthn/credentials/${credentialId}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest'
+      }
+    });
+
+    if (response.ok) {
+      location.reload();
+    } else {
+      const result = await response.json();
+      alert('Failed to remove device: ' + (result.error || 'Unknown error'));
+    }
+  } catch (error) {
+    alert('Error removing device: ' + error.message);
+  }
+}
+</script>
+
+<style>
+.bg-success-subtle {
+  background-color: rgba(25, 135, 84, 0.1);
+}
+
+.progress {
+  background-color: #e9ecef;
+}
+
+.list-group-item {
+  border: none;
+  padding: 0.75rem 0;
+}
+
+.list-group-item:not(:last-child) {
+  border-bottom: 1px solid #dee2e6;
+}
+
+.card {
+  border: 1px solid rgba(0,0,0,.125);
+}
+
+.btn-sm {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+}
+
+@media (max-width: 768px) {
+  .col-lg-4 {
+    margin-top: 1rem;
+  }
+}
+</style>

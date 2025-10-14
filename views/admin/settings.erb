@@ -377,6 +377,80 @@ SMTP_TLS=true</code></pre>
     box-shadow: 0 4px 12px rgba(35, 134, 54, 0.2);
 }
 
+/* Subcategory Styling */
+.subcategory-header {
+    margin-top: 2rem;
+    margin-bottom: 1.5rem;
+}
+
+.subcategory-header h6 {
+    color: var(--accent-primary);
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+}
+
+.subcategory-header h6 i {
+    color: var(--accent-primary);
+    opacity: 0.8;
+}
+
+.subcategory-line {
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent-primary), transparent);
+    border-radius: 1px;
+    opacity: 0.3;
+}
+
+.settings-separator {
+    border: none;
+    height: 2px;
+    background: linear-gradient(90deg,
+        transparent,
+        var(--border-default) 20%,
+        var(--border-default) 80%,
+        transparent
+    );
+    margin: 3rem 0;
+    opacity: 0.5;
+}
+
+/* Enhanced setting items for better grouping */
+.setting-item {
+    background: var(--surface-primary);
+    border: 1px solid var(--border-muted);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.setting-item::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: var(--accent-primary);
+    border-radius: 0.75rem 0 0 0.75rem;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.setting-item:hover::before {
+    opacity: 0.6;
+}
+
+.setting-item:hover {
+    border-color: var(--accent-primary);
+    box-shadow: 0 2px 12px rgba(35, 134, 54, 0.15);
+    transform: translateX(2px);
+}
+
 @media (max-width: 991.98px) {
     .sticky-top {
         position: static !important;
@@ -384,6 +458,14 @@ SMTP_TLS=true</code></pre>
 
     .settings-nav-card {
         margin-bottom: 2rem;
+    }
+
+    .subcategory-header {
+        margin-top: 1.5rem;
+    }
+
+    .settings-separator {
+        margin: 2rem 0;
     }
 }
 </style>
@@ -537,33 +619,139 @@ function renderCategorySettings(categoryData) {
     `;
 }
 
-// Render settings form
+// Render settings form with subcategories
 function renderSettingsForm(settings) {
-    return settings.map(setting => {
-        const schema = setting.schema;
-        const fieldId = setting.key.replace(/\./g, '_');
+    // Group settings by subcategory (based on the key structure)
+    const grouped = groupSettingsBySubcategory(settings);
 
-        return `
-            <div class="mb-4">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <label for="${fieldId}" class="form-label mb-0">
-                        <strong>${getSettingDisplayName(setting.key)}</strong>
-                        ${schema.sensitive ? '<i class="fas fa-lock text-warning ms-1" title="Sensitive data"></i>' : ''}
-                    </label>
-                    ${!schema.web_editable ? '<span class="badge bg-secondary">Read-only</span>' : ''}
-                </div>
+    let html = '';
 
-                <div class="mb-2">
-                    ${renderSettingInput(setting, fieldId)}
-                </div>
+    Object.entries(grouped).forEach(([subcategory, subcategorySettings], index) => {
+        // Add separator between subcategories (except for the first one)
+        if (index > 0) {
+            html += '<hr class="my-5 settings-separator">';
+        }
 
-                <div class="form-text">
-                    ${schema.description}
-                    ${schema.default !== undefined ? `<br><small class="text-muted">Default: ${schema.default}</small>` : ''}
+        // Add subcategory header
+        if (subcategory !== 'general') {
+            html += `
+                <div class="subcategory-header mb-4">
+                    <h6 class="text-primary fw-bold mb-2">
+                        <i class="fas fa-cog me-2"></i>${subcategory.charAt(0).toUpperCase() + subcategory.slice(1).replace(/_/g, ' ')}
+                    </h6>
+                    <div class="subcategory-line"></div>
                 </div>
-            </div>
-        `;
-    }).join('');
+            `;
+        }
+
+        // Render settings in this subcategory
+        subcategorySettings.forEach(setting => {
+            const schema = setting.schema;
+            const fieldId = setting.key.replace(/\./g, '_');
+
+            html += `
+                <div class="mb-4 setting-item">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <label for="${fieldId}" class="form-label mb-0">
+                            <strong>${getSettingDisplayName(setting.key)}</strong>
+                            ${schema.sensitive ? '<i class="fas fa-lock text-warning ms-1" title="Sensitive data"></i>' : ''}
+                        </label>
+                        ${!schema.web_editable ? '<span class="badge bg-secondary">Read-only</span>' : ''}
+                    </div>
+
+                    <div class="mb-2">
+                        ${renderSettingInput(setting, fieldId)}
+                    </div>
+
+                    <div class="form-text">
+                        ${schema.description}
+                        ${schema.default !== undefined ? `<br><small class="text-muted">Default: ${schema.default}</small>` : ''}
+                    </div>
+                </div>
+            `;
+        });
+    });
+
+    return html;
+}
+
+// Group settings by subcategory based on key structure
+function groupSettingsBySubcategory(settings) {
+    const grouped = {};
+
+    settings.forEach(setting => {
+        const keyParts = setting.key.split('.');
+        let subcategory = 'general';
+
+        // Determine subcategory based on key structure
+        if (keyParts.length >= 3) {
+            // For keys like "security.2fa.enforce_all_users" or "security.webauthn.timeout"
+            subcategory = keyParts[1];
+        } else if (keyParts.length === 2) {
+            // For keys like "application.behind_load_balancer", group by first part context
+            const context = getSettingContext(keyParts[1]);
+            if (context) {
+                subcategory = context;
+            }
+        }
+
+        if (!grouped[subcategory]) {
+            grouped[subcategory] = [];
+        }
+
+        grouped[subcategory].push(setting);
+    });
+
+    // Sort subcategories for consistent display
+    const sortedGrouped = {};
+    const sortOrder = ['general', 'authentication', '2fa', 'webauthn', 'session', 'api', 'logging', 'network', 'performance'];
+
+    sortOrder.forEach(key => {
+        if (grouped[key]) {
+            sortedGrouped[key] = grouped[key];
+        }
+    });
+
+    // Add any remaining subcategories not in the sort order
+    Object.keys(grouped).forEach(key => {
+        if (!sortOrder.includes(key)) {
+            sortedGrouped[key] = grouped[key];
+        }
+    });
+
+    return sortedGrouped;
+}
+
+// Get context for settings based on key patterns
+function getSettingContext(settingKey) {
+    const contextMap = {
+        // Authentication & Security
+        'session_timeout': 'authentication',
+        'password_min_length': 'authentication',
+        'password_require_special': 'authentication',
+        'password_require_numbers': 'authentication',
+        'login_attempts': 'authentication',
+        'lockout_duration': 'authentication',
+
+        // Network & Performance
+        'behind_load_balancer': 'network',
+        'trusted_proxies': 'network',
+        'cors_origins': 'network',
+        'rate_limit': 'performance',
+        'cache_duration': 'performance',
+        'max_connections': 'performance',
+
+        // API & Logging
+        'api_key_length': 'api',
+        'api_rate_limit': 'api',
+        'log_level': 'logging',
+        'log_retention': 'logging',
+        'audit_enabled': 'logging',
+
+        // Add more mappings as needed
+    };
+
+    return contextMap[settingKey] || null;
 }
 
 // Render setting input

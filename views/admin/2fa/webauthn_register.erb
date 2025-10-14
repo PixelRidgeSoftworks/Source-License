@@ -1,0 +1,512 @@
+<!-- Admin WebAuthn Registration Page -->
+<div class="container-fluid">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <!-- Header -->
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+          <h2 class="mb-1">
+            <i class="fas fa-key text-primary me-2"></i>Add Security Key or Biometric Device
+          </h2>
+          <p class="text-muted mb-0">Register a new WebAuthn device for secure authentication</p>
+        </div>
+        <a href="/admin/2fa/personal" class="btn btn-outline-secondary">
+          <i class="fas fa-arrow-left me-2"></i>Back to 2FA Settings
+        </a>
+      </div>
+
+      <!-- Success/Error Messages -->
+      <% if params[:message] %>
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+          <%= h(params[:message]) %>
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+      <% end %>
+
+      <% if params[:error] %>
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+          <%= h(params[:error]) %>
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+      <% end %>
+
+      <!-- Main Registration Card -->
+      <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+          <h5 class="mb-0">
+            <i class="fas fa-shield-alt me-2"></i>Admin WebAuthn Device Registration
+          </h5>
+        </div>
+        <div class="card-body">
+          <div class="row g-4">
+            <!-- Left Column: Device Registration -->
+            <div class="col-md-8">
+              <!-- Registration Form -->
+              <div class="mb-4">
+                <h6 class="mb-3">
+                  <i class="fas fa-plus-circle me-2"></i>Register New Device
+                </h6>
+
+                <form id="webauthn-form">
+                  <div class="mb-3">
+                    <label for="device-name" class="form-label">Device Nickname</label>
+                    <input type="text"
+                           class="form-control"
+                           id="device-name"
+                           name="nickname"
+                           placeholder="e.g., 'YubiKey 5', 'Windows Hello', 'iPhone Touch ID'"
+                           maxlength="50"
+                           required autocomplete="off">
+                    <div class="form-text">
+                      Give your device a memorable name to identify it later
+                    </div>
+                  </div>
+
+                  <div class="d-grid gap-2">
+                    <button type="button" id="register-button" class="btn btn-primary btn-lg">
+                      <i class="fas fa-fingerprint me-2"></i>Register Device
+                    </button>
+                    <div class="text-center">
+                      <small class="text-muted">
+                        Follow your browser's prompts to register your security device
+                      </small>
+                    </div>
+                  </div>
+                </form>
+
+                <!-- Registration Status -->
+                <div id="registration-status" class="mt-3" style="display: none;">
+                  <div class="alert alert-info">
+                    <div class="d-flex align-items-center">
+                      <div class="spinner-border spinner-border-sm me-2" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                      </div>
+                      <div id="status-message">Initializing device registration...</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Currently Registered Devices -->
+              <div class="border-top pt-4">
+                <h6 class="mb-3">
+                  <i class="fas fa-list me-2"></i>Currently Registered Devices
+                </h6>
+
+                <% if @credentials.any? %>
+                  <div class="list-group">
+                    <% @credentials.each do |credential| %>
+                      <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center">
+                          <div class="flex-shrink-0 me-3">
+                            <i class="fas fa-key fa-lg text-primary"></i>
+                          </div>
+                          <div class="flex-grow-1">
+                            <div class="fw-bold"><%= h(credential[:name] || 'Security Key') %></div>
+                            <div class="small text-muted">
+                              Added <%= credential[:created_at]&.strftime('%B %d, %Y at %I:%M %p') || 'recently' %>
+                              <% if credential[:last_used_at] %>
+                                • Last used <%= credential[:last_used_at].strftime('%B %d, %Y') %>
+                              <% end %>
+                            </div>
+                            <% if credential[:transports] %>
+                              <div class="small text-info">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Transports: <%= format_credential_transports(credential[:transports]) %>
+                              </div>
+                            <% end %>
+                          </div>
+                        </div>
+                        <div>
+                          <button class="btn btn-outline-danger btn-sm"
+                                  onclick="removeDevice('<%= credential[:id] %>', '<%= h(credential[:name] || 'this device') %>')">
+                            <i class="fas fa-trash"></i>
+                          </button>
+                        </div>
+                      </div>
+                    <% end %>
+                  </div>
+                <% else %>
+                  <div class="text-center py-4 bg-light rounded">
+                    <i class="fas fa-key fa-3x text-muted mb-3"></i>
+                    <p class="text-muted mb-0">No devices registered yet. Register your first device above.</p>
+                  </div>
+                <% end %>
+              </div>
+            </div>
+
+            <!-- Right Column: Information -->
+            <div class="col-md-4">
+              <!-- Supported Devices -->
+              <div class="card border-info mb-4">
+                <div class="card-header bg-info text-white">
+                  <h6 class="mb-0">
+                    <i class="fas fa-devices me-2"></i>Supported Devices
+                  </h6>
+                </div>
+                <div class="card-body">
+                  <ul class="list-unstyled mb-0 small">
+                    <li class="mb-2">
+                      <i class="fas fa-usb text-primary me-2"></i>
+                      <strong>Hardware Keys:</strong> YubiKey, Solo, Titan
+                    </li>
+                    <li class="mb-2">
+                      <i class="fab fa-windows text-primary me-2"></i>
+                      <strong>Windows Hello:</strong> PIN, fingerprint, face
+                    </li>
+                    <li class="mb-2">
+                      <i class="fab fa-apple text-primary me-2"></i>
+                      <strong>Apple:</strong> Touch ID, Face ID
+                    </li>
+                    <li class="mb-2">
+                      <i class="fab fa-android text-primary me-2"></i>
+                      <strong>Android:</strong> Fingerprint, face unlock
+                    </li>
+                    <li>
+                      <i class="fas fa-mobile-alt text-primary me-2"></i>
+                      <strong>Mobile:</strong> Platform authenticators
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
+              <!-- Security Benefits -->
+              <div class="card border-success">
+                <div class="card-header bg-success text-white">
+                  <h6 class="mb-0">
+                    <i class="fas fa-shield-check me-2"></i>Security Benefits
+                  </h6>
+                </div>
+                <div class="card-body">
+                  <ul class="list-unstyled mb-0 small">
+                    <li class="mb-2">
+                      <i class="fas fa-check text-success me-2"></i>
+                      Phishing-resistant authentication
+                    </li>
+                    <li class="mb-2">
+                      <i class="fas fa-check text-success me-2"></i>
+                      Strong cryptographic security
+                    </li>
+                    <li class="mb-2">
+                      <i class="fas fa-check text-success me-2"></i>
+                      No shared secrets with server
+                    </li>
+                    <li class="mb-2">
+                      <i class="fas fa-check text-success me-2"></i>
+                      Convenient and fast authentication
+                    </li>
+                    <li>
+                      <i class="fas fa-check text-success me-2"></i>
+                      Industry standard (FIDO2/WebAuthn)
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Important Information -->
+      <div class="alert alert-info mt-4">
+        <h6 class="alert-heading">
+          <i class="fas fa-info-circle me-2"></i>Important Information
+        </h6>
+        <div class="row">
+          <div class="col-md-6">
+            <ul class="mb-0 small">
+              <li class="mb-2">
+                <strong>Browser Support:</strong> Modern browsers support WebAuthn (Chrome, Firefox, Safari, Edge)
+              </li>
+              <li class="mb-2">
+                <strong>Multiple Devices:</strong> Register multiple devices for backup access
+              </li>
+            </ul>
+          </div>
+          <div class="col-md-6">
+            <ul class="mb-0 small">
+              <li class="mb-2">
+                <strong>Device Security:</strong> Keep your devices secure and up to date
+              </li>
+              <li>
+                <strong>Backup Codes:</strong> Always have backup recovery codes available
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- WebAuthn JavaScript -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const registerButton = document.getElementById('register-button');
+  const deviceNameInput = document.getElementById('device-name');
+  const statusDiv = document.getElementById('registration-status');
+  const statusMessage = document.getElementById('status-message');
+
+  registerButton.addEventListener('click', async function() {
+    const deviceName = deviceNameInput.value.trim();
+
+    if (!deviceName) {
+      alert('Please enter a device nickname');
+      deviceNameInput.focus();
+      return;
+    }
+
+    // Check WebAuthn support
+    if (!window.PublicKeyCredential) {
+      alert('WebAuthn is not supported by your browser. Please use a modern browser like Chrome, Firefox, Safari, or Edge.');
+      return;
+    }
+
+    try {
+      // Show loading status
+      registerButton.disabled = true;
+      statusDiv.style.display = 'block';
+      statusMessage.textContent = 'Requesting registration options from server...';
+
+      // Step 1: Get registration options from server
+      const optionsResponse = await fetch('/admin/2fa/webauthn/register/begin', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      });
+
+      if (!optionsResponse.ok) {
+        throw new Error('Failed to get registration options');
+      }
+
+      const options = await optionsResponse.json();
+
+      statusMessage.textContent = 'Please follow your browser\'s prompts to register your device...';
+
+      // Step 2: Create credential with WebAuthn
+      // Convert base64url to ArrayBuffer for challenge and user ID
+      options.challenge = base64urlToArrayBuffer(options.challenge);
+      options.user.id = base64urlToArrayBuffer(options.user.id);
+
+      // Convert existing credentials
+      if (options.excludeCredentials) {
+        options.excludeCredentials = options.excludeCredentials.map(cred => ({
+          ...cred,
+          id: base64urlToArrayBuffer(cred.id)
+        }));
+      }
+
+      const credential = await navigator.credentials.create({
+        publicKey: options
+      });
+
+      statusMessage.textContent = 'Verifying registration with server...';
+
+      // Step 3: Send credential to server for verification
+      const verificationResponse = await fetch('/admin/2fa/webauthn/register/complete', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify({
+          nickname: deviceName,
+          id: arrayBufferToBase64url(credential.rawId),
+          rawId: arrayBufferToBase64url(credential.rawId),
+          type: credential.type,
+          response: {
+            clientDataJSON: arrayBufferToBase64url(credential.response.clientDataJSON),
+            attestationObject: arrayBufferToBase64url(credential.response.attestationObject)
+          }
+        })
+      });
+
+      const result = await verificationResponse.json();
+
+      if (result.success) {
+        statusMessage.textContent = 'Device registered successfully! Redirecting...';
+        setTimeout(() => {
+          window.location.href = '/admin/2fa/personal?message=Security device registered successfully';
+        }, 1500);
+      } else {
+        throw new Error(result.error || 'Registration verification failed');
+      }
+
+    } catch (error) {
+      console.error('WebAuthn registration error:', error);
+
+      let errorMessage = 'Registration failed: ';
+
+      if (error.name === 'NotSupportedError') {
+        errorMessage += 'WebAuthn is not supported on this device/browser';
+      } else if (error.name === 'SecurityError') {
+        errorMessage += 'Security error - make sure you\'re using HTTPS';
+      } else if (error.name === 'NotAllowedError') {
+        errorMessage += 'Registration was cancelled or timed out';
+      } else if (error.name === 'InvalidStateError') {
+        errorMessage += 'This device is already registered';
+      } else {
+        errorMessage += error.message || 'Unknown error occurred';
+      }
+
+      alert(errorMessage);
+
+      // Hide status and re-enable button
+      statusDiv.style.display = 'none';
+      registerButton.disabled = false;
+    }
+  });
+});
+
+async function removeDevice(credentialId, deviceName) {
+  if (!confirm(`Are you sure you want to remove "${deviceName}"?`)) {
+    return;
+  }
+
+  try {
+    const response = await fetch(`/admin/2fa/webauthn/credentials/${credentialId}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest'
+      }
+    });
+
+    if (response.ok) {
+      location.reload();
+    } else {
+      const result = await response.json();
+      alert('Failed to remove device: ' + (result.error || 'Unknown error'));
+    }
+  } catch (error) {
+    alert('Error removing device: ' + error.message);
+  }
+}
+
+// Utility functions for base64url encoding/decoding
+function base64urlToArrayBuffer(base64url) {
+  const base64 = base64url.replace(/-/g, '+').replace(/_/g, '/');
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return bytes.buffer;
+}
+
+function arrayBufferToBase64url(arrayBuffer) {
+  const bytes = new Uint8Array(arrayBuffer);
+  let binary = '';
+  for (let i = 0; i < bytes.byteLength; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  const base64 = btoa(binary);
+  return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+}
+</script>
+
+<!-- Custom Styles -->
+<style>
+.card {
+  border: 1px solid rgba(0,0,0,.125);
+  box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,.075);
+}
+
+.border-info {
+  border-color: #0dcaf0 !important;
+}
+
+.border-success {
+  border-color: #198754 !important;
+}
+
+.list-group-item {
+  border: 1px solid rgba(0,0,0,.125);
+  padding: 1rem;
+}
+
+.list-group-item:first-child {
+  border-top-left-radius: 0.375rem;
+  border-top-right-radius: 0.375rem;
+}
+
+.list-group-item:last-child {
+  border-bottom-left-radius: 0.375rem;
+  border-bottom-right-radius: 0.375rem;
+}
+
+#device-name {
+  font-size: 1rem;
+}
+
+#device-name:focus {
+  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+  border-color: #86b7fe;
+}
+
+.btn-lg {
+  font-size: 1.125rem;
+  padding: 0.75rem 1.5rem;
+}
+
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.spinner-border-sm {
+  width: 1rem;
+  height: 1rem;
+}
+
+.bg-light {
+  background-color: #f8f9fa !important;
+}
+
+@media (max-width: 768px) {
+  .container-fluid {
+    padding: 1rem;
+  }
+
+  .card-body {
+    padding: 1rem;
+  }
+
+  .col-md-4 {
+    margin-top: 1rem;
+  }
+}
+
+/* Button hover effects */
+.btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  transition: transform 0.2s ease;
+}
+
+.btn-primary:hover {
+  background-color: #0b5ed7;
+  border-color: #0a58ca;
+}
+
+/* Alert improvements */
+.alert {
+  border-radius: 0.375rem;
+}
+
+.alert-heading {
+  margin-bottom: 0.5rem;
+}
+
+/* Loading animation */
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 1; }
+}
+
+.loading {
+  animation: pulse 1.5s infinite;
+}
+</style>

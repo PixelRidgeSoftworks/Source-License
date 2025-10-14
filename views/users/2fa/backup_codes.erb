@@ -1,0 +1,410 @@
+<% @page_title = "Backup Codes" %>
+
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-xl-6 col-lg-8 col-md-10">
+            <!-- Header -->
+            <div class="text-center mb-4">
+                <h1 class="h2 mb-2">
+                    <i class="bi bi-list-ol text-warning"></i>
+                    Your Backup Codes
+                </h1>
+                <p class="text-muted">Save these codes in a safe place</p>
+            </div>
+
+            <!-- Important Notice -->
+            <div class="alert alert-warning mb-4">
+                <i class="bi bi-exclamation-triangle"></i>
+                <strong>Important:</strong> These backup codes are shown only once. Save them immediately in a secure location.
+            </div>
+
+            <!-- Backup Codes Display -->
+            <div class="card">
+                <div class="card-header d-flex align-items-center justify-content-between">
+                    <h5 class="mb-0">
+                        <i class="bi bi-shield-check text-success"></i>
+                        Your Backup Codes
+                    </h5>
+                    <span class="badge bg-success"><%= @backup_codes.length %> codes</span>
+                </div>
+
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <% @backup_codes.each_with_index do |code, index| %>
+                            <div class="col-md-6 mb-3">
+                                <div class="backup-code-item p-3 bg-body-secondary rounded position-relative">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <div>
+                                            <small class="text-muted d-block mb-1">Code #<%= index + 1 %></small>
+                                            <code class="backup-code-display" data-code="<%= code %>"><%= format_backup_code(code) %></code>
+                                        </div>
+                                        <button type="button"
+                                                class="btn btn-sm btn-outline-primary copy-btn"
+                                                onclick="copyCode('<%= code %>', this)"
+                                                title="Copy to clipboard">
+                                            <i class="bi bi-clipboard"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        <% end %>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <button type="button" class="btn btn-primary w-100" onclick="printCodes()">
+                                <i class="bi bi-printer"></i>
+                                Print Codes
+                            </button>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <button type="button" class="btn btn-secondary w-100" onclick="downloadCodes()">
+                                <i class="bi bi-download"></i>
+                                Download as Text
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-footer bg-body-secondary">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <small class="text-muted">
+                                <i class="bi bi-info-circle"></i>
+                                Each code can only be used once. Keep them secure and accessible.
+                            </small>
+                        </div>
+                        <div class="col-auto">
+                            <a href="/2fa" class="btn btn-outline-primary">
+                                <i class="bi bi-arrow-left"></i>
+                                Back to 2FA Settings
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Instructions -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="bi bi-question-circle text-info"></i>
+                        How to Use Backup Codes
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>When to Use</h6>
+                            <ul class="small text-muted mb-3">
+                                <li>Lost your authenticator device</li>
+                                <li>Security key is not available</li>
+                                <li>Unable to receive SMS codes</li>
+                                <li>Emergency access needed</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Storage Tips</h6>
+                            <ul class="small text-muted mb-3">
+                                <li>Print and store in a safe place</li>
+                                <li>Save in a password manager</li>
+                                <li>Keep multiple copies in different locations</li>
+                                <li>Don't store on the same device as your passwords</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info mb-0">
+                        <i class="bi bi-lightbulb"></i>
+                        <strong>Pro Tip:</strong> Save these codes in your password manager's secure notes or print them and store in a safe location.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Security Notice -->
+            <div class="card mt-4">
+                <div class="card-body bg-danger text-white">
+                    <div class="d-flex align-items-start">
+                        <i class="bi bi-exclamation-triangle-fill text-white me-3" style="font-size: 2rem;"></i>
+                        <div>
+                            <h6 class="text-white mb-2">Security Warning</h6>
+                            <p class="small mb-0">
+                                These backup codes provide the same access as your password. Treat them with the same level of security.
+                                If you lose these codes or suspect they've been compromised, generate new ones immediately.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Print Stylesheet -->
+<style media="print">
+    @page {
+        size: A4;
+        margin: 1in;
+    }
+
+    body * {
+        visibility: hidden;
+    }
+
+    .print-content, .print-content * {
+        visibility: visible;
+    }
+
+    .print-content {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+    }
+
+    .no-print {
+        display: none !important;
+    }
+</style>
+
+<style>
+.backup-code-item {
+    background: var(--surface-tertiary) !important;
+    border: 1px solid var(--border-default);
+    transition: all 0.3s ease;
+}
+
+.backup-code-item:hover {
+    border-color: var(--accent-primary);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+}
+
+.backup-code-display {
+    font-family: 'Courier New', monospace;
+    font-size: 1.1rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    color: var(--text-primary);
+    background: var(--surface-secondary);
+    border: 1px solid var(--border-default);
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    user-select: all;
+}
+
+.copy-btn {
+    transition: all 0.3s ease;
+}
+
+.copy-btn:hover {
+    transform: scale(1.1);
+}
+
+.copy-btn.copied {
+    background: var(--bs-success);
+    border-color: var(--bs-success);
+    color: white;
+}
+
+.bg-body-secondary {
+    background-color: var(--surface-tertiary) !important;
+}
+
+/* Print specific styles */
+.print-hidden {
+    display: block;
+}
+
+@media print {
+    .no-print {
+        display: none !important;
+    }
+
+    .print-hidden {
+        display: block !important;
+    }
+
+    .card {
+        border: 1px solid #000 !important;
+        box-shadow: none !important;
+    }
+
+    .backup-code-display {
+        color: #000 !important;
+        background: #f8f9fa !important;
+        border: 1px solid #000 !important;
+    }
+}
+</style>
+
+<!-- Hidden Print Content -->
+<div class="print-content print-hidden" style="display: none;">
+    <div style="text-align: center; margin-bottom: 30px;">
+        <h1>Source-License Backup Codes</h1>
+        <p>Two-Factor Authentication Recovery Codes</p>
+        <p>Generated on: <%= Time.now.strftime("%B %d, %Y at %I:%M %p") %></p>
+    </div>
+
+    <div style="margin-bottom: 30px;">
+        <h3>Your Backup Codes:</h3>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px;">
+            <% @backup_codes.each_with_index do |code, index| %>
+                <div style="padding: 10px; border: 1px solid #ccc; font-family: monospace; font-size: 14px;">
+                    Code #<%= index + 1 %>: <strong><%= format_backup_code(code) %></strong>
+                </div>
+            <% end %>
+        </div>
+    </div>
+
+    <div style="margin-top: 30px; border-top: 1px solid #ccc; padding-top: 20px;">
+        <h4>Important Instructions:</h4>
+        <ul>
+            <li>Each backup code can only be used once</li>
+            <li>Store these codes in a secure location</li>
+            <li>Use them only when you cannot access your primary 2FA method</li>
+            <li>Generate new codes if these are lost or compromised</li>
+        </ul>
+
+        <p style="margin-top: 20px;">
+            <strong>Security Warning:</strong> These codes provide access to your account.
+            Keep them as secure as your password.
+        </p>
+    </div>
+</div>
+
+<script>
+// Backup code management functions
+function copyCode(code, button) {
+    // Format code with dash for display
+    const formattedCode = code.slice(0, 4) + '-' + code.slice(4);
+
+    navigator.clipboard.writeText(formattedCode).then(() => {
+        // Show success feedback
+        const originalIcon = button.innerHTML;
+        const originalClass = button.className;
+
+        button.innerHTML = '<i class="bi bi-check"></i>';
+        button.classList.add('copied');
+
+        setTimeout(() => {
+            button.innerHTML = originalIcon;
+            button.className = originalClass;
+        }, 2000);
+
+        // Show notification
+        showNotification('Code copied to clipboard!', 'success');
+    }).catch(() => {
+        showNotification('Failed to copy to clipboard', 'error');
+    });
+}
+
+function printCodes() {
+    // Show print content and hide everything else
+    document.querySelector('.print-content').style.display = 'block';
+
+    // Trigger print
+    window.print();
+
+    // Hide print content again
+    setTimeout(() => {
+        document.querySelector('.print-content').style.display = 'none';
+    }, 100);
+}
+
+function downloadCodes() {
+    const codes = [];
+    codes.push('Source-License Two-Factor Authentication Backup Codes');
+    codes.push('Generated on: ' + new Date().toLocaleString());
+    codes.push('');
+    codes.push('Your Backup Codes:');
+    codes.push('==================');
+
+    // Get all backup codes
+    document.querySelectorAll('.backup-code-display').forEach((element, index) => {
+        const code = element.getAttribute('data-code');
+        const formattedCode = code.slice(0, 4) + '-' + code.slice(4);
+        codes.push(`Code #${index + 1}: ${formattedCode}`);
+    });
+
+    codes.push('');
+    codes.push('Important Instructions:');
+    codes.push('======================');
+    codes.push('• Each backup code can only be used once');
+    codes.push('• Store these codes in a secure location');
+    codes.push('• Use them only when you cannot access your primary 2FA method');
+    codes.push('• Generate new codes if these are lost or compromised');
+    codes.push('');
+    codes.push('Security Warning: These codes provide access to your account.');
+    codes.push('Keep them as secure as your password.');
+
+    // Create and download file
+    const content = codes.join('\n');
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = window.URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `source-license-backup-codes-${new Date().toISOString().split('T')[0]}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+
+    showNotification('Backup codes downloaded successfully!', 'success');
+}
+
+function showNotification(message, type) {
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type === 'success' ? 'success' : 'danger'} position-fixed`;
+    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; max-width: 300px;';
+    notification.innerHTML = `
+        <i class="bi bi-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
+        ${message}
+    `;
+
+    document.body.appendChild(notification);
+
+    setTimeout(() => {
+        notification.style.transition = 'opacity 0.5s ease';
+        notification.style.opacity = '0';
+        setTimeout(() => notification.remove(), 500);
+    }, 3000);
+}
+
+// Initialize page
+document.addEventListener('DOMContentLoaded', function() {
+    // Add hover effects to backup codes
+    document.querySelectorAll('.backup-code-item').forEach(item => {
+        const codeDisplay = item.querySelector('.backup-code-display');
+
+        item.addEventListener('mouseenter', () => {
+            codeDisplay.style.transform = 'scale(1.02)';
+        });
+
+        item.addEventListener('mouseleave', () => {
+            codeDisplay.style.transform = 'scale(1)';
+        });
+    });
+
+    // Show a reminder notification
+    setTimeout(() => {
+        showNotification('Remember to save these codes in a secure location!', 'warning');
+    }, 2000);
+});
+
+// Prevent accidental navigation away
+window.addEventListener('beforeunload', function(e) {
+    const confirmationMessage = 'Are you sure you want to leave? Make sure you have saved your backup codes.';
+    e.returnValue = confirmationMessage;
+    return confirmationMessage;
+});
+
+// Remove the beforeunload listener when navigating to 2FA settings
+document.addEventListener('click', function(e) {
+    if (e.target.closest('a[href="/2fa"]')) {
+        window.removeEventListener('beforeunload', arguments.callee);
+    }
+});
+</script>

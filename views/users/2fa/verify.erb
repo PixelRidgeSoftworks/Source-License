@@ -1,0 +1,603 @@
+<% @page_title = "Two-Factor Authentication" %>
+
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-xl-5 col-lg-6 col-md-8 col-sm-10">
+            <div class="card">
+                <div class="card-header text-center bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-shield-lock"></i>
+                        Two-Factor Authentication
+                    </h4>
+                    <small>Additional verification required</small>
+                </div>
+
+                <div class="card-body p-4">
+                    <!-- Security Notice -->
+                    <div class="alert alert-info mb-4">
+                        <i class="bi bi-info-circle"></i>
+                        <strong>Security Check:</strong> Please verify your identity using one of your configured 2FA methods.
+                    </div>
+
+                    <!-- 2FA Methods Tabs -->
+                    <ul class="nav nav-pills nav-justified mb-4" id="2faMethods" role="tablist">
+                        <% if @available_methods.include?('totp') %>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link <%= @preferred_method == 'totp' ? 'active' : '' %>"
+                                        id="totp-tab"
+                                        data-bs-toggle="pill"
+                                        data-bs-target="#totp-pane"
+                                        type="button"
+                                        role="tab">
+                                    <i class="bi bi-phone"></i>
+                                    <span class="d-none d-sm-inline">Authenticator</span>
+                                </button>
+                            </li>
+                        <% end %>
+
+                        <% if @available_methods.include?('webauthn') %>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link <%= @preferred_method == 'webauthn' ? 'active' : '' %>"
+                                        id="webauthn-tab"
+                                        data-bs-toggle="pill"
+                                        data-bs-target="#webauthn-pane"
+                                        type="button"
+                                        role="tab">
+                                    <i class="bi bi-key"></i>
+                                    <span class="d-none d-sm-inline">Security Key</span>
+                                </button>
+                            </li>
+                        <% end %>
+
+                        <% if @backup_codes_count > 0 %>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link"
+                                        id="backup-tab"
+                                        data-bs-toggle="pill"
+                                        data-bs-target="#backup-pane"
+                                        type="button"
+                                        role="tab">
+                                    <i class="bi bi-list-ol"></i>
+                                    <span class="d-none d-sm-inline">Backup Code</span>
+                                </button>
+                            </li>
+                        <% end %>
+                    </ul>
+
+                    <!-- 2FA Method Content -->
+                    <div class="tab-content" id="2faMethodsContent">
+                        <!-- TOTP Tab -->
+                        <% if @available_methods.include?('totp') %>
+                            <div class="tab-pane fade <%= @preferred_method == 'totp' ? 'show active' : '' %>"
+                                 id="totp-pane"
+                                 role="tabpanel">
+                                <div class="text-center mb-3">
+                                    <i class="bi bi-phone text-primary" style="font-size: 3rem;"></i>
+                                    <h5 class="mt-2">Authenticator App</h5>
+                                    <p class="text-muted">Enter the 6-digit code from your authenticator app</p>
+                                </div>
+
+                                <form id="totpForm" method="post" action="/2fa/verify/totp">
+                                    <div class="mb-3">
+                                        <label for="totpCode" class="form-label">Verification Code</label>
+                                        <input type="text"
+                                               class="form-control form-control-lg text-center"
+                                               id="totpCode"
+                                               name="token"
+                                               placeholder="000000"
+                                               maxlength="6"
+                                               pattern="[0-9]{6}"
+                                               autocomplete="off"
+                                               required>
+                                        <div class="form-text">Enter the code from Google Authenticator or similar app</div>
+                                    </div>
+
+                                    <div class="d-grid">
+                                        <button type="submit" class="btn btn-primary btn-lg" id="totpSubmit">
+                                            <i class="bi bi-check-circle"></i>
+                                            Verify Code
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        <% end %>
+
+                        <!-- WebAuthn Tab -->
+                        <% if @available_methods.include?('webauthn') %>
+                            <div class="tab-pane fade <%= @preferred_method == 'webauthn' ? 'show active' : '' %>"
+                                 id="webauthn-pane"
+                                 role="tabpanel">
+                                <div class="text-center mb-3">
+                                    <i class="bi bi-key text-primary" style="font-size: 3rem;"></i>
+                                    <h5 class="mt-2">Security Key</h5>
+                                    <p class="text-muted">Use your hardware security key or biometric device</p>
+                                </div>
+
+                                <div id="webauthnStatus">
+                                    <div class="alert alert-info text-center">
+                                        <div class="security-key-animation mb-2">
+                                            <i class="bi bi-key-fill text-primary" style="font-size: 2rem; animation: pulse 2s infinite;"></i>
+                                        </div>
+                                        <strong>Touch your security key</strong><br>
+                                        <small>Or follow the biometric prompt</small>
+                                    </div>
+                                </div>
+
+                                <div class="d-grid">
+                                    <button type="button" class="btn btn-primary btn-lg" id="webauthnVerify" onclick="startWebAuthnAuth()">
+                                        <i class="bi bi-shield-check"></i>
+                                        Use Security Key
+                                    </button>
+                                </div>
+                            </div>
+                        <% end %>
+
+                        <!-- Backup Code Tab -->
+                        <% if @backup_codes_count > 0 %>
+                            <div class="tab-pane fade" id="backup-pane" role="tabpanel">
+                                <div class="text-center mb-3">
+                                    <i class="bi bi-list-ol text-warning" style="font-size: 3rem;"></i>
+                                    <h5 class="mt-2">Backup Code</h5>
+                                    <p class="text-muted">Enter one of your backup codes</p>
+                                </div>
+
+                                <div class="alert alert-warning mb-3">
+                                    <i class="bi bi-exclamation-triangle"></i>
+                                    <strong>Note:</strong> You have <%= @backup_codes_count %> backup codes remaining.
+                                    Each code can only be used once.
+                                </div>
+
+                                <form id="backupForm" method="post" action="/2fa/verify/backup">
+                                    <div class="mb-3">
+                                        <label for="backupCode" class="form-label">Backup Code</label>
+                                        <input type="text"
+                                               class="form-control form-control-lg text-center"
+                                               id="backupCode"
+                                               name="code"
+                                               placeholder="abcd1234"
+                                               maxlength="8"
+                                               pattern="[a-z0-9]{8}"
+                                               autocomplete="off"
+                                               required>
+                                        <div class="form-text">Enter your 8-character backup code</div>
+                                    </div>
+
+                                    <div class="d-grid">
+                                        <button type="submit" class="btn btn-warning btn-lg" id="backupSubmit">
+                                            <i class="bi bi-key"></i>
+                                            Use Backup Code
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        <% end %>
+                    </div>
+
+                    <!-- Error Display -->
+                    <div id="errorDisplay" class="alert alert-danger mt-3" style="display: none;">
+                        <i class="bi bi-exclamation-circle"></i>
+                        <span id="errorMessage"></span>
+                    </div>
+
+                    <!-- Success Display -->
+                    <div id="successDisplay" class="alert alert-success mt-3" style="display: none;">
+                        <i class="bi bi-check-circle"></i>
+                        <span id="successMessage"></span>
+                    </div>
+                </div>
+
+                <div class="card-footer bg-body-secondary text-center">
+                    <small class="text-muted">
+                        <i class="bi bi-shield-exclamation"></i>
+                        Having trouble? Contact support for assistance.
+                    </small>
+                </div>
+            </div>
+
+            <!-- Alternative Actions -->
+            <div class="text-center mt-3">
+                <a href="/users/logout" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-box-arrow-right"></i>
+                    Sign Out
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.nav-pills .nav-link {
+    border-radius: 8px;
+    margin: 0 2px;
+}
+
+.nav-pills .nav-link.active {
+    background: var(--gradient-primary);
+}
+
+.security-key-animation {
+    animation: bounce 1.5s ease-in-out infinite alternate;
+}
+
+@keyframes bounce {
+    0% { transform: translateY(0px); }
+    100% { transform: translateY(-5px); }
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+#totpCode, #backupCode {
+    font-family: 'Courier New', monospace;
+    letter-spacing: 0.1em;
+}
+
+.bg-body-secondary {
+    background-color: var(--surface-tertiary) !important;
+}
+
+/* Loading states */
+.btn-loading {
+    position: relative;
+    color: transparent !important;
+}
+
+.btn-loading::after {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    top: 50%;
+    left: 50%;
+    margin-left: -10px;
+    margin-top: -10px;
+    border: 2px solid #ffffff;
+    border-radius: 50%;
+    border-top-color: transparent;
+    animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+</style>
+
+<script>
+// 2FA Verification Implementation
+class TwoFactorVerification {
+    constructor() {
+        this.webauthnOptions = <%= @webauthn_options ? @webauthn_options.to_json : 'null' %>;
+        this.init();
+    }
+
+    init() {
+        // Set up form handlers
+        this.setupTotpForm();
+        this.setupBackupForm();
+
+        // Auto-start WebAuthn if it's the preferred method
+        <% if @preferred_method == 'webauthn' && @webauthn_options %>
+            setTimeout(() => {
+                this.startWebAuthnAuth();
+            }, 1000);
+        <% end %>
+
+        // Focus on the active input
+        this.focusActiveInput();
+    }
+
+    setupTotpForm() {
+        const form = document.getElementById('totpForm');
+        const input = document.getElementById('totpCode');
+
+        if (!form || !input) return;
+
+        // Auto-format and submit
+        input.addEventListener('input', (e) => {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length > 6) value = value.substring(0, 6);
+            e.target.value = value;
+
+            if (value.length === 6) {
+                setTimeout(() => form.submit(), 300);
+            }
+        });
+
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.submitTotp();
+        });
+    }
+
+    setupBackupForm() {
+        const form = document.getElementById('backupForm');
+        const input = document.getElementById('backupCode');
+
+        if (!form || !input) return;
+
+        // Auto-format backup code
+        input.addEventListener('input', (e) => {
+            let value = e.target.value.toLowerCase().replace(/[^a-z0-9]/g, '');
+            if (value.length > 8) value = value.substring(0, 8);
+            e.target.value = value;
+        });
+
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.submitBackupCode();
+        });
+    }
+
+    async submitTotp() {
+        const token = document.getElementById('totpCode').value.trim();
+        const button = document.getElementById('totpSubmit');
+
+        if (token.length !== 6) {
+            this.showError('Please enter a 6-digit code');
+            return;
+        }
+
+        this.setLoading(button, true);
+        this.hideMessages();
+
+        try {
+            const response = await fetch('/2fa/verify/totp', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `token=${encodeURIComponent(token)}`,
+                credentials: 'same-origin'
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                this.showSuccess('Verification successful! Redirecting...');
+                if (result.warning) {
+                    setTimeout(() => this.showError(result.warning, 'warning'), 1500);
+                }
+                setTimeout(() => {
+                    window.location.href = result.redirect || '/dashboard';
+                }, 2000);
+            } else {
+                this.showError(result.error || 'Invalid verification code');
+                document.getElementById('totpCode').value = '';
+                document.getElementById('totpCode').focus();
+            }
+        } catch (error) {
+            this.showError('Network error. Please try again.');
+        } finally {
+            this.setLoading(button, false);
+        }
+    }
+
+    async submitBackupCode() {
+        const code = document.getElementById('backupCode').value.trim().toLowerCase();
+        const button = document.getElementById('backupSubmit');
+
+        if (code.length !== 8) {
+            this.showError('Please enter an 8-character backup code');
+            return;
+        }
+
+        this.setLoading(button, true);
+        this.hideMessages();
+
+        try {
+            const response = await fetch('/2fa/verify/backup', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `code=${encodeURIComponent(code)}`,
+                credentials: 'same-origin'
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                this.showSuccess('Backup code accepted! Redirecting...');
+                if (result.warning) {
+                    setTimeout(() => this.showError(result.warning, 'warning'), 1500);
+                }
+                setTimeout(() => {
+                    window.location.href = result.redirect || '/dashboard';
+                }, 2000);
+            } else {
+                this.showError(result.error || 'Invalid backup code');
+                document.getElementById('backupCode').value = '';
+                document.getElementById('backupCode').focus();
+            }
+        } catch (error) {
+            this.showError('Network error. Please try again.');
+        } finally {
+            this.setLoading(button, false);
+        }
+    }
+
+    async startWebAuthnAuth() {
+        if (!this.webauthnOptions) {
+            this.showError('WebAuthn not available');
+            return;
+        }
+
+        if (!window.PublicKeyCredential) {
+            this.showError('WebAuthn not supported by this browser');
+            return;
+        }
+
+        const button = document.getElementById('webauthnVerify');
+        this.setLoading(button, true);
+        this.hideMessages();
+
+        try {
+            // Convert base64url to ArrayBuffer
+            const options = {
+                ...this.webauthnOptions,
+                challenge: this.base64urlToArrayBuffer(this.webauthnOptions.challenge)
+            };
+
+            if (options.allowCredentials) {
+                options.allowCredentials = options.allowCredentials.map(cred => ({
+                    ...cred,
+                    id: this.base64urlToArrayBuffer(cred.id)
+                }));
+            }
+
+            // Get credential from authenticator
+            const credential = await navigator.credentials.get({
+                publicKey: options
+            });
+
+            if (!credential) {
+                throw new Error('No credential returned');
+            }
+
+            // Send to server
+            await this.completeWebAuthnAuth(credential);
+
+        } catch (error) {
+            if (error.name === 'NotAllowedError') {
+                this.showError('Authentication was cancelled or timed out');
+            } else if (error.name === 'InvalidStateError') {
+                this.showError('No matching security key found');
+            } else {
+                this.showError(`Authentication failed: ${error.message}`);
+            }
+        } finally {
+            this.setLoading(button, false);
+        }
+    }
+
+    async completeWebAuthnAuth(credential) {
+        try {
+            const credentialData = {
+                id: credential.id,
+                rawId: this.arrayBufferToBase64url(credential.rawId),
+                response: {
+                    clientDataJSON: this.arrayBufferToBase64url(credential.response.clientDataJSON),
+                    authenticatorData: this.arrayBufferToBase64url(credential.response.authenticatorData),
+                    signature: this.arrayBufferToBase64url(credential.response.signature),
+                    userHandle: credential.response.userHandle ?
+                        this.arrayBufferToBase64url(credential.response.userHandle) : null
+                },
+                type: credential.type
+            };
+
+            const response = await fetch('/2fa/verify/webauthn', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(credentialData),
+                credentials: 'same-origin'
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                this.showSuccess('Security key verified! Redirecting...');
+                setTimeout(() => {
+                    window.location.href = result.redirect || '/dashboard';
+                }, 2000);
+            } else {
+                throw new Error(result.error || 'Authentication failed');
+            }
+
+        } catch (error) {
+            throw new Error(`Failed to complete authentication: ${error.message}`);
+        }
+    }
+
+    focusActiveInput() {
+        setTimeout(() => {
+            const activePane = document.querySelector('.tab-pane.active');
+            if (activePane) {
+                const input = activePane.querySelector('input');
+                if (input) input.focus();
+            }
+        }, 100);
+    }
+
+    showError(message, type = 'danger') {
+        const errorDiv = document.getElementById('errorDisplay');
+        const errorMsg = document.getElementById('errorMessage');
+
+        errorMsg.textContent = message;
+        errorDiv.className = `alert alert-${type} mt-3`;
+        errorDiv.style.display = 'block';
+
+        document.getElementById('successDisplay').style.display = 'none';
+    }
+
+    showSuccess(message) {
+        const successDiv = document.getElementById('successDisplay');
+        const successMsg = document.getElementById('successMessage');
+
+        successMsg.textContent = message;
+        successDiv.style.display = 'block';
+
+        document.getElementById('errorDisplay').style.display = 'none';
+    }
+
+    hideMessages() {
+        document.getElementById('errorDisplay').style.display = 'none';
+        document.getElementById('successDisplay').style.display = 'none';
+    }
+
+    setLoading(button, loading) {
+        if (loading) {
+            button.classList.add('btn-loading');
+            button.disabled = true;
+        } else {
+            button.classList.remove('btn-loading');
+            button.disabled = false;
+        }
+    }
+
+    // Utility methods for base64url encoding/decoding
+    base64urlToArrayBuffer(base64url) {
+        const binary = atob(base64url.replace(/-/g, '+').replace(/_/g, '/'));
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) {
+            bytes[i] = binary.charCodeAt(i);
+        }
+        return bytes.buffer;
+    }
+
+    arrayBufferToBase64url(buffer) {
+        const bytes = new Uint8Array(buffer);
+        let binary = '';
+        for (let i = 0; i < bytes.byteLength; i++) {
+            binary += String.fromCharCode(bytes[i]);
+        }
+        return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+    }
+}
+
+// Initialize verification
+let verification;
+
+document.addEventListener('DOMContentLoaded', function() {
+    verification = new TwoFactorVerification();
+
+    // Tab switching handler
+    document.querySelectorAll('[data-bs-toggle="pill"]').forEach(tab => {
+        tab.addEventListener('shown.bs.tab', () => {
+            verification.focusActiveInput();
+            verification.hideMessages();
+        });
+    });
+});
+
+// Global function for WebAuthn button
+function startWebAuthnAuth() {
+    if (verification) {
+        verification.startWebAuthnAuth();
+    }
+}
+</script>

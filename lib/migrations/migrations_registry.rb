@@ -41,6 +41,12 @@ class Migrations::MigrationsRegistry
         Migrations::SecureLicenseSystem,
         Migrations::EnforceMachineIdRequirement,
         Migrations::AddActivatedAtToLicenseActivations,
+        Migrations::CreateBillingAddressesTable,
+        Migrations::CreateUserTotpSettingsTable,
+        Migrations::CreateUserWebauthnCredentialsTable,
+        Migrations::Add2faFieldsToUsersTable,
+        Migrations::Add2faSettingsToSettingsTable,
+        Migrations::AddExpandedSettingsToSettingsTable,
       ]
     end
 
@@ -75,6 +81,12 @@ class Migrations::MigrationsRegistry
         025_secure_license_system
         026_enforce_machine_id_requirement
         027_add_activated_at_to_license_activations
+        028_create_billing_addresses_table
+        029_create_user_totp_settings_table
+        030_create_user_webauthn_credentials_table
+        031_add_2fa_fields_to_users_table
+        032_add_2fa_settings_to_settings_table
+        033_add_expanded_settings_to_settings_table
       ]
     end
   end

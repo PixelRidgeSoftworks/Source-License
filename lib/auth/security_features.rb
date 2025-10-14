@@ -32,17 +32,19 @@ module Auth::SecurityFeatures
   # TWO-FACTOR AUTHENTICATION
   #
 
-  # Two-factor authentication support
+  # Include the comprehensive 2FA module
+  include Auth::TwoFactorAuth
+
+  # Legacy methods for backward compatibility
   def generate_2fa_secret
-    Base32.encode(SecureRandom.random_bytes(10))
+    ROTP::Base32.random_base32
   end
 
   def verify_2fa_token(secret, token)
     return false unless secret && token
 
-    # TOTP verification would go here
-    # For now, we'll simulate it
-    true # Placeholder
+    totp = ROTP::TOTP.new(secret)
+    totp.verify(token, drift_behind: 30, drift_ahead: 30)
   end
 
   #
@@ -63,24 +65,24 @@ module Auth::SecurityFeatures
 
   # Progressive ban management
   def account_locked?(email)
-    ban_info = get_current_ban(email)
+    ban_info = current_ban(email)
     return false unless ban_info
 
     # Check if ban is still active
     ban_info[:banned_until] > Time.now
   end
 
-  def get_current_ban(email)
+  def current_ban(email)
     if use_redis_for_auth?
-      get_ban_redis(email)
+      ban_redis(email)
     else
-      get_ban_database(email)
+      ban_database(email)
     end
   end
 
   def apply_progressive_ban(email, admin_id = nil, request_info = {})
     # Get previous ban count
-    ban_count = get_ban_count(email)
+    ban_count = ban_count(email)
 
     # Calculate new ban duration
     duration_index = [ban_count, BAN_DURATIONS.length - 1].min
@@ -119,11 +121,11 @@ module Auth::SecurityFeatures
     ban_data
   end
 
-  def get_ban_count(email)
+  def ban_count(email)
     if use_redis_for_auth?
-      get_ban_count_redis(email)
+      ban_count_redis(email)
     else
-      get_ban_count_database(email)
+      ban_count_database(email)
     end
   end
 
@@ -137,8 +139,8 @@ module Auth::SecurityFeatures
     end
   end
 
-  def get_ban_time_remaining(email)
-    ban_info = get_current_ban(email)
+  def ban_time_remaining(email)
+    ban_info = current_ban(email)
     return 0 unless ban_info && ban_info[:banned_until] > Time.now
 
     ban_info[:banned_until] - Time.now
@@ -180,11 +182,11 @@ module Auth::SecurityFeatures
     true
   end
 
-  def get_all_active_bans(limit = 50)
+  def all_active_bans(limit = 50)
     if use_redis_for_auth?
-      get_all_active_bans_redis(limit)
+      all_active_bans_redis(limit)
     else
-      get_all_active_bans_database(limit)
+      all_active_bans_database(limit)
     end
   end
 
@@ -205,16 +207,16 @@ module Auth::SecurityFeatures
     end
   end
 
-  def get_failed_attempts(email)
+  def failed_attempts(email)
     if use_redis_for_auth?
-      get_failed_attempts_redis(email)
+      failed_attempts_redis(email)
     else
-      get_failed_attempts_database(email)
+      failed_attempts_database(email)
     end
   end
 
-  def get_failed_attempt_count(email)
-    get_failed_attempts(email).count
+  def failed_attempt_count(email)
+    failed_attempts(email).count
   end
 
   def clear_failed_login_attempts(email)
@@ -251,7 +253,7 @@ module Auth::SecurityFeatures
     end
   end
 
-  def get_failed_attempts_redis(email)
+  def failed_attempts_redis(email)
     return [] unless use_redis_for_auth?
 
     begin
@@ -268,7 +270,7 @@ module Auth::SecurityFeatures
       attempts.select { |attempt| Time.parse(attempt[:timestamp].to_s) > cutoff_time }
     rescue StandardError => e
       AppLogger.error("Redis failed for auth retrieval: #{e.message}")
-      get_failed_attempts_database(email)
+      failed_attempts_database(email)
     end
   end
 
@@ -307,7 +309,7 @@ module Auth::SecurityFeatures
     session[:failed_attempts] << attempt_data
   end
 
-  def get_failed_attempts_database(email)
+  def failed_attempts_database(email)
     return [] unless DB.table_exists?(:failed_login_attempts)
 
     cutoff_time = Time.now - LOGIN_ATTEMPT_WINDOW
@@ -385,7 +387,7 @@ module Auth::SecurityFeatures
     end
   end
 
-  def get_ban_redis(email)
+  def ban_redis(email)
     return nil unless use_redis_for_auth?
 
     begin
@@ -401,11 +403,11 @@ module Auth::SecurityFeatures
       ban_data
     rescue StandardError => e
       AppLogger.error("Redis failed for ban retrieval: #{e.message}")
-      get_ban_database(email)
+      ban_database(email)
     end
   end
 
-  def get_ban_count_redis(email)
+  def ban_count_redis(email)
     return 0 unless use_redis_for_auth?
 
     begin
@@ -417,7 +419,7 @@ module Auth::SecurityFeatures
       count ? count.to_i : 0
     rescue StandardError => e
       AppLogger.error("Redis failed for ban count retrieval: #{e.message}")
-      get_ban_count_database(email)
+      ban_count_database(email)
     end
   end
 
@@ -441,7 +443,7 @@ module Auth::SecurityFeatures
     AppLogger.error("Database failed for ban storage: #{e.message}")
   end
 
-  def get_ban_database(email)
+  def ban_database(email)
     return nil unless DB.table_exists?(:account_bans)
 
     ban = DB[:account_bans]
@@ -467,7 +469,7 @@ module Auth::SecurityFeatures
     nil
   end
 
-  def get_ban_count_database(email)
+  def ban_count_database(email)
     return 0 unless DB.table_exists?(:account_bans)
 
     # Get the most recent ban count, or count historical bans
@@ -553,7 +555,7 @@ module Auth::SecurityFeatures
     AppLogger.error("Database failed for ban count reset: #{e.message}")
   end
 
-  def get_all_active_bans_redis(limit = 50)
+  def all_active_bans_redis(limit = 50)
     return [] unless use_redis_for_auth?
 
     begin
@@ -578,11 +580,11 @@ module Auth::SecurityFeatures
       active_bans.sort_by { |ban| ban[:created_at] }.reverse
     rescue StandardError => e
       AppLogger.error("Redis failed for getting all active bans: #{e.message}")
-      get_all_active_bans_database(limit)
+      all_active_bans_database(limit)
     end
   end
 
-  def get_all_active_bans_database(limit = 50)
+  def all_active_bans_database(limit = 50)
     return [] unless DB.table_exists?(:account_bans)
 
     bans = DB[:account_bans]

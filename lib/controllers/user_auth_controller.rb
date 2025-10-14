@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative 'route_primitive'
+
 # Controller for user authentication and user area routes
 module UserAuthController
   def self.included(base)
@@ -12,46 +14,87 @@ module UserAuthController
     # USER AUTHENTICATION ROUTES
     # ==================================================
 
-    # User login page
+    # Authentication routes
+    user_login_page_route(app)
+    user_login_handler_route(app)
+    user_registration_page_route(app)
+    user_registration_handler_route(app)
+    user_logout_route(app)
+
+    # User dashboard and license management
+    user_dashboard_route(app)
+    user_licenses_list_route(app)
+    user_license_details_route(app)
+    secure_download_route(app)
+
+    # User profile management
+    user_profile_page_route(app)
+    user_profile_update_route(app)
+
+    # Password reset functionality
+    password_reset_request_page_route(app)
+    password_reset_request_handler_route(app)
+    password_reset_form_route(app)
+    password_reset_handler_route(app)
+  end
+
+  # User login page
+  def self.user_login_page_route(app)
     app.get '/login' do
       redirect '/dashboard' if user_logged_in?
       @page_title = 'Login'
       erb :'users/login', layout: :'layouts/main_layout'
     end
+  end
 
-    # User login handler
+  # User login handler
+  def self.user_login_handler_route(app)
     app.post '/login' do
       result = authenticate_user(params[:email], params[:password])
 
       if result[:success]
         user = result[:user]
-        create_user_session(user)
 
-        # Transfer any licenses from email to user account
-        transferred_count = transfer_licenses_to_user(user, params[:email])
+        # Check if user has 2FA enabled
+        if user_has_2fa?(user[:id])
+          # Set up 2FA verification session
+          session[:pending_2fa_user_id] = user[:id]
+          session[:pending_licenses_transfer] = params[:email]
+          redirect '/2fa/verify'
+        else
+          # No 2FA required, complete login
+          create_user_session(user)
 
-        if transferred_count.positive?
-          flash :info, "#{transferred_count} existing license(s) have been transferred to your account."
+          # Transfer any licenses from email to user account
+          transferred_count = transfer_licenses_to_user(user, params[:email])
+
+          if transferred_count.positive?
+            flash :info, "#{transferred_count} existing license(s) have been transferred to your account."
+          end
+
+          # Redirect to dashboard or return URL
+          redirect_url = session.delete(:return_to) || '/dashboard'
+          redirect redirect_url
         end
-
-        # Redirect to dashboard or return URL
-        redirect_url = session.delete(:return_to) || '/dashboard'
-        redirect redirect_url
       else
         @error = result[:error]
         @page_title = 'Login'
         erb :'users/login', layout: :'layouts/main_layout'
       end
     end
+  end
 
-    # User registration page
+  # User registration page
+  def self.user_registration_page_route(app)
     app.get '/register' do
       redirect '/dashboard' if user_logged_in?
       @page_title = 'Create Account'
       erb :'users/register', layout: :'layouts/main_layout'
     end
+  end
 
-    # User registration handler
+  # User registration handler
+  def self.user_registration_handler_route(app)
     app.post '/register' do
       result = register_user(params[:email], params[:password], params[:name])
 
@@ -77,15 +120,19 @@ module UserAuthController
         erb :'users/register', layout: :'layouts/main_layout'
       end
     end
+  end
 
-    # User logout
+  # User logout
+  def self.user_logout_route(app)
     app.post '/logout' do
       clear_user_session
       flash :success, 'You have been logged out successfully.'
       redirect '/'
     end
+  end
 
-    # User dashboard (secure)
+  # User dashboard (secure)
+  def self.user_dashboard_route(app)
     app.get '/dashboard' do
       require_user_auth
       @user = current_user
@@ -93,8 +140,10 @@ module UserAuthController
       @page_title = 'My Dashboard'
       erb :'users/dashboard', layout: :'layouts/main_layout'
     end
+  end
 
-    # Secure license management (replaces the old insecure lookup)
+  # Secure license management (replaces the old insecure lookup)
+  def self.user_licenses_list_route(app)
     app.get '/licenses' do
       require_user_auth
       @user = current_user
@@ -102,8 +151,10 @@ module UserAuthController
       @page_title = 'My Licenses'
       erb :'users/licenses', layout: :'layouts/main_layout'
     end
+  end
 
-    # Secure license details
+  # Secure license details
+  def self.user_license_details_route(app)
     app.get '/licenses/:id' do
       require_user_auth
       license = License.eager(:subscription, :product).where(id: params[:id]).first
@@ -114,8 +165,10 @@ module UserAuthController
       @page_title = "License: #{@license.product.name}"
       erb :'users/license_details', layout: :'layouts/main_layout'
     end
+  end
 
-    # Secure download (requires authentication)
+  # Secure download (requires authentication)
+  def self.secure_download_route(app)
     app.get '/secure-download/:license_id/:file' do
       require_user_auth
       license = License[params[:license_id]]
@@ -133,16 +186,20 @@ module UserAuthController
 
       send_file file_path, disposition: 'attachment'
     end
+  end
 
-    # User profile page
+  # User profile page
+  def self.user_profile_page_route(app)
     app.get '/profile' do
       require_user_auth
       @user = current_user
       @page_title = 'My Profile'
       erb :'users/profile', layout: :'layouts/main_layout'
     end
+  end
 
-    # Update user profile
+  # Update user profile
+  def self.user_profile_update_route(app)
     app.post '/profile' do
       require_user_auth
       user = current_user
@@ -173,15 +230,19 @@ module UserAuthController
       user.save_changes
       redirect '/profile'
     end
+  end
 
-    # Password reset request page
+  # Password reset request page
+  def self.password_reset_request_page_route(app)
     app.get '/forgot-password' do
       redirect '/dashboard' if user_logged_in?
       @page_title = 'Forgot Password'
       erb :'users/forgot_password', layout: :'layouts/main_layout'
     end
+  end
 
-    # Password reset request handler
+  # Password reset request handler
+  def self.password_reset_request_handler_route(app)
     app.post '/forgot-password' do
       result = generate_password_reset_token(params[:email])
 
@@ -199,8 +260,10 @@ module UserAuthController
 
       redirect '/login'
     end
+  end
 
-    # Password reset form
+  # Password reset form
+  def self.password_reset_form_route(app)
     app.get '/reset-password/:token' do
       @user = verify_password_reset_token(params[:token])
       halt 404 unless @user
@@ -209,8 +272,10 @@ module UserAuthController
       @page_title = 'Reset Password'
       erb :'users/reset_password', layout: :'layouts/main_layout'
     end
+  end
 
-    # Password reset handler
+  # Password reset handler
+  def self.password_reset_handler_route(app)
     app.post '/reset-password/:token' do
       result = reset_password_with_token(params[:token], params[:password])
 
@@ -228,10 +293,8 @@ module UserAuthController
     end
   end
 
-  private
-
   # Send password reset email
-  def send_password_reset_email(user, token)
+  def self.send_password_reset_email(user, token)
     reset_url = "#{request.scheme}://#{request.host_with_port}/reset-password/#{token}"
 
     mail = Mail.new do

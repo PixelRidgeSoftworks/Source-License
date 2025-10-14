@@ -1,0 +1,1102 @@
+openapi: 3.0.3
+info:
+  title: Source-License API
+  description: |
+    Secure License Management API for Source-License platform.
+    
+    This API provides comprehensive license management capabilities including:
+    - License validation and verification
+    - License activation and deactivation  
+    - Batch operations for multiple licenses
+    - JWT-based authentication tokens
+    - Real-time license status monitoring
+    
+    ## Authentication
+    Most endpoints require proper machine identification through:
+    - `machine_fingerprint`: Hardware-based unique identifier
+    - `machine_id`: Software-based unique identifier
+    
+    ## Rate Limiting
+    All endpoints are rate limited per IP address and per license key:
+    - Validation: 100 requests/minute
+    - Activation: 50 requests/minute  
+    - Deactivation: 50 requests/minute
+    - Status: 100 requests/minute
+    - Batch: 10 requests/minute
+    
+    Rate limit information is provided in response headers:
+    - `X-RateLimit-Limit`: Maximum requests allowed
+    - `X-RateLimit-Remaining`: Requests remaining in current window
+    - `X-RateLimit-Reset`: Unix timestamp when rate limit resets
+    
+  version: "2.0.0"
+  contact:
+    name: Source-License Support
+    url: https://github.com/PixelRidgeSoftworks/Source-License
+  license:
+    name: MIT License
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: "{protocol}://{host}/api/license"
+    description: License API Server
+    variables:
+      protocol:
+        enum:
+          - http
+          - https
+        default: https
+      host:
+        default: localhost:4567
+        description: Server hostname and port
+
+security:
+  - ApiKeyAuth: []
+  - MachineAuth: []
+
+tags:
+  - name: License Validation
+    description: License verification and validation operations
+  - name: License Management  
+    description: License activation and deactivation operations
+  - name: License Status
+    description: License status and information retrieval
+  - name: Batch Operations
+    description: Multiple license operations in single request
+  - name: System
+    description: System health and monitoring endpoints
+
+paths:
+  /{key}/validate:
+    get:
+      tags:
+        - License Validation
+      summary: Validate License
+      description: |
+        Validates a license key and verifies machine binding.
+        
+        This endpoint performs comprehensive license validation including:
+        - License key format and existence verification
+        - Expiration date checking
+        - Machine fingerprint/ID verification (if previously activated)
+        - Activation limits checking
+        - Product-specific validation rules
+        
+        Returns detailed validation results with machine binding information.
+      operationId: validateLicense
+      parameters:
+        - name: key
+          in: path
+          required: true
+          description: License key to validate
+          schema:
+            type: string
+            pattern: '^[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$'
+          example: "ABCD-EFGH-IJKL-MNOP"
+        - name: machine_fingerprint
+          in: query
+          required: false
+          description: Hardware-based machine fingerprint for validation
+          schema:
+            type: string
+            minLength: 16
+            maxLength: 128
+          example: "hw-abc123def456"
+        - name: machine_id
+          in: query
+          required: false  
+          description: Software-based machine identifier for validation
+          schema:
+            type: string
+            minLength: 8
+            maxLength: 64
+          example: "sw-xyz789"
+      responses:
+        '200':
+          description: License validation result
+          headers:
+            X-RateLimit-Limit:
+              schema:
+                type: integer
+              description: Maximum requests per minute
+            X-RateLimit-Remaining:
+              schema:
+                type: integer
+              description: Requests remaining in current window
+            X-RateLimit-Reset:
+              schema:
+                type: integer
+              description: Unix timestamp when rate limit resets
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationResult'
+              examples:
+                valid_license:
+                  summary: Valid License
+                  value:
+                    valid: true
+                    license_key: "ABCD-****-****-MNOP"
+                    product_name: "Professional Software"
+                    expires_at: "2025-12-31T23:59:59Z"
+                    max_activations: 3
+                    current_activations: 1
+                    is_activated: true
+                    machine_bound: true
+                    timestamp: "2024-10-13T14:52:30Z"
+                invalid_license:
+                  summary: Invalid License  
+                  value:
+                    valid: false
+                    error: "License has expired"
+                    license_key: "ABCD-****-****-MNOP"
+                    timestamp: "2024-10-13T14:52:30Z"
+        '400':
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: License not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RateLimitError'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /{key}/activate:
+    post:
+      tags:
+        - License Management
+      summary: Activate License
+      description: |
+        Activates a license key and binds it to a specific machine.
+        
+        This endpoint performs license activation including:
+        - License key validation and availability checking
+        - Machine fingerprint/ID binding
+        - Activation limit enforcement
+        - Audit trail creation
+        - Activation record generation
+        
+        Once activated, the license becomes bound to the provided machine identifiers.
+      operationId: activateLicense
+      parameters:
+        - name: key
+          in: path
+          required: true
+          description: License key to activate
+          schema:
+            type: string
+            pattern: '^[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$'
+          example: "ABCD-EFGH-IJKL-MNOP"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActivationRequest'
+            examples:
+              activation_request:
+                summary: License Activation Request
+                value:
+                  machine_fingerprint: "hw-abc123def456ghi789"
+                  machine_id: "sw-xyz789abc123"
+      responses:
+        '200':
+          description: License activation result
+          headers:
+            X-RateLimit-Limit:
+              schema:
+                type: integer
+            X-RateLimit-Remaining:
+              schema:
+                type: integer
+            X-RateLimit-Reset:
+              schema:
+                type: integer
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActivationResult'
+              examples:
+                successful_activation:
+                  summary: Successful Activation
+                  value:
+                    success: true
+                    message: "License activated successfully"
+                    license_key: "ABCD-****-****-MNOP"
+                    activation_id: "act_1234567890"
+                    activated_at: "2024-10-13T14:52:30Z"
+                    expires_at: "2025-12-31T23:59:59Z"
+                    activations_remaining: 2
+                    timestamp: "2024-10-13T14:52:30Z"
+                failed_activation:
+                  summary: Failed Activation
+                  value:
+                    success: false
+                    error: "License activation limit exceeded"
+                    license_key: "ABCD-****-****-MNOP"
+                    max_activations: 3
+                    current_activations: 3
+                    timestamp: "2024-10-13T14:52:30Z"
+        '400':
+          description: Invalid request or license cannot be activated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: License not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RateLimitError'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /{key}/deactivate:
+    post:
+      tags:
+        - License Management
+      summary: Deactivate License
+      description: |
+        Deactivates a license key and removes machine binding.
+        
+        This endpoint performs license deactivation including:
+        - License and activation verification
+        - Machine identifier matching
+        - Activation record removal
+        - Audit trail creation
+        - Activation count adjustment
+        
+        After deactivation, the license becomes available for activation on other machines.
+      operationId: deactivateLicense
+      parameters:
+        - name: key
+          in: path
+          required: true
+          description: License key to deactivate
+          schema:
+            type: string
+            pattern: '^[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$'
+          example: "ABCD-EFGH-IJKL-MNOP"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeactivationRequest'
+            examples:
+              deactivation_request:
+                summary: License Deactivation Request
+                value:
+                  machine_fingerprint: "hw-abc123def456ghi789"
+                  machine_id: "sw-xyz789abc123"
+      responses:
+        '200':
+          description: License deactivation result
+          headers:
+            X-RateLimit-Limit:
+              schema:
+                type: integer
+            X-RateLimit-Remaining:
+              schema:
+                type: integer
+            X-RateLimit-Reset:
+              schema:
+                type: integer
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeactivationResult'
+              examples:
+                successful_deactivation:
+                  summary: Successful Deactivation
+                  value:
+                    success: true
+                    message: "License deactivated successfully"
+                    license_key: "ABCD-****-****-MNOP"
+                    deactivated_at: "2024-10-13T14:52:30Z"
+                    activations_remaining: 3
+                    timestamp: "2024-10-13T14:52:30Z"
+                failed_deactivation:
+                  summary: Failed Deactivation
+                  value:
+                    success: false
+                    error: "No active license found for this machine"
+                    license_key: "ABCD-****-****-MNOP"
+                    timestamp: "2024-10-13T14:52:30Z"
+        '400':
+          description: Invalid request or license cannot be deactivated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: License or activation not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RateLimitError'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /{key}/status:
+    get:
+      tags:
+        - License Status
+      summary: Get License Status
+      description: |
+        Retrieves comprehensive status information for a license key.
+        
+        This endpoint provides detailed license information including:
+        - License validity and expiration status
+        - Product information and features
+        - Activation history and current activations
+        - Machine binding information
+        - Usage statistics and limits
+        
+        Does not require machine identification for status queries.
+      operationId: getLicenseStatus
+      parameters:
+        - name: key
+          in: path
+          required: true
+          description: License key to check status for
+          schema:
+            type: string
+            pattern: '^[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$'
+          example: "ABCD-EFGH-IJKL-MNOP"
+      responses:
+        '200':
+          description: License status information
+          headers:
+            X-RateLimit-Limit:
+              schema:
+                type: integer
+            X-RateLimit-Remaining:
+              schema:
+                type: integer
+            X-RateLimit-Reset:
+              schema:
+                type: integer
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusResult'
+              examples:
+                active_license:
+                  summary: Active License Status
+                  value:
+                    success: true
+                    license_key: "ABCD-****-****-MNOP"
+                    status: "active"
+                    product_name: "Professional Software"
+                    customer_name: "John Doe"
+                    issued_at: "2024-01-01T00:00:00Z"
+                    expires_at: "2025-12-31T23:59:59Z"
+                    max_activations: 3
+                    current_activations: 1
+                    activations:
+                      - activation_id: "act_1234567890"
+                        activated_at: "2024-10-01T10:00:00Z"
+                        machine_hash: "mh_abc123..."
+                    last_validated_at: "2024-10-13T14:52:30Z"
+                    timestamp: "2024-10-13T14:52:30Z"
+                expired_license:
+                  summary: Expired License Status
+                  value:
+                    success: false
+                    license_key: "ABCD-****-****-MNOP"
+                    status: "expired"
+                    error: "License has expired"
+                    expires_at: "2024-01-01T00:00:00Z"
+                    timestamp: "2024-10-13T14:52:30Z"
+        '404':
+          description: License not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RateLimitError'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /{key}/validate/jwt:
+    get:
+      tags:
+        - License Validation
+      summary: Validate License with JWT
+      description: |
+        Validates a license key and returns a JWT token for authenticated access.
+        
+        This enhanced validation endpoint:
+        - Performs standard license validation
+        - Generates a secure JWT token upon successful validation
+        - Provides token-based authentication for subsequent requests
+        - Includes license information in the JWT payload
+        
+        The JWT token is valid for 5 minutes and contains minimal license information.
+      operationId: validateLicenseWithJWT
+      parameters:
+        - name: key
+          in: path
+          required: true
+          description: License key to validate
+          schema:
+            type: string
+            pattern: '^[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$'
+          example: "ABCD-EFGH-IJKL-MNOP"
+        - name: machine_fingerprint
+          in: query
+          required: false
+          description: Hardware-based machine fingerprint
+          schema:
+            type: string
+            minLength: 16
+            maxLength: 128
+          example: "hw-abc123def456"
+        - name: machine_id
+          in: query
+          required: false
+          description: Software-based machine identifier
+          schema:
+            type: string
+            minLength: 8
+            maxLength: 64
+          example: "sw-xyz789"
+      responses:
+        '200':
+          description: License validation result with JWT token
+          headers:
+            X-RateLimit-Limit:
+              schema:
+                type: integer
+            X-RateLimit-Remaining:
+              schema:
+                type: integer
+            X-RateLimit-Reset:
+              schema:
+                type: integer
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JWTValidationResult'
+              examples:
+                valid_with_jwt:
+                  summary: Valid License with JWT
+                  value:
+                    valid: true
+                    license_key: "ABCD-****-****-MNOP"
+                    product_name: "Professional Software"
+                    expires_at: "2025-12-31T23:59:59Z"
+                    jwt_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                    token_expires_at: "2024-10-13T15:07:30Z"
+                    timestamp: "2024-10-13T14:52:30Z"
+        '400':
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: License not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RateLimitError'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /licenses/batch:
+    post:
+      tags:
+        - Batch Operations
+      summary: Batch License Operations
+      description: |
+        Performs multiple license operations in a single request for efficiency.
+        
+        This endpoint supports batch processing of:
+        - License validation operations
+        - License activation operations  
+        - License deactivation operations
+        - License status queries
+        
+        Maximum 10 operations per batch request.
+        Each operation is processed independently with individual results.
+      operationId: batchLicenseOperations
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BatchRequest'
+            examples:
+              mixed_batch:
+                summary: Mixed Batch Operations
+                value:
+                  operations:
+                    - type: "validate"
+                      license_key: "ABCD-EFGH-IJKL-MNOP"
+                      machine_fingerprint: "hw-abc123def456"
+                      machine_id: "sw-xyz789"
+                    - type: "activate"  
+                      license_key: "WXYZ-1234-5678-9ABC"
+                      machine_fingerprint: "hw-def456ghi789"
+                      machine_id: "sw-abc123"
+                    - type: "status"
+                      license_key: "QRST-UVWX-YZAB-CDEF"
+      responses:
+        '200':
+          description: Batch operation results
+          headers:
+            X-RateLimit-Limit:
+              schema:
+                type: integer
+            X-RateLimit-Remaining:
+              schema:
+                type: integer  
+            X-RateLimit-Reset:
+              schema:
+                type: integer
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchResult'
+              examples:
+                batch_results:
+                  summary: Batch Operation Results
+                  value:
+                    success: true
+                    batch_id: "batch_abc123def456"
+                    operations_count: 3
+                    results:
+                      - index: 0
+                        operation: "validate"
+                        license_key: "ABCD-****-****-MNOP"
+                        result:
+                          valid: true
+                          product_name: "Professional Software"
+                          expires_at: "2025-12-31T23:59:59Z"
+                      - index: 1
+                        operation: "activate"
+                        license_key: "WXYZ-****-****-9ABC"
+                        result:
+                          success: true
+                          message: "License activated successfully"
+                          activation_id: "act_9876543210"
+                      - index: 2
+                        operation: "status"
+                        license_key: "QRST-****-****-CDEF"
+                        result:
+                          success: true
+                          status: "active"
+                          current_activations: 2
+                    timestamp: "2024-10-13T14:52:30Z"
+        '400':
+          description: Invalid batch request format or size limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RateLimitError'
+        '500':
+          description: Internal server error  
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /health:
+    get:
+      tags:
+        - System
+      summary: Health Check
+      description: |
+        Returns the health status of the License API service.
+        
+        This endpoint provides:
+        - Service availability confirmation
+        - API version information
+        - Security status indicators
+        - Response timestamp
+        
+        Used for monitoring and load balancer health checks.
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+              examples:
+                healthy:
+                  summary: Healthy Service
+                  value:
+                    status: "ok"
+                    version: "2.0"
+                    timestamp: "2024-10-13T14:52:30Z"
+                    secure: true
+        '500':
+          description: Service is unhealthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: query
+      name: api_key
+      description: API key for authentication
+    MachineAuth:
+      type: apiKey
+      in: query  
+      name: machine_fingerprint
+      description: Machine fingerprint for hardware identification
+
+  schemas:
+    ValidationResult:
+      type: object
+      properties:
+        valid:
+          type: boolean
+          description: Whether the license is valid
+        license_key:
+          type: string
+          description: Partial license key (masked for security)
+          example: "ABCD-****-****-MNOP"
+        product_name:
+          type: string
+          description: Name of the licensed product
+          example: "Professional Software"
+        expires_at:
+          type: string
+          format: date-time
+          description: License expiration timestamp
+          example: "2025-12-31T23:59:59Z"
+        max_activations:
+          type: integer
+          description: Maximum allowed activations
+          example: 3
+        current_activations:
+          type: integer
+          description: Current number of activations
+          example: 1
+        is_activated:
+          type: boolean
+          description: Whether license is activated on requesting machine
+        machine_bound:
+          type: boolean
+          description: Whether license is bound to requesting machine
+        error:
+          type: string
+          description: Error message if validation failed
+          example: "License has expired"
+        timestamp:
+          type: string
+          format: date-time
+          description: Response timestamp
+      required:
+        - valid
+        - timestamp
+
+    ActivationRequest:
+      type: object
+      properties:
+        machine_fingerprint:
+          type: string
+          description: Hardware-based machine fingerprint
+          minLength: 16
+          maxLength: 128
+          example: "hw-abc123def456ghi789"
+        machine_id:
+          type: string
+          description: Software-based machine identifier
+          minLength: 8
+          maxLength: 64
+          example: "sw-xyz789abc123"
+      required:
+        - machine_fingerprint
+        - machine_id
+
+    ActivationResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+          description: Whether activation was successful
+        message:
+          type: string
+          description: Success or error message
+          example: "License activated successfully"
+        license_key:
+          type: string
+          description: Partial license key (masked for security)
+          example: "ABCD-****-****-MNOP"
+        activation_id:
+          type: string
+          description: Unique activation identifier
+          example: "act_1234567890"
+        activated_at:
+          type: string
+          format: date-time
+          description: Activation timestamp
+        expires_at:
+          type: string
+          format: date-time
+          description: License expiration timestamp
+        activations_remaining:
+          type: integer
+          description: Number of activations still available
+          example: 2
+        max_activations:
+          type: integer
+          description: Maximum allowed activations (error cases)
+        current_activations:
+          type: integer
+          description: Current activations (error cases)
+        error:
+          type: string
+          description: Error message if activation failed
+        timestamp:
+          type: string
+          format: date-time
+          description: Response timestamp
+      required:
+        - success
+        - timestamp
+
+    DeactivationRequest:
+      type: object
+      properties:
+        machine_fingerprint:
+          type: string
+          description: Hardware-based machine fingerprint
+          minLength: 16
+          maxLength: 128
+          example: "hw-abc123def456ghi789"
+        machine_id:
+          type: string
+          description: Software-based machine identifier
+          minLength: 8
+          maxLength: 64
+          example: "sw-xyz789abc123"
+      required:
+        - machine_fingerprint
+        - machine_id
+
+    DeactivationResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+          description: Whether deactivation was successful
+        message:
+          type: string
+          description: Success or error message
+          example: "License deactivated successfully"
+        license_key:
+          type: string
+          description: Partial license key (masked for security)
+          example: "ABCD-****-****-MNOP"
+        deactivated_at:
+          type: string
+          format: date-time
+          description: Deactivation timestamp
+        activations_remaining:
+          type: integer
+          description: Number of activations available after deactivation
+          example: 3
+        error:
+          type: string
+          description: Error message if deactivation failed
+        timestamp:
+          type: string
+          format: date-time
+          description: Response timestamp
+      required:
+        - success
+        - timestamp
+
+    StatusResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+          description: Whether status query was successful
+        license_key:
+          type: string
+          description: Partial license key (masked for security)
+          example: "ABCD-****-****-MNOP"
+        status:
+          type: string
+          enum: [active, expired, revoked, inactive]
+          description: Current license status
+        product_name:
+          type: string
+          description: Name of the licensed product
+          example: "Professional Software"
+        customer_name:
+          type: string
+          description: License holder name
+          example: "John Doe"
+        issued_at:
+          type: string
+          format: date-time
+          description: License issuance timestamp
+        expires_at:
+          type: string
+          format: date-time
+          description: License expiration timestamp
+        max_activations:
+          type: integer
+          description: Maximum allowed activations
+        current_activations:
+          type: integer
+          description: Current number of activations
+        activations:
+          type: array
+          description: List of current activations
+          items:
+            type: object
+            properties:
+              activation_id:
+                type: string
+                example: "act_1234567890"
+              activated_at:
+                type: string
+                format: date-time
+              machine_hash:
+                type: string
+                description: Hashed machine identifier
+                example: "mh_abc123..."
+        last_validated_at:
+          type: string
+          format: date-time
+          description: Last validation timestamp
+        error:
+          type: string
+          description: Error message if status query failed
+        timestamp:
+          type: string
+          format: date-time
+          description: Response timestamp
+      required:
+        - success
+        - timestamp
+
+    JWTValidationResult:
+      allOf:
+        - $ref: '#/components/schemas/ValidationResult'
+        - type: object
+          properties:
+            jwt_token:
+              type: string
+              description: JWT authentication token (if validation successful)
+              example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+            token_expires_at:
+              type: string
+              format: date-time
+              description: JWT token expiration timestamp
+              example: "2024-10-13T15:07:30Z"
+
+    BatchRequest:
+      type: object
+      properties:
+        operations:
+          type: array
+          description: List of operations to perform
+          maxItems: 10
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+                enum: [validate, activate, deactivate, status]
+                description: Type of operation to perform
+              license_key:
+                type: string
+                description: License key for the operation
+                pattern: '^[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$'
+              machine_fingerprint:
+                type: string
+                description: Hardware-based machine fingerprint (for activate/deactivate/validate)
+                minLength: 16
+                maxLength: 128
+              machine_id:
+                type: string
+                description: Software-based machine identifier (for activate/deactivate/validate)
+                minLength: 8
+                maxLength: 64
+            required:
+              - type
+              - license_key
+      required:
+        - operations
+
+    BatchResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+          description: Whether batch processing was successful
+        batch_id:
+          type: string
+          description: Unique identifier for this batch
+          example: "batch_abc123def456"
+        operations_count:
+          type: integer
+          description: Number of operations processed
+          example: 3
+        results:
+          type: array
+          description: Results for each operation
+          items:
+            type: object
+            properties:
+              index:
+                type: integer
+                description: Operation index in the batch
+              operation:
+                type: string
+                description: Type of operation performed
+              license_key:
+                type: string
+                description: Partial license key (masked for security)
+              result:
+                type: object
+                description: Operation-specific result object
+        timestamp:
+          type: string
+          format: date-time
+          description: Response timestamp
+      required:
+        - success
+        - batch_id
+        - operations_count
+        - results
+        - timestamp
+
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [ok, error]
+          description: Service health status
+        version:
+          type: string
+          description: API version
+          example: "2.0"
+        timestamp:
+          type: string
+          format: date-time
+          description: Health check timestamp
+        secure:
+          type: boolean
+          description: Whether security features are enabled
+      required:
+        - status
+        - version
+        - timestamp
+        - secure
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message
+          example: "Invalid license key format"
+        timestamp:
+          type: string
+          format: date-time
+          description: Error timestamp
+        path:
+          type: string
+          description: Request path that caused the error
+          example: "/INVALID-KEY/validate"
+      required:
+        - error
+        - timestamp
+
+    RateLimitError:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Rate limit error message
+          example: "Rate limit exceeded"
+        retry_after:
+          type: integer
+          description: Seconds to wait before retrying
+          example: 60
+        timestamp:
+          type: string
+          format: date-time
+          description: Error timestamp
+      required:
+        - error
+        - retry_after
+        - timestamp

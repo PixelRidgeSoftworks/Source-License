@@ -30,6 +30,27 @@ class Payments::StripeProcessor < Payments::BasePaymentProcessor
           },
         }
 
+        # Add billing details with postal code support for international customers
+        if payment_data[:billing_details]
+          billing_details = payment_data[:billing_details]
+          intent_params[:payment_method_data] = {
+            type: 'card',
+            card: { token: payment_data[:payment_method_id] },
+            billing_details: {
+              name: billing_details[:name],
+              email: billing_details[:email],
+              address: {
+                line1: billing_details[:address_line1],
+                line2: billing_details[:address_line2],
+                city: billing_details[:city],
+                state: billing_details[:state],
+                postal_code: billing_details[:postal_code], # Support both ZIP codes and postal codes
+                country: billing_details[:country] || 'US',
+              },
+            },
+          }
+        end
+
         # Add idempotency key to prevent duplicate charges
         intent = Stripe::PaymentIntent.create(intent_params, {
           idempotency_key: idempotency_key,

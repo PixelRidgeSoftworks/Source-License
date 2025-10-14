@@ -188,12 +188,54 @@
         </div>
       </div>
 
+      <!-- Two-Factor Authentication -->
+      <div class="card mt-4">
+        <div class="card-header">
+          <h6 class="mb-0">
+            <i class="fas fa-shield-alt me-2"></i>
+            Two-Factor Authentication
+          </h6>
+        </div>
+        <div class="card-body">
+          <% if user_has_2fa?(@user[:id]) %>
+            <div class="d-flex align-items-center justify-content-between mb-3">
+              <div>
+                <span class="badge bg-success mb-2">
+                  <i class="fas fa-check-circle me-1"></i>
+                  Enabled
+                </span>
+                <p class="small text-muted mb-0">
+                  Your account is protected with two-factor authentication.
+                </p>
+              </div>
+            </div>
+            <div class="d-grid gap-2">
+              <a href="/2fa" class="btn btn-outline-primary btn-sm">
+                <i class="fas fa-cog me-2"></i>
+                Manage 2FA Settings
+              </a>
+            </div>
+          <% else %>
+            <div class="alert alert-warning alert-sm">
+              <i class="fas fa-exclamation-triangle me-2"></i>
+              <strong>Recommended:</strong> Enable two-factor authentication for enhanced security.
+            </div>
+            <div class="d-grid gap-2">
+              <a href="/2fa" class="btn btn-success btn-sm">
+                <i class="fas fa-plus-circle me-2"></i>
+                Set Up 2FA
+              </a>
+            </div>
+          <% end %>
+        </div>
+      </div>
+
       <!-- Security Notice -->
       <div class="card mt-4">
         <div class="card-body">
           <h6 class="card-title">
-            <i class="fas fa-shield-alt text-success me-2"></i>
-            Security
+            <i class="fas fa-info-circle text-info me-2"></i>
+            Security Tips
           </h6>
           <p class="card-text small text-muted">
             Your account is secured with industry-standard encryption. Never share your login credentials with anyone.

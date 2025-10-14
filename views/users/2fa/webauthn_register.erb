@@ -1,0 +1,586 @@
+<% @page_title = "Add Security Key" %>
+
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-xl-6 col-lg-8 col-md-10">
+            <!-- Header -->
+            <div class="text-center mb-4">
+                <h1 class="h2 mb-2">
+                    <i class="bi bi-key text-primary"></i>
+                    Add Security Key
+                </h1>
+                <p class="text-muted">Register a hardware security key or biometric device</p>
+            </div>
+
+            <!-- Existing Credentials -->
+            <% if @credentials && @credentials.length > 0 %>
+                <div class="card mb-4">
+                    <div class="card-header d-flex align-items-center justify-content-between">
+                        <h5 class="mb-0">
+                            <i class="bi bi-shield-check text-success"></i>
+                            Your Security Keys
+                        </h5>
+                        <span class="badge bg-success"><%= @credentials.length %></span>
+                    </div>
+                    <div class="card-body">
+                        <% @credentials.each do |credential| %>
+                            <div class="d-flex align-items-center justify-content-between mb-3 p-3 bg-body-secondary rounded">
+                                <div>
+                                    <div class="fw-medium">
+                                        <i class="bi bi-key-fill text-primary"></i>
+                                        <%= h(credential[:nickname]) %>
+                                    </div>
+                                    <small class="text-muted">
+                                        Added <%= credential[:created_at]&.strftime("%B %d, %Y") %>
+                                        <% if credential[:last_used_at] %>
+                                            • Last used <%= time_ago(credential[:last_used_at]) %>
+                                        <% end %>
+                                    </small>
+                                    <% if credential[:transports] %>
+                                        <div class="mt-1">
+                                            <small class="text-muted">
+                                                <i class="bi bi-info-circle"></i>
+                                                Supports: <%= format_credential_transports(credential[:transports]) %>
+                                            </small>
+                                        </div>
+                                    <% end %>
+                                </div>
+                                <form method="post" action="/2fa/webauthn/credentials/<%= credential[:id] %>" class="d-inline" onsubmit="return confirm('Remove this security key?')">
+                                    <input type="hidden" name="_method" value="delete">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Remove security key">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        <% end %>
+                    </div>
+                </div>
+            <% end %>
+
+            <!-- Registration Form -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-plus-circle text-primary"></i>
+                        Register New Security Key
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <!-- Supported Devices Info -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h6>Hardware Keys</h6>
+                            <ul class="small text-muted mb-3">
+                                <li>YubiKey (USB, NFC, Lightning)</li>
+                                <li>Google Titan Security Key</li>
+                                <li>Feitian ePass FIDO</li>
+                                <li>SoloKeys</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Built-in Authenticators</h6>
+                            <ul class="small text-muted mb-3">
+                                <li>Windows Hello (PIN, Fingerprint, Face)</li>
+                                <li>Touch ID / Face ID (Safari)</li>
+                                <li>Android Fingerprint</li>
+                                <li>Platform authenticators</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Registration Steps -->
+                    <div id="registrationSteps">
+                        <!-- Step 1: Name the key -->
+                        <div class="registration-step active" id="step1">
+                            <div class="d-flex align-items-start mb-3">
+                                <div class="step-number me-3">1</div>
+                                <div class="flex-grow-1">
+                                    <h5 class="mb-2">Name Your Security Key</h5>
+                                    <p class="text-muted mb-3">Give your security key a recognizable name</p>
+
+                                    <div class="mb-3">
+                                        <label for="keyNickname" class="form-label">Key Nickname</label>
+                                        <input type="text"
+                                               class="form-control"
+                                               id="keyNickname"
+                                               placeholder="e.g., YubiKey 5C, Windows Hello, etc."
+                                               maxlength="50"
+                                               required>
+                                        <div class="form-text">Choose a name to identify this key later</div>
+                                    </div>
+
+                                    <button type="button" class="btn btn-primary" onclick="startRegistration()">
+                                        <i class="bi bi-arrow-right"></i>
+                                        Continue
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Step 2: Register the key -->
+                        <div class="registration-step" id="step2">
+                            <div class="d-flex align-items-start mb-3">
+                                <div class="step-number me-3">2</div>
+                                <div class="flex-grow-1">
+                                    <h5 class="mb-2">Register Your Security Key</h5>
+                                    <p class="text-muted mb-3">Follow the prompts to register your device</p>
+
+                                    <div id="registrationStatus" class="mb-4">
+                                        <div class="d-flex align-items-center">
+                                            <div class="spinner-border spinner-border-sm text-primary me-3" role="status">
+                                                <span class="visually-hidden">Loading...</span>
+                                            </div>
+                                            <div>
+                                                <div class="fw-medium">Preparing registration...</div>
+                                                <small class="text-muted">Please wait while we set up your security key registration</small>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div id="registrationPrompt" style="display: none;">
+                                        <div class="alert alert-info mb-3">
+                                            <i class="bi bi-info-circle"></i>
+                                            <strong>Follow these steps:</strong>
+                                            <ol class="mb-0 mt-2">
+                                                <li>Insert your security key (if USB)</li>
+                                                <li>Touch the button on your key when it blinks</li>
+                                                <li>Or follow the biometric prompt if using built-in authenticator</li>
+                                            </ol>
+                                        </div>
+
+                                        <div class="text-center">
+                                            <div class="security-key-animation mb-3">
+                                                <i class="bi bi-key-fill text-primary" style="font-size: 4rem; animation: pulse 2s infinite;"></i>
+                                            </div>
+                                            <p class="text-muted">Touch your security key or follow the authentication prompt</p>
+                                        </div>
+                                    </div>
+
+                                    <div class="d-flex gap-2">
+                                        <button type="button" class="btn btn-outline-secondary" onclick="cancelRegistration()">
+                                            <i class="bi bi-x-circle"></i>
+                                            Cancel
+                                        </button>
+                                        <button type="button" id="retryButton" class="btn btn-outline-primary" onclick="retryRegistration()" style="display: none;">
+                                            <i class="bi bi-arrow-clockwise"></i>
+                                            Try Again
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Step 3: Success -->
+                        <div class="registration-step" id="step3">
+                            <div class="d-flex align-items-start mb-3">
+                                <div class="step-number success me-3">
+                                    <i class="bi bi-check"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <h5 class="mb-2 text-success">Security Key Registered!</h5>
+                                    <p class="text-muted mb-3">Your security key has been successfully added to your account</p>
+
+                                    <div class="alert alert-success">
+                                        <i class="bi bi-shield-check"></i>
+                                        <strong>Success!</strong> Your security key "<span id="successKeyName"></span>" is now active.
+                                    </div>
+
+                                    <div class="d-flex gap-2">
+                                        <a href="/2fa" class="btn btn-primary">
+                                            <i class="bi bi-arrow-left"></i>
+                                            Back to 2FA Settings
+                                        </a>
+                                        <button type="button" class="btn btn-outline-primary" onclick="registerAnother()">
+                                            <i class="bi bi-plus-circle"></i>
+                                            Add Another Key
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-footer bg-body-secondary">
+                    <small class="text-muted">
+                        <i class="bi bi-shield-exclamation"></i>
+                        <strong>Security Note:</strong> Only register security keys that you own and control.
+                        Never share your security keys with others.
+                    </small>
+                </div>
+            </div>
+
+            <!-- Browser Compatibility -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="bi bi-info-circle text-info"></i>
+                        Browser Compatibility
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Supported Browsers</h6>
+                            <ul class="small text-muted mb-0">
+                                <li><strong>Chrome/Edge:</strong> Full WebAuthn support</li>
+                                <li><strong>Firefox:</strong> Full WebAuthn support</li>
+                                <li><strong>Safari:</strong> WebAuthn support (iOS 14.5+)</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Troubleshooting</h6>
+                            <ul class="small text-muted mb-0">
+                                <li>Ensure your browser is up to date</li>
+                                <li>Allow permission prompts from your browser</li>
+                                <li>Try a different USB port if using hardware key</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.step-number {
+    width: 40px;
+    height: 40px;
+    background: var(--gradient-primary);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+
+.step-number.success {
+    background: var(--bs-success);
+}
+
+.registration-step {
+    display: none;
+}
+
+.registration-step.active {
+    display: block;
+}
+
+.bg-body-secondary {
+    background-color: var(--surface-tertiary) !important;
+}
+
+.security-key-animation {
+    animation: bounce 1.5s ease-in-out infinite alternate;
+}
+
+@keyframes bounce {
+    0% { transform: translateY(0px); }
+    100% { transform: translateY(-10px); }
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+.spinner-border-sm {
+    width: 1rem;
+    height: 1rem;
+}
+</style>
+
+<script>
+// WebAuthn Registration Implementation
+class WebAuthnRegistration {
+    constructor() {
+        this.currentStep = 1;
+        this.nickname = '';
+        this.registrationOptions = null;
+    }
+
+    async startRegistration() {
+        const nickname = document.getElementById('keyNickname').value.trim();
+
+        if (!nickname) {
+            this.showError('Please enter a nickname for your security key');
+            return;
+        }
+
+        if (nickname.length > 50) {
+            this.showError('Nickname must be 50 characters or less');
+            return;
+        }
+
+        this.nickname = nickname;
+        this.showStep(2);
+
+        try {
+            await this.beginRegistration();
+        } catch (error) {
+            this.handleRegistrationError(error);
+        }
+    }
+
+    async beginRegistration() {
+        this.updateStatus('Preparing registration...', 'Please wait while we set up your security key registration');
+
+        try {
+            // Get registration options from server
+            const response = await fetch('/2fa/webauthn/register/begin', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({})
+            });
+
+            if (!response.ok) {
+                throw new Error(`Server error: ${response.status}`);
+            }
+
+            this.registrationOptions = await response.json();
+
+            // Show user prompt
+            this.updateStatus('Touch your security key', 'Follow the prompts to authenticate with your device', true);
+
+            // Start WebAuthn registration
+            await this.performRegistration();
+
+        } catch (error) {
+            throw new Error(`Failed to start registration: ${error.message}`);
+        }
+    }
+
+    async performRegistration() {
+        try {
+            // Convert base64url to ArrayBuffer for WebAuthn API
+            const options = {
+                ...this.registrationOptions,
+                challenge: this.base64urlToArrayBuffer(this.registrationOptions.challenge),
+                user: {
+                    ...this.registrationOptions.user,
+                    id: this.base64urlToArrayBuffer(this.registrationOptions.user.id)
+                }
+            };
+
+            // Convert excludeCredentials if present
+            if (options.excludeCredentials) {
+                options.excludeCredentials = options.excludeCredentials.map(cred => ({
+                    ...cred,
+                    id: this.base64urlToArrayBuffer(cred.id)
+                }));
+            }
+
+            // Call WebAuthn API
+            const credential = await navigator.credentials.create({
+                publicKey: options
+            });
+
+            if (!credential) {
+                throw new Error('No credential returned from authenticator');
+            }
+
+            // Send credential to server
+            await this.completeRegistration(credential);
+
+        } catch (error) {
+            if (error.name === 'NotAllowedError') {
+                throw new Error('Registration was cancelled or timed out');
+            } else if (error.name === 'InvalidStateError') {
+                throw new Error('This authenticator is already registered');
+            } else if (error.name === 'NotSupportedError') {
+                throw new Error('WebAuthn is not supported by this browser');
+            } else {
+                throw new Error(`Registration failed: ${error.message}`);
+            }
+        }
+    }
+
+    async completeRegistration(credential) {
+        this.updateStatus('Completing registration...', 'Saving your security key to your account');
+
+        try {
+            // Convert credential to format expected by server
+            const credentialData = {
+                id: credential.id,
+                rawId: this.arrayBufferToBase64url(credential.rawId),
+                response: {
+                    clientDataJSON: this.arrayBufferToBase64url(credential.response.clientDataJSON),
+                    attestationObject: this.arrayBufferToBase64url(credential.response.attestationObject)
+                },
+                type: credential.type
+            };
+
+            const response = await fetch('/2fa/webauthn/register/complete', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(credentialData),
+                credentials: 'same-origin'
+            });
+
+            const result = await response.json();
+
+            if (!response.ok || !result.success) {
+                throw new Error(result.error || 'Registration failed');
+            }
+
+            // Show success
+            this.showSuccess();
+
+        } catch (error) {
+            throw new Error(`Failed to complete registration: ${error.message}`);
+        }
+    }
+
+    showSuccess() {
+        document.getElementById('successKeyName').textContent = this.nickname;
+        this.showStep(3);
+    }
+
+    showStep(stepNumber) {
+        // Hide all steps
+        document.querySelectorAll('.registration-step').forEach(step => {
+            step.classList.remove('active');
+        });
+
+        // Show target step
+        document.getElementById(`step${stepNumber}`).classList.add('active');
+        this.currentStep = stepNumber;
+    }
+
+    updateStatus(title, message, showPrompt = false) {
+        const statusDiv = document.getElementById('registrationStatus');
+        const promptDiv = document.getElementById('registrationPrompt');
+
+        if (showPrompt) {
+            statusDiv.style.display = 'none';
+            promptDiv.style.display = 'block';
+        } else {
+            statusDiv.querySelector('.fw-medium').textContent = title;
+            statusDiv.querySelector('.text-muted').textContent = message;
+            statusDiv.style.display = 'block';
+            promptDiv.style.display = 'none';
+        }
+    }
+
+    handleRegistrationError(error) {
+        console.error('WebAuthn registration error:', error);
+
+        const statusDiv = document.getElementById('registrationStatus');
+        statusDiv.innerHTML = `
+            <div class="alert alert-danger">
+                <i class="bi bi-exclamation-circle"></i>
+                <strong>Registration Failed</strong><br>
+                ${this.escapeHtml(error.message)}
+            </div>
+        `;
+
+        document.getElementById('retryButton').style.display = 'inline-block';
+    }
+
+    cancelRegistration() {
+        window.location.href = '/2fa';
+    }
+
+    retryRegistration() {
+        document.getElementById('retryButton').style.display = 'none';
+        this.beginRegistration();
+    }
+
+    registerAnother() {
+        // Reset form
+        document.getElementById('keyNickname').value = '';
+        this.nickname = '';
+        this.registrationOptions = null;
+        this.showStep(1);
+        document.getElementById('keyNickname').focus();
+    }
+
+    // Utility methods for base64url encoding/decoding
+    base64urlToArrayBuffer(base64url) {
+        const binary = atob(base64url.replace(/-/g, '+').replace(/_/g, '/'));
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) {
+            bytes[i] = binary.charCodeAt(i);
+        }
+        return bytes.buffer;
+    }
+
+    arrayBufferToBase64url(buffer) {
+        const bytes = new Uint8Array(buffer);
+        let binary = '';
+        for (let i = 0; i < bytes.byteLength; i++) {
+            binary += String.fromCharCode(bytes[i]);
+        }
+        return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+    }
+
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+}
+
+// Initialize WebAuthn registration
+let webAuthnReg;
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Check WebAuthn support
+    if (!window.PublicKeyCredential) {
+        document.getElementById('registrationSteps').innerHTML = `
+            <div class="alert alert-warning">
+                <i class="bi bi-exclamation-triangle"></i>
+                <strong>WebAuthn Not Supported</strong><br>
+                Your browser doesn't support WebAuthn. Please use a modern browser like Chrome, Firefox, or Safari.
+            </div>
+        `;
+        return;
+    }
+
+    webAuthnReg = new WebAuthnRegistration();
+
+    // Focus on nickname input
+    document.getElementById('keyNickname').focus();
+
+    // Enter key listener for nickname input
+    document.getElementById('keyNickname').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            startRegistration();
+        }
+    });
+});
+
+// Global functions for button clicks
+function startRegistration() {
+    if (webAuthnReg) {
+        webAuthnReg.startRegistration();
+    }
+}
+
+function cancelRegistration() {
+    if (webAuthnReg) {
+        webAuthnReg.cancelRegistration();
+    }
+}
+
+function retryRegistration() {
+    if (webAuthnReg) {
+        webAuthnReg.retryRegistration();
+    }
+}
+
+function registerAnother() {
+    if (webAuthnReg) {
+        webAuthnReg.registerAnother();
+    }
+}
+</script>

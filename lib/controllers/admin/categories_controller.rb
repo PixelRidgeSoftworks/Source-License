@@ -1,11 +1,28 @@
 # frozen_string_literal: true
 
+require_relative '../route_primitive'
+
 # Source-License: Admin Categories Controller
 # Handles product category management in the admin panel
 
 module Admin::CategoriesController
   def self.setup_routes(app)
-    # GET /admin/categories
+    # Category management routes
+    categories_list_route(app)
+    categories_new_page_route(app)
+    categories_create_route(app)
+    categories_edit_page_route(app)
+    categories_update_route(app)
+    categories_delete_route(app)
+    categories_toggle_status_route(app)
+    categories_bulk_action_route(app)
+
+    # Add helper method to app
+    add_helper_methods(app)
+  end
+
+  # GET /admin/categories
+  def self.categories_list_route(app)
     app.get '/admin/categories' do
       require_secure_admin_auth
       @categories = ProductCategory.order(:sort_order, :name)
@@ -17,15 +34,19 @@ module Admin::CategoriesController
 
       erb :'admin/categories', layout: :'layouts/admin_layout'
     end
+  end
 
-    # GET /admin/categories/new
+  # GET /admin/categories/new
+  def self.categories_new_page_route(app)
     app.get '/admin/categories/new' do
       require_secure_admin_auth
       @category = ProductCategory.new
       erb :'admin/categories_new', layout: :'layouts/admin_layout'
     end
+  end
 
-    # POST /admin/categories
+  # POST /admin/categories
+  def self.categories_create_route(app)
     app.post '/admin/categories' do
       require_secure_admin_auth
       @category = ProductCategory.new(category_params)
@@ -42,8 +63,10 @@ module Admin::CategoriesController
         erb :'admin/categories_new', layout: :'layouts/admin_layout'
       end
     end
+  end
 
-    # GET /admin/categories/:id/edit
+  # GET /admin/categories/:id/edit
+  def self.categories_edit_page_route(app)
     app.get '/admin/categories/:id/edit' do
       require_secure_admin_auth
       @category = ProductCategory[params[:id]]
@@ -51,8 +74,10 @@ module Admin::CategoriesController
 
       erb :'admin/categories_edit', layout: :'layouts/admin_layout'
     end
+  end
 
-    # PUT /admin/categories/:id
+  # PUT /admin/categories/:id
+  def self.categories_update_route(app)
     app.put '/admin/categories/:id' do
       require_secure_admin_auth
       @category = ProductCategory[params[:id]]
@@ -70,8 +95,10 @@ module Admin::CategoriesController
         erb :'admin/categories_edit', layout: :'layouts/admin_layout'
       end
     end
+  end
 
-    # DELETE /admin/categories/:id
+  # DELETE /admin/categories/:id
+  def self.categories_delete_route(app)
     app.delete '/admin/categories/:id' do
       require_secure_admin_auth
       @category = ProductCategory[params[:id]]
@@ -106,8 +133,10 @@ module Admin::CategoriesController
         end
       end
     end
+  end
 
-    # POST /admin/categories/:id/toggle-status
+  # POST /admin/categories/:id/toggle-status
+  def self.categories_toggle_status_route(app)
     app.post '/admin/categories/:id/toggle-status' do
       require_secure_admin_auth
       @category = ProductCategory[params[:id]]
@@ -135,8 +164,10 @@ module Admin::CategoriesController
         end
       end
     end
+  end
 
-    # POST /admin/categories/bulk-action
+  # POST /admin/categories/bulk-action
+  def self.categories_bulk_action_route(app)
     app.post '/admin/categories/bulk-action' do
       require_secure_admin_auth
       action = params[:action]
@@ -178,18 +209,23 @@ module Admin::CategoriesController
       content_type :json
       { success: true, results: results }.to_json
     end
+  end
 
-    # Helper method for category params
-    def app.category_params
-      {
-        name: params[:name]&.strip,
-        slug: params[:slug]&.strip,
-        description: params[:description]&.strip,
-        color: params[:color]&.strip,
-        icon: params[:icon]&.strip,
-        sort_order: params[:sort_order].to_i,
-        active: %w[1 true].include?(params[:active]),
-      }.compact
+  # Add helper methods to the app
+  def self.add_helper_methods(app)
+    app.instance_eval do
+      # Helper method for category params
+      def category_params
+        {
+          name: params[:name]&.strip,
+          slug: params[:slug]&.strip,
+          description: params[:description]&.strip,
+          color: params[:color]&.strip,
+          icon: params[:icon]&.strip,
+          sort_order: params[:sort_order].to_i,
+          active: %w[1 true].include?(params[:active]),
+        }.compact
+      end
     end
   end
 end

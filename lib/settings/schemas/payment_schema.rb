@@ -56,6 +56,14 @@ class Settings::Schemas::PaymentSchema
       description: 'PayPal environment (sandbox for testing)',
       web_editable: true,
     },
+    'payment.paypal.webhook_id' => {
+      type: 'string',
+      default: '',
+      category: 'payment',
+      description: 'PayPal webhook ID for payment notifications',
+      web_editable: true,
+      sensitive: false,
+    },
   }.freeze
 
   class << self

@@ -90,6 +90,118 @@ class Settings::Schemas::SecuritySchema
       description: 'Application is behind a load balancer',
       web_editable: true,
     },
+
+    # Two-Factor Authentication Settings
+    'security.2fa.enforce_all_users' => {
+      type: 'boolean',
+      default: false,
+      category: 'security',
+      description: 'Require 2FA for all users',
+      web_editable: true,
+    },
+    'security.2fa.enforce_new_users' => {
+      type: 'boolean',
+      default: false,
+      category: 'security',
+      description: 'Require 2FA for new user registrations',
+      web_editable: true,
+    },
+    'security.2fa.enforce_admins' => {
+      type: 'boolean',
+      default: false,
+      category: 'security',
+      description: 'Require 2FA for all administrators',
+      web_editable: true,
+    },
+    'security.2fa.grace_period_days' => {
+      type: 'number',
+      default: 7,
+      category: 'security',
+      description: 'Days users have to set up 2FA after it becomes required',
+      web_editable: true,
+    },
+    'security.2fa.allow_totp' => {
+      type: 'boolean',
+      default: true,
+      category: 'security',
+      description: 'Allow TOTP (Authenticator Apps) as 2FA method',
+      web_editable: true,
+    },
+    'security.2fa.allow_webauthn' => {
+      type: 'boolean',
+      default: true,
+      category: 'security',
+      description: 'Allow WebAuthn (Security Keys & Biometrics) as 2FA method',
+      web_editable: true,
+    },
+    'security.2fa.allow_backup_codes' => {
+      type: 'boolean',
+      default: true,
+      category: 'security',
+      description: 'Allow backup codes for 2FA recovery',
+      web_editable: true,
+    },
+    'security.2fa.backup_code_count' => {
+      type: 'select',
+      default: 10,
+      options: [8, 10, 12, 16],
+      category: 'security',
+      description: 'Number of backup codes to generate',
+      web_editable: true,
+    },
+    'security.2fa.totp_issuer' => {
+      type: 'string',
+      default: 'Source-License',
+      category: 'security',
+      description: 'TOTP issuer name displayed in authenticator apps',
+      web_editable: true,
+    },
+
+    # WebAuthn Configuration
+    'security.webauthn.origin' => {
+      type: 'url',
+      default: 'https://localhost:4567',
+      category: 'security',
+      description: 'WebAuthn origin URL for authentication',
+      web_editable: true,
+    },
+    'security.webauthn.rp_name' => {
+      type: 'string',
+      default: 'Source-License',
+      category: 'security',
+      description: 'WebAuthn Relying Party name',
+      web_editable: true,
+    },
+    'security.webauthn.rp_id' => {
+      type: 'string',
+      default: 'localhost',
+      category: 'security',
+      description: 'WebAuthn Relying Party ID (domain)',
+      web_editable: true,
+    },
+    'security.webauthn.timeout' => {
+      type: 'number',
+      default: 60,
+      category: 'security',
+      description: 'WebAuthn authentication timeout in seconds',
+      web_editable: true,
+    },
+    'security.webauthn.user_verification' => {
+      type: 'select',
+      default: 'preferred',
+      options: %w[required preferred discouraged],
+      category: 'security',
+      description: 'WebAuthn user verification requirement',
+      web_editable: true,
+    },
+    'security.webauthn.attestation' => {
+      type: 'select',
+      default: 'none',
+      options: %w[none indirect direct enterprise],
+      category: 'security',
+      description: 'WebAuthn attestation preference',
+      web_editable: true,
+    },
   }.freeze
 
   class << self

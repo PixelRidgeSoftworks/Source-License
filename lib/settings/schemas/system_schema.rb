@@ -28,6 +28,67 @@ class Settings::Schemas::SystemSchema
       web_editable: true,
     },
 
+    # Secure Licensing System
+    'license.hash_salt' => {
+      type: 'password',
+      default: '',
+      category: 'license',
+      description: 'Secret salt for hashing license keys and machine data (CRITICAL - Change in production)',
+      web_editable: false,
+      sensitive: true,
+    },
+    'license.jwt_secret' => {
+      type: 'password',
+      default: '',
+      category: 'license',
+      description: 'JWT signing key for secure API responses (CRITICAL - Change in production)',
+      web_editable: false,
+      sensitive: true,
+    },
+    'license.bcrypt_cost' => {
+      type: 'select',
+      default: 12,
+      options: [10, 11, 12, 13, 14],
+      category: 'license',
+      description: 'Bcrypt cost for license key hashing (10-14 recommended, higher = more secure but slower)',
+      web_editable: true,
+    },
+    'license.audit_logging' => {
+      type: 'boolean',
+      default: true,
+      category: 'license',
+      description: 'Enable audit logging for license operations',
+      web_editable: true,
+    },
+    'license.max_rate_limit_failures' => {
+      type: 'number',
+      default: 10,
+      category: 'license',
+      description: 'Maximum rate limit failures before temporary ban (per IP)',
+      web_editable: true,
+    },
+    'license.rate_limit_window' => {
+      type: 'number',
+      default: 1,
+      category: 'license',
+      description: 'Rate limit window in minutes',
+      web_editable: true,
+    },
+    'license.validation_rate_limit' => {
+      type: 'number',
+      default: 30,
+      category: 'license',
+      description: 'Default license validation rate limit (requests per window)',
+      web_editable: true,
+    },
+    'license.activation_rate_limit' => {
+      type: 'number',
+      default: 10,
+      category: 'license',
+      description: 'Default license activation rate limit (requests per window)',
+      web_editable: true,
+    },
+
     # Tax Settings
     'tax.enable_taxes' => {
       type: 'boolean',

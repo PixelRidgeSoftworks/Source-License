@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Documentation Access - Source-License</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .login-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            width: 100%;
+            max-width: 420px;
+            text-align: center;
+        }
+
+        .logo {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            line-height: 1.5;
+        }
+
+        .security-notice {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 25px;
+            text-align: left;
+        }
+
+        .security-notice .icon {
+            display: inline-block;
+            margin-right: 8px;
+            font-size: 1.1rem;
+        }
+
+        .security-notice h4 {
+            color: #856404;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .security-notice p {
+            color: #856404;
+            font-size: 0.85rem;
+            line-height: 1.4;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 500;
+            color: #555;
+            margin-bottom: 6px;
+            font-size: 0.9rem;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e1e5e9;
+            border-radius: 6px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .error-message {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+        }
+
+        .login-button {
+            width: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 14px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .login-button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .login-button:active {
+            transform: translateY(0);
+        }
+
+        .auth-methods {
+            margin-top: 25px;
+            padding-top: 25px;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .auth-methods h4 {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .auth-method {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 8px;
+            text-align: left;
+        }
+
+        .auth-method .method-title {
+            font-weight: 600;
+            color: #495057;
+            font-size: 0.85rem;
+        }
+
+        .auth-method .method-desc {
+            color: #6c757d;
+            font-size: 0.8rem;
+            margin-top: 2px;
+        }
+
+        .footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e9ecef;
+            font-size: 0.8rem;
+            color: #6c757d;
+        }
+
+        .footer a {
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 480px) {
+            .login-container {
+                padding: 30px 20px;
+            }
+
+            .title {
+                font-size: 1.3rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="logo">🔐</div>
+        <h1 class="title">API Documentation</h1>
+        <p class="subtitle">Secure access to Source-License API documentation</p>
+
+        <div class="security-notice">
+            <h4><span class="icon">🔒</span> Protected Content</h4>
+            <p>This documentation contains sensitive API information and requires administrator authentication to access.</p>
+        </div>
+
+        <% if defined?(@error) && @error %>
+        <div class="error-message">
+            <strong>Authentication Failed:</strong> <%= @error %>
+        </div>
+        <% end %>
+
+        <form method="POST" action="/docs/login">
+            <div class="form-group">
+                <label for="username">Username / Email</label>
+                <input
+                    type="text"
+                    id="username"
+                    name="username"
+                    required
+                    autocomplete="username"
+                    placeholder="Enter your admin email or username"
+                    value="<%= params[:username] if defined?(params) && params[:username] %>">
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input
+                    type="password"
+                    id="password"
+                    name="password"
+                    required
+                    autocomplete="current-password"
+                    placeholder="Enter your password">
+            </div>
+
+            <button type="submit" class="login-button">
+                Access Documentation
+            </button>
+        </form>
+
+        <div class="auth-methods">
+            <h4>Accepted Authentication Methods</h4>
+
+            <div class="auth-method">
+                <div class="method-title">Administrator Credentials Only</div>
+                <div class="method-desc">Use your Source-License admin panel email and password to access the API documentation</div>
+            </div>
+
+            <div class="auth-method">
+                <div class="method-title">HTTP Basic Authentication</div>
+                <div class="method-desc">Your browser may also prompt for basic auth using your admin credentials</div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>
+                <strong>Source-License v2.0.0</strong><br>
+                <a href="https://github.com/PixelRidgeSoftworks/Source-License" target="_blank">GitHub Repository</a> |
+                <a href="/docs/health" target="_blank">Service Health</a>
+            </p>
+            <p style="margin-top: 10px;">
+                If you're having trouble accessing the documentation, please contact your system administrator.
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Auto-focus the username field
+        document.addEventListener('DOMContentLoaded', function() {
+            const usernameField = document.getElementById('username');
+            if (usernameField && !usernameField.value) {
+                usernameField.focus();
+            }
+        });
+
+        // Add some helpful console information
+        console.log('🔐 Source-License API Documentation Login');
+        console.log('📋 Authentication methods supported:');
+        console.log('  • Admin panel credentials');
+        console.log('  • Environment variables (SWAGGER_USERNAME/SWAGGER_PASSWORD)');
+        console.log('  • HTTP Basic Authentication');
+
+        // Simple form validation
+        const form = document.querySelector('form');
+        form.addEventListener('submit', function(e) {
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+
+            if (!username || !password) {
+                e.preventDefault();
+                alert('Please enter both username and password.');
+                return false;
+            }
+
+            // Show loading state
+            const button = document.querySelector('.login-button');
+            const originalText = button.textContent;
+            button.textContent = 'Authenticating...';
+            button.disabled = true;
+
+            // Re-enable button if form submission fails
+            setTimeout(function() {
+                button.textContent = originalText;
+                button.disabled = false;
+            }, 5000);
+        });
+    </script>
+</body>
+</html>

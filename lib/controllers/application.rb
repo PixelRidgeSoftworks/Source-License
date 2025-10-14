@@ -18,6 +18,9 @@ require_relative '../services/admin/order_service'
 require_relative 'webhooks_controller'
 require_relative 'subscription_controller'
 require_relative 'api_controller'
+require_relative 'secure_api_controller'
+require_relative 'user_addresses_controller'
+require_relative 'two_factor_auth_controller'
 
 class SourceLicenseApp < Sinatra::Base
   # Configure mail delivery
@@ -119,8 +122,10 @@ class SourceLicenseApp < Sinatra::Base
 
   # Set up all routes - API routes FIRST to avoid conflicts
   ApiController.setup_routes(self)
+  UserAddressesController.setup_routes(self)
   WebhooksController.setup_routes(self)
   SubscriptionController.setup_routes(self)
+  TwoFactorAuthController.setup_routes(self)
   AdminController.setup_routes(self)
   AdminControllers::ProductsController.setup_routes(self)
   AdminControllers::LicensesController.setup_routes(self)

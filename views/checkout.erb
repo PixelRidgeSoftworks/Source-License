@@ -47,16 +47,38 @@
                 </div>
                 <div class="card-body">
                     <form id="customer-form">
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="customer-name" class="form-label">Full Name *</label>
-                                <input type="text" class="form-control" id="customer-name" required autocomplete="name">
+                        <% if user_logged_in? %>
+                            <!-- Logged-in user: show their info (read-only) -->
+                            <div class="alert alert-info mb-3">
+                                <i class="fas fa-info-circle me-2"></i>
+                                You are logged in as <strong><%= current_user.display_name %></strong>
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="customer-email" class="form-label">Email Address *</label>
-                                <input type="email" class="form-control" id="customer-email" required autocomplete="email">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Full Name</label>
+                                    <input type="text" class="form-control" value="<%= current_user.name || current_user.display_name %>" readonly autocomplete="off">
+                                    <input type="hidden" id="customer-name" value="<%= current_user.name || current_user.display_name %>">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Email Address</label>
+                                    <input type="email" class="form-control" value="<%= current_user.email %>" readonly autocomplete="off">
+                                    <input type="hidden" id="customer-email" value="<%= current_user.email %>">
+                                </div>
                             </div>
-                        </div>
+                        <% else %>
+                            <!-- Guest user: show editable fields -->
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="customer-name" class="form-label">Full Name *</label>
+                                    <input type="text" class="form-control" id="customer-name" required autocomplete="name">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="customer-email" class="form-label">Email Address *</label>
+                                    <input type="email" class="form-control" id="customer-email" required autocomplete="email">
+                                </div>
+                            </div>
+                        <% end %>
+
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="company-name" class="form-label">Company Name</label>
@@ -67,14 +89,199 @@
                                 <input type="tel" class="form-control" id="phone-number" autocomplete="tel">
                             </div>
                         </div>
-                        <div class="mb-3">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="newsletter-signup">
-                                <label class="form-check-label" for="newsletter-signup">
-                                    Subscribe to newsletter for product updates
-                                </label>
+
+                        <!-- Billing Address Section -->
+                        <hr class="my-4">
+                        <h6 class="fw-bold mb-3">
+                            <i class="fas fa-map-marker-alt me-2"></i>
+                            Billing Address
+                        </h6>
+
+                        <% if user_logged_in? %>
+                            <!-- Address selection for logged-in users -->
+                            <div id="address-selection-section">
+                                <div class="mb-3">
+                                    <label for="address-selector" class="form-label">Select Address</label>
+                                    <select class="form-select" id="address-selector" onchange="handleAddressSelection()">
+                                        <option value="">Choose an address...</option>
+                                        <option value="new">+ Add New Address</option>
+                                    </select>
+                                </div>
+
+                                <!-- Selected address preview -->
+                                <div id="selected-address-preview" class="address-preview mb-3" style="display: none;">
+                                    <div class="card">
+                                        <div class="card-body">
+                                            <div id="address-preview-content"></div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
+                        <% end %>
+
+                        <!-- Address form (always shown for guests, shown when "new" selected for users) -->
+                        <div id="address-form-section" <% if user_logged_in? %> style="display: none;"<% end %>>
+                            <% if user_logged_in? %>
+                                <div class="mb-3">
+                                    <label for="address-name" class="form-label">Address Name *</label>
+                                    <input type="text" class="form-control" id="address-name" placeholder="e.g., Home, Work, Billing" autocomplete="off">
+                                    <small class="form-text text-muted">Give this address a name for easy selection later</small>
+                                </div>
+                            <% end %>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="billing-first-name" class="form-label">First Name *</label>
+                                    <input type="text" class="form-control" id="billing-first-name" required autocomplete="given-name">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="billing-last-name" class="form-label">Last Name *</label>
+                                    <input type="text" class="form-control" id="billing-last-name" required autocomplete="family-name">
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-12 mb-3">
+                                    <label for="billing-company" class="form-label">Company</label>
+                                    <input type="text" class="form-control" id="billing-company" autocomplete="organization">
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-12 mb-3">
+                                    <label for="address-line1" class="form-label">Address Line 1 *</label>
+                                    <input type="text" class="form-control" id="address-line1" required autocomplete="address-line1">
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-12 mb-3">
+                                    <label for="address-line2" class="form-label">Address Line 2</label>
+                                    <input type="text" class="form-control" id="address-line2" autocomplete="address-line2">
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="city" class="form-label">City *</label>
+                                    <input type="text" class="form-control" id="city" required autocomplete="address-level2">
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label for="state" class="form-label">State/Province *</label>
+                                    <input type="text" class="form-control" id="state" required autocomplete="address-level1">
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label for="postal-code" class="form-label">ZIP/Postal Code *</label>
+                                    <input type="text" class="form-control" id="postal-code" required autocomplete="postal-code">
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="country" class="form-label">Country *</label>
+                                    <select class="form-select" id="country" required autocomplete="country">
+                                        <option value="">Select Country</option>
+                                        <option value="CA">Canada</option>
+                                        <option value="US" selected>United States</option>
+                                        <option value="GB">United Kingdom</option>
+                                        <option value="AU">Australia</option>
+                                        <option value="DE">Germany</option>
+                                        <option value="FR">France</option>
+                                        <option value="IT">Italy</option>
+                                        <option value="ES">Spain</option>
+                                        <option value="NL">Netherlands</option>
+                                        <option value="BE">Belgium</option>
+                                        <option value="CH">Switzerland</option>
+                                        <option value="AT">Austria</option>
+                                        <option value="SE">Sweden</option>
+                                        <option value="NO">Norway</option>
+                                        <option value="DK">Denmark</option>
+                                        <option value="FI">Finland</option>
+                                        <option value="IE">Ireland</option>
+                                        <option value="PT">Portugal</option>
+                                        <option value="PL">Poland</option>
+                                        <option value="CZ">Czech Republic</option>
+                                        <option value="HU">Hungary</option>
+                                        <option value="SK">Slovakia</option>
+                                        <option value="SI">Slovenia</option>
+                                        <option value="HR">Croatia</option>
+                                        <option value="GR">Greece</option>
+                                        <option value="BG">Bulgaria</option>
+                                        <option value="RO">Romania</option>
+                                        <option value="EE">Estonia</option>
+                                        <option value="LV">Latvia</option>
+                                        <option value="LT">Lithuania</option>
+                                        <option value="LU">Luxembourg</option>
+                                        <option value="MT">Malta</option>
+                                        <option value="CY">Cyprus</option>
+                                        <option value="JP">Japan</option>
+                                        <option value="KR">Korea, Republic of</option>
+                                        <option value="SG">Singapore</option>
+                                        <option value="HK">Hong Kong</option>
+                                        <option value="TW">Taiwan</option>
+                                        <option value="MY">Malaysia</option>
+                                        <option value="TH">Thailand</option>
+                                        <option value="PH">Philippines</option>
+                                        <option value="ID">Indonesia</option>
+                                        <option value="VN">Viet Nam</option>
+                                        <option value="IN">India</option>
+                                        <option value="CN">China</option>
+                                        <option value="BR">Brazil</option>
+                                        <option value="MX">Mexico</option>
+                                        <option value="AR">Argentina</option>
+                                        <option value="CL">Chile</option>
+                                        <option value="CO">Colombia</option>
+                                        <option value="PE">Peru</option>
+                                        <option value="ZA">South Africa</option>
+                                        <option value="NG">Nigeria</option>
+                                        <option value="EG">Egypt</option>
+                                        <option value="MA">Morocco</option>
+                                        <option value="KE">Kenya</option>
+                                        <option value="GH">Ghana</option>
+                                        <option value="IL">Israel</option>
+                                        <option value="AE">United Arab Emirates</option>
+                                        <option value="SA">Saudi Arabia</option>
+                                        <option value="TR">Turkey</option>
+                                        <option value="RU">Russian Federation</option>
+                                        <option value="UA">Ukraine</option>
+                                        <option value="BY">Belarus</option>
+                                        <option value="KZ">Kazakhstan</option>
+                                        <option value="UZ">Uzbekistan</option>
+                                        <option value="NZ">New Zealand</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="billing-phone" class="form-label">Phone Number</label>
+                                    <input type="tel" class="form-control" id="billing-phone" autocomplete="tel">
+                                </div>
+                            </div>
+
+                            <% if user_logged_in? %>
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="save-address" checked>
+                                        <label class="form-check-label" for="save-address">
+                                            Save this address for future use
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="set-default-address">
+                                        <label class="form-check-label" for="set-default-address">
+                                            Set as default billing address
+                                        </label>
+                                    </div>
+                                </div>
+                            <% end %>
                         </div>
+
+                        <% unless user_logged_in? %>
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="newsletter-signup">
+                                    <label class="form-check-label" for="newsletter-signup">
+                                        Subscribe to newsletter for product updates
+                                    </label>
+                                </div>
+                            </div>
+                        <% end %>
+
                         <div class="d-flex justify-content-end">
                             <button type="button" class="btn btn-primary" id="continue-btn" onclick="proceedToNext()">
                                 <span id="continue-text">Continue to Payment</span>
@@ -398,7 +605,9 @@ class CheckoutManager {
             }
         });
 
-        this.cardElement = elements.create('card');
+        this.cardElement = elements.create('card', {
+            hidePostalCode: true
+        });
         this.cardElement.mount('#card-element');
 
         this.cardElement.on('change', (event) => {
@@ -624,13 +833,55 @@ class CheckoutManager {
         }
     }
 
-    handlePaymentSuccess(result) {
+    async handlePaymentSuccess(result) {
         // Clear cart
         localStorage.removeItem('cart');
         sessionStorage.removeItem('checkout_cart');
 
+        // Wait for webhook processing to complete before redirecting
+        await this.waitForOrderCompletion(result.order_id);
+
         // Redirect to success page
         window.location.href = `/success?order_id=${result.order_id}`;
+    }
+
+    // Wait for webhooks to complete order processing and license generation
+    async waitForOrderCompletion(orderId, maxAttempts = 30) {
+        this.showNotification('Processing payment and generating licenses...', 'info');
+
+        for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+            try {
+                const response = await fetch(`/api/orders/${orderId}`);
+                if (response.ok) {
+                    const orderData = await response.json();
+
+                    // Check if order is completed AND has licenses
+                    if (orderData.status === 'completed' && orderData.license_keys && orderData.license_keys.length > 0) {
+                        this.showNotification('Payment processed successfully! Redirecting...', 'success');
+                        return; // Order is complete with licenses
+                    }
+
+                    // If order is completed but no licenses yet, continue waiting
+                    if (orderData.status === 'completed') {
+                        console.log(`Attempt ${attempt}: Order completed, waiting for license generation...`);
+                    } else {
+                        console.log(`Attempt ${attempt}: Order status: ${orderData.status}, waiting...`);
+                    }
+                } else {
+                    console.log(`Attempt ${attempt}: Failed to fetch order status`);
+                }
+            } catch (error) {
+                console.log(`Attempt ${attempt}: Error checking order status:`, error);
+            }
+
+            // Wait 1 second before next attempt (exponential backoff for later attempts)
+            const delay = attempt < 10 ? 1000 : Math.min(2000, 1000 * Math.pow(1.2, attempt - 10));
+            await new Promise(resolve => setTimeout(resolve, delay));
+        }
+
+        // If we've reached max attempts, show warning but still redirect
+        this.showNotification('Payment processed, but license generation is taking longer than expected. Redirecting...', 'warning');
+        console.warn('Webhook processing took longer than expected, proceeding to success page');
     }
 }
 
@@ -638,15 +889,175 @@ class CheckoutManager {
 let checkout;
 document.addEventListener('DOMContentLoaded', function() {
     checkout = new CheckoutManager();
+    <% if user_logged_in? %>
+        loadUserAddresses();
+    <% end %>
 });
 
+<% if user_logged_in? %>
+// Address management functions for logged-in users
+async function loadUserAddresses() {
+    try {
+        const response = await fetch('/api/user/addresses');
+        if (response.ok) {
+            const addresses = await response.json();
+            populateAddressSelector(addresses);
+        }
+    } catch (error) {
+        console.error('Failed to load addresses:', error);
+    }
+}
+
+function populateAddressSelector(addresses) {
+    const selector = document.getElementById('address-selector');
+
+    // Clear existing options (except first two)
+    while (selector.children.length > 2) {
+        selector.removeChild(selector.lastChild);
+    }
+
+    // Add user addresses
+    addresses.forEach(address => {
+        const option = document.createElement('option');
+        option.value = address.id;
+        option.textContent = `${address.name} - ${address.single_line_address}`;
+        if (address.is_default) {
+            option.textContent += ' (Default)';
+        }
+        selector.appendChild(option);
+    });
+
+    // Auto-select default address if available
+    const defaultAddress = addresses.find(addr => addr.is_default);
+    if (defaultAddress) {
+        selector.value = defaultAddress.id;
+        handleAddressSelection();
+    }
+}
+
+function handleAddressSelection() {
+    const selector = document.getElementById('address-selector');
+    const selectedValue = selector.value;
+
+    const addressFormSection = document.getElementById('address-form-section');
+    const addressPreview = document.getElementById('selected-address-preview');
+
+    if (selectedValue === 'new') {
+        // Show new address form
+        addressFormSection.style.display = 'block';
+        addressPreview.style.display = 'none';
+        clearAddressForm();
+    } else if (selectedValue === '') {
+        // No selection
+        addressFormSection.style.display = 'none';
+        addressPreview.style.display = 'none';
+    } else {
+        // Load selected address
+        loadSelectedAddress(selectedValue);
+        addressFormSection.style.display = 'none';
+        addressPreview.style.display = 'block';
+    }
+}
+
+async function loadSelectedAddress(addressId) {
+    try {
+        const response = await fetch(`/api/user/addresses/${addressId}`);
+        if (response.ok) {
+            const address = await response.json();
+            displayAddressPreview(address);
+            // Store selected address ID for checkout
+            window.selectedAddressId = addressId;
+        }
+    } catch (error) {
+        console.error('Failed to load address:', error);
+    }
+}
+
+function displayAddressPreview(address) {
+    const previewContent = document.getElementById('address-preview-content');
+    previewContent.innerHTML = `
+        <div class="d-flex justify-content-between align-items-start">
+            <div>
+                <h6 class="fw-bold mb-1">${address.name}</h6>
+                <div class="text-muted">
+                    <div><strong>${address.full_name}</strong></div>
+                    ${address.company ? `<div>${address.company}</div>` : ''}
+                    <div>${address.address_line_1}</div>
+                    ${address.address_line_2 ? `<div>${address.address_line_2}</div>` : ''}
+                    <div>${address.city}, ${address.state_province} ${address.postal_code}</div>
+                    <div>${address.country}</div>
+                    ${address.phone ? `<div>${address.phone}</div>` : ''}
+                </div>
+            </div>
+            <button type="button" class="btn btn-sm btn-outline-primary" onclick="editSelectedAddress()">
+                <i class="fas fa-edit"></i> Edit
+            </button>
+        </div>
+    `;
+}
+
+function editSelectedAddress() {
+    const selector = document.getElementById('address-selector');
+    selector.value = 'new';
+    handleAddressSelection();
+
+    // If we have a selected address, populate the form with its data
+    if (window.selectedAddressId) {
+        populateAddressForm(window.selectedAddressId);
+    }
+}
+
+async function populateAddressForm(addressId) {
+    try {
+        const response = await fetch(`/api/user/addresses/${addressId}`);
+        if (response.ok) {
+            const address = await response.json();
+
+            document.getElementById('address-name').value = address.name;
+            document.getElementById('billing-first-name').value = address.first_name;
+            document.getElementById('billing-last-name').value = address.last_name;
+            document.getElementById('billing-company').value = address.company || '';
+            document.getElementById('address-line1').value = address.address_line_1;
+            document.getElementById('address-line2').value = address.address_line_2 || '';
+            document.getElementById('city').value = address.city;
+            document.getElementById('state').value = address.state_province;
+            document.getElementById('postal-code').value = address.postal_code;
+            document.getElementById('country').value = address.country;
+            document.getElementById('billing-phone').value = address.phone || '';
+            document.getElementById('set-default-address').checked = address.is_default;
+        }
+    } catch (error) {
+        console.error('Failed to populate address form:', error);
+    }
+}
+
+function clearAddressForm() {
+    document.getElementById('address-name').value = '';
+    document.getElementById('billing-first-name').value = '';
+    document.getElementById('billing-last-name').value = '';
+    document.getElementById('billing-company').value = '';
+    document.getElementById('address-line1').value = '';
+    document.getElementById('address-line2').value = '';
+    document.getElementById('city').value = '';
+    document.getElementById('state').value = '';
+    document.getElementById('postal-code').value = '';
+    document.getElementById('country').value = 'US';
+    document.getElementById('billing-phone').value = '';
+    document.getElementById('save-address').checked = true;
+    document.getElementById('set-default-address').checked = false;
+}
+<% end %>
+
 // Step navigation functions
-function proceedToNext() {
+async function proceedToNext() {
     const form = document.getElementById('customer-form');
     if (!form.checkValidity()) {
         form.reportValidity();
         return;
     }
+
+    // Store billing address information for payment processing
+    await storeBillingAddressInfo();
 
     // Check if order total is free
     const total = checkout.calculateTotal();
@@ -659,6 +1070,110 @@ function proceedToNext() {
         proceedToPayment();
     }
 }
+
+// Store billing address information for use in payment processing
+async function storeBillingAddressInfo() {
+    let billingAddress = {};
+
+    <% if user_logged_in? %>
+        // For logged-in users, check if they selected an existing address or are creating new
+        const selectedAddressId = document.getElementById('address-selector').value;
+
+        if (selectedAddressId && selectedAddressId !== 'new' && selectedAddressId !== '') {
+            // Use existing selected address
+            if (window.selectedAddressId) {
+                try {
+                    const response = await fetch(`/api/user/addresses/${window.selectedAddressId}`);
+                    if (response.ok) {
+                        const address = await response.json();
+                        billingAddress = {
+                            name: `${address.first_name} ${address.last_name}`,
+                            email: document.getElementById('customer-email').value,
+                            line1: address.address_line_1,
+                            line2: address.address_line_2,
+                            city: address.city,
+                            state: address.state_province,
+                            postal_code: address.postal_code,
+                            country: address.country
+                        };
+                    }
+                } catch (error) {
+                    console.error('Failed to load selected address:', error);
+                }
+            }
+        } else if (selectedAddressId === 'new') {
+            // Creating new address - get from form
+            billingAddress = getBillingAddressFromForm();
+
+            // Save the new address if the user wants to
+            if (document.getElementById('save-address').checked) {
+                await saveNewBillingAddress();
+            }
+        } else {
+            // No address selected - get from form
+            billingAddress = getBillingAddressFromForm();
+        }
+    <% else %>
+        // For guest users, always get from form
+        billingAddress = getBillingAddressFromForm();
+    <% end %>
+
+    // Store globally for payment processing
+    window.storedBillingAddress = billingAddress;
+}
+
+function getBillingAddressFromForm() {
+    return {
+        name: document.getElementById('customer-name').value,
+        email: document.getElementById('customer-email').value,
+        line1: document.getElementById('address-line1').value,
+        line2: document.getElementById('address-line2').value || null,
+        city: document.getElementById('city').value,
+        state: document.getElementById('state').value,
+        postal_code: document.getElementById('postal-code').value,
+        country: document.getElementById('country').value
+    };
+}
+
+<% if user_logged_in? %>
+async function saveNewBillingAddress() {
+    const addressData = {
+        name: document.getElementById('address-name').value || 'Billing Address',
+        first_name: document.getElementById('billing-first-name').value,
+        last_name: document.getElementById('billing-last-name').value,
+        company: document.getElementById('billing-company').value,
+        address_line_1: document.getElementById('address-line1').value,
+        address_line_2: document.getElementById('address-line2').value,
+        city: document.getElementById('city').value,
+        state_province: document.getElementById('state').value,
+        postal_code: document.getElementById('postal-code').value,
+        country: document.getElementById('country').value,
+        phone: document.getElementById('billing-phone').value,
+        is_default: document.getElementById('set-default-address').checked
+    };
+
+    try {
+        const response = await fetch('/api/user/addresses', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(addressData)
+        });
+
+        if (response.ok) {
+            const newAddress = await response.json();
+            console.log('New address saved:', newAddress);
+            // Optionally reload the address selector
+            loadUserAddresses();
+        } else {
+            console.error('Failed to save address');
+        }
+    } catch (error) {
+        console.error('Error saving address:', error);
+    }
+}
+<% end %>
 
 function proceedToPayment() {
     // Hide customer info, show payment
@@ -750,18 +1265,33 @@ async function completePayment() {
 <% if stripe_enabled? %>
 async function processStripePayment() {
     try {
+        // Use stored billing address from the customer information step
+        const storedAddress = window.storedBillingAddress;
+
+        if (!storedAddress) {
+            throw new Error('Billing address information is missing. Please go back and fill out your address.');
+        }
+
         // Create order first
         const order = await checkout.createOrder();
 
-        // Confirm payment with Stripe
+        // Confirm payment with Stripe using stored billing address
         const {error, paymentIntent} = await checkout.stripe.confirmCardPayment(
             order.client_secret,
             {
                 payment_method: {
                     card: checkout.cardElement,
                     billing_details: {
-                        name: document.getElementById('customer-name').value,
-                        email: document.getElementById('customer-email').value,
+                        name: storedAddress.name,
+                        email: storedAddress.email,
+                        address: {
+                            line1: storedAddress.line1,
+                            line2: storedAddress.line2,
+                            city: storedAddress.city,
+                            state: storedAddress.state,
+                            postal_code: storedAddress.postal_code,
+                            country: storedAddress.country
+                        }
                     }
                 }
             }

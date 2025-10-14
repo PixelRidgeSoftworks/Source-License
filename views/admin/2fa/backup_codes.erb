@@ -1,0 +1,572 @@
+<!-- Admin Backup Codes Display Page -->
+<div class="container-fluid">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <!-- Header -->
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+          <h2 class="mb-1">
+            <i class="fas fa-list-ol text-primary me-2"></i>Your Backup Recovery Codes
+          </h2>
+          <p class="text-muted mb-0">Save these codes in a secure location for emergency access</p>
+        </div>
+        <a href="/admin/2fa/personal" class="btn btn-outline-secondary">
+          <i class="fas fa-arrow-left me-2"></i>Back to 2FA Settings
+        </a>
+      </div>
+
+      <!-- Important Warning -->
+      <div class="alert alert-danger" role="alert">
+        <h5 class="alert-heading">
+          <i class="fas fa-exclamation-triangle me-2"></i>Important: Save These Codes Now!
+        </h5>
+        <p class="mb-3">
+          <strong>This is the only time these backup codes will be shown.</strong>
+          Each code can only be used once and will provide access to your administrator account if you lose your other 2FA methods.
+        </p>
+        <div class="d-flex gap-2 flex-wrap">
+          <button class="btn btn-warning btn-sm" onclick="printCodes()">
+            <i class="fas fa-print me-1"></i>Print Codes
+          </button>
+          <button class="btn btn-info btn-sm" onclick="downloadCodes()">
+            <i class="fas fa-download me-1"></i>Download as Text
+          </button>
+          <button class="btn btn-secondary btn-sm" onclick="copyCodes()">
+            <i class="fas fa-copy me-1"></i>Copy to Clipboard
+          </button>
+        </div>
+      </div>
+
+      <!-- Backup Codes Display -->
+      <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+          <h5 class="mb-0">
+            <i class="fas fa-shield-alt me-2"></i>Admin Recovery Codes
+          </h5>
+        </div>
+        <div class="card-body">
+          <div class="row g-3" id="backup-codes-container">
+            <% @backup_codes.each_with_index do |code, index| %>
+              <div class="col-md-6">
+                <div class="card bg-light border">
+                  <div class="card-body text-center py-3">
+                    <div class="small text-muted mb-1">Code <%= index + 1 %></div>
+                    <code class="backup-code fs-5 fw-bold text-dark d-block" data-code="<%= code %>">
+                      <%= code.insert(4, '-') %>
+                    </code>
+                    <button class="btn btn-outline-primary btn-sm mt-2"
+                            onclick="copyIndividualCode('<%= code %>', this)">
+                      <i class="fas fa-copy me-1"></i>Copy
+                    </button>
+                  </div>
+                </div>
+              </div>
+            <% end %>
+          </div>
+
+          <!-- Usage Information -->
+          <div class="mt-4 pt-3 border-top">
+            <h6 class="mb-3">
+              <i class="fas fa-info-circle me-2"></i>How to Use Backup Codes
+            </h6>
+            <div class="row">
+              <div class="col-md-6">
+                <ul class="list-unstyled small">
+                  <li class="mb-2">
+                    <i class="fas fa-arrow-right text-primary me-2"></i>
+                    Use these codes if you lose access to your authenticator app or security keys
+                  </li>
+                  <li class="mb-2">
+                    <i class="fas fa-arrow-right text-primary me-2"></i>
+                    Enter a backup code in place of your normal 2FA verification
+                  </li>
+                  <li class="mb-2">
+                    <i class="fas fa-arrow-right text-primary me-2"></i>
+                    Each code can only be used once - cross it out after use
+                  </li>
+                </ul>
+              </div>
+              <div class="col-md-6">
+                <ul class="list-unstyled small">
+                  <li class="mb-2">
+                    <i class="fas fa-arrow-right text-success me-2"></i>
+                    Store codes in a secure location (password manager, safe)
+                  </li>
+                  <li class="mb-2">
+                    <i class="fas fa-arrow-right text-success me-2"></i>
+                    Keep codes separate from your other login credentials
+                  </li>
+                  <li class="mb-2">
+                    <i class="fas fa-arrow-right text-success me-2"></i>
+                    Generate new codes when you have few remaining
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Security Recommendations -->
+      <div class="row g-4 mt-2">
+        <div class="col-md-6">
+          <div class="card border-success">
+            <div class="card-header bg-success text-white">
+              <h6 class="mb-0">
+                <i class="fas fa-shield-check me-2"></i>Recommended Storage
+              </h6>
+            </div>
+            <div class="card-body">
+              <ul class="list-unstyled mb-0 small">
+                <li class="mb-2">
+                  <i class="fas fa-check text-success me-2"></i>
+                  <strong>Password Manager:</strong> Store in a secure note
+                </li>
+                <li class="mb-2">
+                  <i class="fas fa-check text-success me-2"></i>
+                  <strong>Physical Safe:</strong> Print and store securely
+                </li>
+                <li class="mb-2">
+                  <i class="fas fa-check text-success me-2"></i>
+                  <strong>Encrypted File:</strong> Save as encrypted document
+                </li>
+                <li>
+                  <i class="fas fa-check text-success me-2"></i>
+                  <strong>Multiple Copies:</strong> Store in different secure locations
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-6">
+          <div class="card border-warning">
+            <div class="card-header bg-warning text-dark">
+              <h6 class="mb-0">
+                <i class="fas fa-exclamation-triangle me-2"></i>Security Warnings
+              </h6>
+            </div>
+            <div class="card-body">
+              <ul class="list-unstyled mb-0 small">
+                <li class="mb-2">
+                  <i class="fas fa-times text-danger me-2"></i>
+                  <strong>Don't email:</strong> Never send codes via email
+                </li>
+                <li class="mb-2">
+                  <i class="fas fa-times text-danger me-2"></i>
+                  <strong>Don't share:</strong> Keep codes completely private
+                </li>
+                <li class="mb-2">
+                  <i class="fas fa-times text-danger me-2"></i>
+                  <strong>Don't store in browser:</strong> Avoid browser bookmarks
+                </li>
+                <li>
+                  <i class="fas fa-times text-danger me-2"></i>
+                  <strong>Don't screenshot:</strong> Avoid saving as images
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Next Steps -->
+      <div class="alert alert-info mt-4">
+        <h6 class="alert-heading">
+          <i class="fas fa-lightbulb me-2"></i>Next Steps
+        </h6>
+        <p class="mb-2">After saving your backup codes:</p>
+        <ol class="mb-0 small">
+          <li>Store the codes in at least two secure locations</li>
+          <li>Test one backup code to ensure it works (optional but recommended)</li>
+          <li>Return to your 2FA settings to complete your security setup</li>
+          <li>Consider setting up additional authentication methods for redundancy</li>
+        </ol>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="d-grid gap-2 d-md-flex justify-content-md-center mt-4">
+        <a href="/admin/2fa/personal" class="btn btn-success btn-lg">
+          <i class="fas fa-check me-2"></i>I've Saved My Codes
+        </a>
+        <button class="btn btn-outline-primary btn-lg" onclick="printCodes()">
+          <i class="fas fa-print me-2"></i>Print Codes
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Print-only styles -->
+<style media="print" id="print-styles">
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  #printable-content,
+  #printable-content * {
+    visibility: visible;
+  }
+
+  #printable-content {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .backup-code {
+    font-size: 18px !important;
+    font-weight: bold;
+    font-family: 'Courier New', monospace;
+    page-break-inside: avoid;
+  }
+
+  .code-item {
+    margin-bottom: 10px;
+    page-break-inside: avoid;
+  }
+}
+</style>
+
+<!-- Hidden printable content -->
+<div id="printable-content" style="display: none;">
+  <h1>Source-License Admin Backup Recovery Codes</h1>
+  <p><strong>Administrator Account:</strong> <%= session[:admin_session][:admin_email] rescue 'Admin Account' %></p>
+  <p><strong>Generated:</strong> <%= Time.now.strftime('%B %d, %Y at %I:%M %p %Z') %></p>
+
+  <div style="border: 2px solid #000; padding: 20px; margin: 20px 0;">
+    <h2>⚠️ IMPORTANT SECURITY INFORMATION</h2>
+    <ul>
+      <li>Each code can only be used ONCE</li>
+      <li>Cross out codes after use</li>
+      <li>Store in a secure location</li>
+      <li>Never share these codes with anyone</li>
+      <li>Generate new codes when running low</li>
+    </ul>
+  </div>
+
+  <h2>Backup Codes:</h2>
+  <% @backup_codes.each_with_index do |code, index| %>
+    <div class="code-item">
+      <strong><%= index + 1 %>.</strong>
+      <span class="backup-code"><%= code.insert(4, '-') %></span>
+      <span style="margin-left: 20px;">☐ Used</span>
+    </div>
+  <% end %>
+
+  <div style="margin-top: 30px; border-top: 1px solid #ccc; padding-top: 20px;">
+    <p><strong>How to use:</strong> When prompted for 2FA verification, enter one of these codes instead of your authenticator app code or security key.</p>
+    <p><strong>Security:</strong> Keep these codes as secure as your password. Anyone with access to these codes can access your admin account.</p>
+  </div>
+</div>
+
+<!-- JavaScript Functions -->
+<script>
+// Copy all codes to clipboard
+function copyCodes() {
+  const codes = document.querySelectorAll('.backup-code');
+  const codeList = Array.from(codes).map(code => code.dataset.code).join('\n');
+
+  const header = `Source-License Admin Backup Recovery Codes
+Generated: ${new Date().toLocaleString()}
+
+⚠️ IMPORTANT: Each code can only be used once. Keep these codes secure and private.
+
+Backup Codes:
+`;
+
+  const footer = `
+
+How to use: When prompted for 2FA verification, enter one of these codes instead of your authenticator app code or security key.
+
+Security: Keep these codes as secure as your password. Anyone with access to these codes can access your admin account.`;
+
+  const fullText = header + codeList + footer;
+
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(fullText).then(() => {
+      showToast('All backup codes copied to clipboard!', 'success');
+    }).catch(() => {
+      fallbackCopy(fullText);
+    });
+  } else {
+    fallbackCopy(fullText);
+  }
+}
+
+// Copy individual code
+function copyIndividualCode(code, button) {
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(code).then(() => {
+      const originalText = button.innerHTML;
+      button.innerHTML = '<i class="fas fa-check me-1"></i>Copied!';
+      button.classList.remove('btn-outline-primary');
+      button.classList.add('btn-success');
+
+      setTimeout(() => {
+        button.innerHTML = originalText;
+        button.classList.remove('btn-success');
+        button.classList.add('btn-outline-primary');
+      }, 2000);
+    });
+  } else {
+    fallbackCopy(code);
+  }
+}
+
+// Fallback copy method
+function fallbackCopy(text) {
+  const textArea = document.createElement('textarea');
+  textArea.value = text;
+  textArea.style.position = 'fixed';
+  textArea.style.left = '-999999px';
+  textArea.style.top = '-999999px';
+  document.body.appendChild(textArea);
+  textArea.focus();
+  textArea.select();
+
+  try {
+    document.execCommand('copy');
+    showToast('Copied to clipboard!', 'success');
+  } catch (err) {
+    showToast('Failed to copy to clipboard. Please copy manually.', 'error');
+  }
+
+  document.body.removeChild(textArea);
+}
+
+// Print codes
+function printCodes() {
+  const printContent = document.getElementById('printable-content');
+  printContent.style.display = 'block';
+  window.print();
+  printContent.style.display = 'none';
+}
+
+// Download codes as text file
+function downloadCodes() {
+  const codes = document.querySelectorAll('.backup-code');
+  const codeList = Array.from(codes).map((code, index) => `${index + 1}. ${code.dataset.code}`).join('\n');
+
+  const content = `Source-License Admin Backup Recovery Codes
+Generated: ${new Date().toLocaleString()}
+
+⚠️ IMPORTANT SECURITY INFORMATION:
+- Each code can only be used ONCE
+- Cross out codes after use
+- Store in a secure location
+- Never share these codes with anyone
+- Generate new codes when running low
+
+Backup Codes:
+${codeList}
+
+How to use:
+When prompted for 2FA verification, enter one of these codes instead of your authenticator app code or security key.
+
+Security Warning:
+Keep these codes as secure as your password. Anyone with access to these codes can access your admin account.
+
+Store these codes in:
+✓ Password manager (recommended)
+✓ Physical safe or secure location
+✓ Encrypted file storage
+✗ DO NOT store in email, browser bookmarks, or unencrypted files`;
+
+  const blob = new Blob([content], { type: 'text/plain' });
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `source-license-admin-backup-codes-${new Date().toISOString().split('T')[0]}.txt`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  window.URL.revokeObjectURL(url);
+
+  showToast('Backup codes downloaded successfully!', 'success');
+}
+
+// Show toast notification
+function showToast(message, type = 'info') {
+  const toast = document.createElement('div');
+  toast.className = `alert alert-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'info'} position-fixed`;
+  toast.style.top = '20px';
+  toast.style.right = '20px';
+  toast.style.zIndex = '9999';
+  toast.style.minWidth = '300px';
+  toast.innerHTML = `
+    <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-triangle' : 'info-circle'} me-2"></i>
+    ${message}
+  `;
+
+  document.body.appendChild(toast);
+
+  // Fade in
+  setTimeout(() => {
+    toast.style.opacity = '1';
+  }, 100);
+
+  // Remove after 3 seconds
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    setTimeout(() => {
+      if (toast.parentNode) {
+        document.body.removeChild(toast);
+      }
+    }, 300);
+  }, 3000);
+}
+
+// Auto-focus and keyboard shortcuts
+document.addEventListener('DOMContentLoaded', function() {
+  // Ctrl+C to copy all codes
+  document.addEventListener('keydown', function(e) {
+    if (e.ctrlKey && e.key === 'c' && !window.getSelection().toString()) {
+      e.preventDefault();
+      copyCodes();
+    }
+
+    // Ctrl+P to print
+    if (e.ctrlKey && e.key === 'p') {
+      e.preventDefault();
+      printCodes();
+    }
+
+    // Ctrl+S to download
+    if (e.ctrlKey && e.key === s') {
+      e.preventDefault();
+      downloadCodes();
+    }
+  });
+
+  // Show helpful keyboard shortcuts
+  showToast('💡 Tip: Use Ctrl+C to copy all codes, Ctrl+P to print, Ctrl+S to download', 'info');
+});
+
+// Prevent accidental page navigation
+window.addEventListener('beforeunload', function(e) {
+  e.preventDefault();
+  e.returnValue = 'Are you sure you want to leave? Make sure you have saved your backup codes!';
+});
+
+// Remove the beforeunload warning when navigating to 2FA settings
+document.addEventListener('click', function(e) {
+  if (e.target.closest('a[href="/admin/2fa/personal"]')) {
+    window.removeEventListener('beforeunload', arguments.callee);
+  }
+});
+</script>
+
+<!-- Custom Styles -->
+<style>
+.backup-code {
+  font-family: 'Courier New', Monaco, monospace;
+  letter-spacing: 0.1em;
+  user-select: all;
+  cursor: pointer;
+}
+
+.backup-code:hover {
+  background-color: #e9ecef;
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+
+.card {
+  border: 1px solid rgba(0,0,0,.125);
+  box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,.075);
+}
+
+.border-success {
+  border-color: #198754 !important;
+}
+
+.border-warning {
+  border-color: #ffc107 !important;
+}
+
+.alert {
+  border-radius: 0.375rem;
+}
+
+.alert-heading {
+  margin-bottom: 0.5rem;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+  transition: transform 0.2s ease;
+}
+
+.btn-lg {
+  font-size: 1.125rem;
+  padding: 0.75rem 1.5rem;
+}
+
+@media (max-width: 768px) {
+  .container-fluid {
+    padding: 1rem;
+  }
+
+  .card-body {
+    padding: 1rem;
+  }
+
+  .d-md-flex {
+    flex-direction: column;
+  }
+
+  .btn-lg {
+    margin-bottom: 0.5rem;
+  }
+
+  .backup-code {
+    font-size: 1rem !important;
+  }
+}
+
+/* Toast notification styles */
+.position-fixed {
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+/* Print button pulse animation */
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+.btn-warning:hover {
+  animation: pulse 0.5s ease-in-out;
+}
+
+/* Secure visual indicators */
+.bg-light {
+  background-color: #f8f9fa !important;
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 10px,
+    rgba(0,0,0,.02) 10px,
+    rgba(0,0,0,.02) 20px
+  );
+}
+
+/* Focus states for accessibility */
+.backup-code:focus {
+  outline: 2px solid #0d6efd;
+  outline-offset: 2px;
+}
+
+button:focus {
+  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+</style>

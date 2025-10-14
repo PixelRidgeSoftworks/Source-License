@@ -216,6 +216,250 @@ class SecureLicenseService
       query.any?
     end
 
+    # Validate a license with secure checks
+    def validate_license(license_key:, machine_fingerprint: nil, machine_id: nil, request_info: {})
+      return secure_error_response('Missing license key') if license_key.nil? || license_key.strip.empty?
+
+      license = find_license_by_key(license_key)
+      return secure_error_response('License not found') unless license
+
+      # Check if license is active
+      return secure_error_response('License is not active') unless license[:status] == 'active'
+
+      # Check expiration
+      return secure_error_response('License has expired') if license[:expires_at] && license[:expires_at] < Time.now
+
+      # Check if machine validation is required
+      if license[:requires_machine_id] && machine_fingerprint.nil? && machine_id.nil?
+        return secure_error_response('Machine identification required')
+      end
+
+      # If machine data provided, validate activation
+      if (machine_fingerprint || machine_id) && !validate_machine_activation(license[:id], machine_fingerprint,
+                                                                             machine_id)
+        return secure_error_response('Machine not activated for this license')
+      end
+
+      # Log successful validation
+      log_license_operation(
+        action: 'validate',
+        license_id: license[:id],
+        license_key: license_key,
+        machine_fingerprint: machine_fingerprint,
+        machine_id: machine_id,
+        ip_address: request_info[:ip_address],
+        user_agent: request_info[:user_agent],
+        success: true
+      )
+
+      {
+        valid: true,
+        license_id: license[:id],
+        expires_at: license[:expires_at],
+        requires_machine_id: license[:requires_machine_id],
+        timestamp: Time.now.iso8601,
+      }
+    rescue StandardError => e
+      log_security_incident(
+        event_type: 'validation_exception',
+        license_key: license_key,
+        request_info: request_info,
+        details: { error: e.message }
+      )
+      secure_error_response('Validation failed')
+    end
+
+    # Activate a license on a machine
+    def activate_license(license_key:, machine_fingerprint: nil, machine_id: nil, request_info: {})
+      return { success: false, error: 'Missing license key' } if license_key.nil? || license_key.strip.empty?
+      return { success: false, error: 'Machine identification required' } if machine_fingerprint.nil? && machine_id.nil?
+
+      license = find_license_by_key(license_key)
+      return { success: false, error: 'Invalid license' } unless license
+
+      # Check if license is active
+      return { success: false, error: 'License is not active' } unless license[:status] == 'active'
+
+      # Check expiration
+      return { success: false, error: 'License has expired' } if license[:expires_at] && license[:expires_at] < Time.now
+
+      # Check activation limits
+      max_activations = license[:custom_max_activations] || license[:max_activations]
+      if max_activations && license[:activation_count] >= max_activations
+        return { success: false, error: 'Maximum activations reached' }
+      end
+
+      # Check if already activated on this machine
+      if validate_machine_activation(license[:id], machine_fingerprint, machine_id)
+        return { success: false, error: 'License already activated on this machine' }
+      end
+
+      # Create activation record
+      activation_data = {
+        license_id: license[:id],
+        activated_at: Time.now,
+        active: true,
+        revoked: false,
+      }
+
+      activation_data[:machine_fingerprint_hash] = hash_machine_data(machine_fingerprint) if machine_fingerprint
+      activation_data[:machine_id_hash] = hash_machine_data(machine_id) if machine_id
+
+      DB[:license_activations].insert(activation_data)
+
+      # Update activation count
+      DB[:licenses].where(id: license[:id]).update(
+        activation_count: license[:activation_count] + 1
+      )
+
+      # Log successful activation
+      log_license_operation(
+        action: 'activate',
+        license_id: license[:id],
+        license_key: license_key,
+        machine_fingerprint: machine_fingerprint,
+        machine_id: machine_id,
+        ip_address: request_info[:ip_address],
+        user_agent: request_info[:user_agent],
+        success: true
+      )
+
+      {
+        success: true,
+        message: 'License activated successfully',
+        timestamp: Time.now.iso8601,
+      }
+    rescue StandardError => e
+      log_security_incident(
+        event_type: 'activation_exception',
+        license_key: license_key,
+        request_info: request_info,
+        details: { error: e.message }
+      )
+      { success: false, error: 'Activation failed' }
+    end
+
+    # Deactivate a license from a machine
+    def deactivate_license(license_key:, machine_fingerprint: nil, machine_id: nil, request_info: {})
+      return { success: false, error: 'Missing license key' } if license_key.nil? || license_key.strip.empty?
+      return { success: false, error: 'Machine identification required' } if machine_fingerprint.nil? && machine_id.nil?
+
+      license = find_license_by_key(license_key)
+      return { success: false, error: 'Invalid license' } unless license
+
+      # Find activation to deactivate
+      query = DB[:license_activations].where(
+        license_id: license[:id],
+        active: true,
+        revoked: false
+      )
+
+      query = query.where(machine_fingerprint_hash: hash_machine_data(machine_fingerprint)) if machine_fingerprint
+      query = query.where(machine_id_hash: hash_machine_data(machine_id)) if machine_id
+
+      activation = query.first
+      return { success: false, error: 'No active license found on this machine' } unless activation
+
+      # Deactivate the license
+      DB[:license_activations].where(id: activation[:id]).update(
+        active: false,
+        revoked: true
+      )
+
+      # Update activation count
+      DB[:licenses].where(id: license[:id]).update(
+        activation_count: [license[:activation_count] - 1, 0].max
+      )
+
+      # Log successful deactivation
+      log_license_operation(
+        action: 'deactivate',
+        license_id: license[:id],
+        license_key: license_key,
+        machine_fingerprint: machine_fingerprint,
+        machine_id: machine_id,
+        ip_address: request_info[:ip_address],
+        user_agent: request_info[:user_agent],
+        success: true
+      )
+
+      {
+        success: true,
+        message: 'License deactivated successfully',
+        timestamp: Time.now.iso8601,
+      }
+    rescue StandardError => e
+      log_security_incident(
+        event_type: 'deactivation_exception',
+        license_key: license_key,
+        request_info: request_info,
+        details: { error: e.message }
+      )
+      { success: false, error: 'Deactivation failed' }
+    end
+
+    # Get license status information
+    def get_license_status(license_key:, request_info: {})
+      return { success: false, error: 'Missing license key' } if license_key.nil? || license_key.strip.empty?
+
+      license = find_license_by_key(license_key)
+      return { success: false, error: 'License not found' } unless license
+
+      # Get activation count
+      active_activations = DB[:license_activations].where(
+        license_id: license[:id],
+        active: true,
+        revoked: false
+      ).count
+
+      # Log status check
+      log_license_operation(
+        action: 'status_check',
+        license_id: license[:id],
+        license_key: license_key,
+        ip_address: request_info[:ip_address],
+        user_agent: request_info[:user_agent],
+        success: true
+      )
+
+      max_activations = license[:custom_max_activations] || license[:max_activations]
+
+      {
+        success: true,
+        status: license[:status],
+        expires_at: license[:expires_at]&.iso8601,
+        active_activations: active_activations,
+        max_activations: max_activations,
+        requires_machine_id: license[:requires_machine_id],
+        timestamp: Time.now.iso8601,
+      }
+    rescue StandardError => e
+      log_security_incident(
+        event_type: 'status_exception',
+        license_key: license_key,
+        request_info: request_info,
+        details: { error: e.message }
+      )
+      { success: false, error: 'Status check failed' }
+    end
+
+    # Log security incidents
+    def log_security_incident(event_type:, license_key: nil, request_info: {}, details: {})
+      DB[:license_audit_logs].insert(
+        license_key_partial: partial_license_key(license_key),
+        action: "security_incident:#{event_type}",
+        ip_address: request_info[:ip_address],
+        user_agent: request_info[:user_agent],
+        success: false,
+        failure_reason: event_type,
+        metadata: details.to_json,
+        created_at: Time.now
+      )
+    rescue StandardError => e
+      # If we can't log to database, at least log to console
+      puts "Failed to log security incident: #{e.message}"
+    end
+
     # Migrate existing plaintext data to hashed versions (run once during deployment)
     def migrate_existing_data!
       puts '🔄 Migrating existing license keys to secure hashes...'

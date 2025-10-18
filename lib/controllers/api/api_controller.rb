@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require_relative 'license_controller'
+require_relative '../core/license_controller'
 
 # Controller for API routes
 module ApiController

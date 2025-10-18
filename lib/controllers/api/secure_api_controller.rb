@@ -2,8 +2,8 @@
 
 require 'json'
 require 'rack/attack'
-require_relative '../services/secure_license_service'
-require_relative '../license_generator'
+require_relative '../../services/secure_license_service'
+require_relative '../../license_generator'
 
 # Secure API Controller with rate limiting and security enhancements
 class SecureApiController < Sinatra::Base

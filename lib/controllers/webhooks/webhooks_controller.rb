@@ -3,9 +3,9 @@
 # Source-License: Webhooks Controller
 # Handles incoming webhook requests from payment providers
 
-require_relative '../webhooks/stripe_webhook_handler'
-require_relative '../webhooks/paypal_webhook_handler'
-require_relative 'route_primitive'
+require_relative '../../webhooks/stripe_webhook_handler'
+require_relative '../../webhooks/paypal_webhook_handler'
+require_relative '../core/route_primitive'
 
 module WebhooksController
   def self.setup_routes(app)

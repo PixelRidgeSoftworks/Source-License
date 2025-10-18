@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
 require 'json'
-require_relative '../services/secure_license_service'
-require_relative '../license_generator'
+require_relative '../../services/secure_license_service'
+require_relative '../../license_generator'
 
 # Secure License Controller
 # Handles license validation, activation, and deactivation with security enhancements

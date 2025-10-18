@@ -35,5 +35,5 @@ require_relative 'lib/logger'
 require_relative 'lib/settings_manager'
 
 # Load the modularized application
-require_relative 'lib/controllers/application'
-require_relative 'lib/controllers/swagger_controller'
+require_relative 'lib/controllers/core/application'
+require_relative 'lib/controllers/api/swagger_controller'

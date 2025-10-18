@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require_relative '../route_primitive'
+require_relative '../core/route_primitive'
 
 # Admin Customers Controller
 # Handles customer management operations

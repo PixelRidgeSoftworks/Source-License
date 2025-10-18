@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-require_relative '../payments/stripe_processor'
-require_relative '../logging/payment_logger'
-require_relative 'route_primitive'
+require_relative '../../payments/stripe_processor'
+require_relative '../../logging/payment_logger'
+require_relative '../core/route_primitive'
 
 module SubscriptionController
   def self.setup_routes(app)

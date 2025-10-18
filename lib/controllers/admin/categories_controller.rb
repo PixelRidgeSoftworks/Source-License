@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require_relative '../route_primitive'
+require_relative '../core/route_primitive'
 
 # Source-License: Admin Categories Controller
 # Handles product category management in the admin panel

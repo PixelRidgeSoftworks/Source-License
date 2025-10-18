@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require_relative 'route_primitive'
+require_relative '../core/route_primitive'
 
 # Controller for user billing address management
 module UserAddressesController

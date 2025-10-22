@@ -47,7 +47,7 @@ module BaseController
           status 404
           { success: false, error: 'Not found' }.to_json
         else
-          erb :'errors/404', layout: :'layouts/main_layout'
+          erb :'../errors/404', layout: :'layouts/main_layout'
         end
       end
 
@@ -57,7 +57,7 @@ module BaseController
           status 500
           { success: false, error: 'Internal server error' }.to_json
         else
-          erb :'errors/500', layout: :'layouts/main_layout'
+          erb :'../errors/500', layout: :'layouts/main_layout'
         end
       end
     end

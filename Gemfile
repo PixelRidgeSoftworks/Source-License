@@ -20,7 +20,7 @@ gem 'mysql2' # MySQL driver
 # gem 'pg', '~> 1.5'             # PostgreSQL driver (temporarily disabled)
 gem 'sequel'
 # SQLite3 - using specific version that compiles properly on Ruby 3.4
-gem 'sqlite3', '~> 1.6.9'
+gem 'sqlite3', '~> 2.8.0'
 
 # Authentication & Security
 gem 'bcrypt'

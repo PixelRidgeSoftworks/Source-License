@@ -112,7 +112,7 @@ GEM
       net-pop
       net-smtp
     mini_mime (1.1.5)
-    minitest (5.26.1)
+    minitest (5.26.2)
     minitest-reporters (1.7.1)
       ansi
       builder
@@ -295,7 +295,7 @@ GEM
     sqlite3 (2.8.0-x64-mingw-ucrt)
     sqlite3 (2.8.0-x86_64-linux-gnu)
     stringio (3.1.7)
-    stripe (17.2.0)
+    stripe (18.0.0)
     terminal-table (4.0.0)
       unicode-display_width (>= 1.1.1, < 4)
     thor (1.4.0)

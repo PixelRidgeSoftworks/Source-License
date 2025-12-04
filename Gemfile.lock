@@ -292,8 +292,8 @@ GEM
       sinatra (= 4.2.1)
       tilt (~> 2.0)
     smart_properties (1.17.0)
-    sqlite3 (2.8.0-x64-mingw-ucrt)
-    sqlite3 (2.8.0-x86_64-linux-gnu)
+    sqlite3 (2.8.1-x64-mingw-ucrt)
+    sqlite3 (2.8.1-x86_64-linux-gnu)
     stringio (3.1.7)
     stripe (18.0.1)
     terminal-table (4.0.0)
@@ -374,7 +374,7 @@ DEPENDENCIES
   simplecov-console
   sinatra
   sinatra-contrib
-  sqlite3 (~> 2.8.0)
+  sqlite3 (~> 2.8.1)
   stripe
   vcr
   webauthn

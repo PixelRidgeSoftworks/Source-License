@@ -116,6 +116,22 @@ class SourceLicenseApp < Sinatra::Base
   end
 
   # ==================================================
+  # MAIL CONFIGURATION
+  # ==================================================
+  def self.configure_mail
+    Mail.defaults do
+      delivery_method :smtp, {
+        address: ENV.fetch('SMTP_HOST', nil),
+        port: ENV['SMTP_PORT'].to_i,
+        user_name: ENV.fetch('SMTP_USERNAME', nil),
+        password: ENV.fetch('SMTP_PASSWORD', nil),
+        authentication: 'plain',
+        enable_starttls_auto: ENV['SMTP_TLS'] == 'true',
+      }
+    end
+  end
+
+  # ==================================================
   # COMMON CONFIGURATION
   # ==================================================
   configure do
@@ -163,22 +179,6 @@ class SourceLicenseApp < Sinatra::Base
   # HELPER MODULES
   # ==================================================
   helpers CsrfHelpers
-
-  # ==================================================
-  # MAIL CONFIGURATION
-  # ==================================================
-  def self.configure_mail
-    Mail.defaults do
-      delivery_method :smtp, {
-        address: ENV.fetch('SMTP_HOST', nil),
-        port: ENV['SMTP_PORT'].to_i,
-        user_name: ENV.fetch('SMTP_USERNAME', nil),
-        password: ENV.fetch('SMTP_PASSWORD', nil),
-        authentication: 'plain',
-        enable_starttls_auto: ENV['SMTP_TLS'] == 'true',
-      }
-    end
-  end
 
   # Include all controller modules
   include PublicController

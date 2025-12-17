@@ -4,6 +4,7 @@
 # This file is used to run the Sinatra application with rack servers
 
 require 'rack/cors'
+require 'rack/ssl-enforcer'
 require_relative 'app'
 
 # Production-ready CORS configuration

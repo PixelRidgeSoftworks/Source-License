@@ -66,7 +66,6 @@ group :development, :test do
   gem 'rubocop-performance'
   gem 'rubocop-sequel'
 
-
   # Testing Framework
   gem 'database_cleaner-sequel'
   gem 'minitest'

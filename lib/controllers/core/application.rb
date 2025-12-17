@@ -2,6 +2,7 @@
 
 # Main application controller that includes all other controllers
 require_relative 'base_controller'
+require_relative '../../csrf_protection'
 require_relative '../public/public_controller'
 require_relative '../auth/user_auth_controller'
 require_relative '../admin/admin_controller'
@@ -23,7 +24,149 @@ require_relative '../public/user_addresses_controller'
 require_relative '../auth/two_factor_auth_controller'
 
 class SourceLicenseApp < Sinatra::Base
-  # Configure mail delivery
+  register Sinatra::Contrib
+
+  # ==================================================
+  # SESSION CONFIGURATION
+  # ==================================================
+  # Require a proper session secret in production - fail fast if missing
+  session_secret = ENV.fetch('APP_SECRET', nil)
+  is_production = ENV['APP_ENV'] == 'production' || ENV['RACK_ENV'] == 'production'
+
+  if is_production && (session_secret.nil? || session_secret.empty? || session_secret.length < 64)
+    raise 'APP_SECRET environment variable must be set to a secure random string (64+ chars) in production'
+  end
+
+  # Fallback for development only
+  session_secret ||= SecureRandom.hex(64)
+
+  enable :sessions
+  set :session_secret, session_secret
+  set :sessions,
+      httponly: true,
+      secure: is_production || ENV['HTTPS'] == 'true',
+      same_site: ENV['RENDER'] == 'true' ? :none : :lax,
+      expire_after: 86_400 * 7 # 7 days
+
+  # ==================================================
+  # HOST AUTHORIZATION
+  # ==================================================
+  def self.permitted_hosts
+    domains_string = ENV['ALLOWED_HOSTS'] || 'localhost'
+    domains = domains_string.split(',').map(&:strip)
+
+    hosts = []
+    domains.each do |domain|
+      hosts << domain
+
+      next unless domain == 'localhost'
+
+      port = ENV['PORT'] || '4567'
+      hosts += [
+        "localhost:#{port}",
+        '127.0.0.1',
+        "127.0.0.1:#{port}",
+        '[::1]',
+        "[::1]:#{port}",
+      ]
+    end
+
+    hosts.uniq
+  end
+
+  # ==================================================
+  # RACK::PROTECTION CONFIGURATION
+  # ==================================================
+  # Enable Sinatra's built-in Rack::Protection middleware
+  # This provides CSRF protection via AuthenticityToken plus many other protections
+  #
+  # Protections enabled by default:
+  # - AuthenticityToken (CSRF protection for forms)
+  # - RemoteToken (CSRF via Referer/Origin headers)
+  # - SessionHijacking
+  # - XSSHeader, FrameOptions, etc.
+  #
+  # We customize to work with our API/webhook paths that use different auth
+  set :protection, except: [:json_csrf] # Allow JSON requests with proper CSRF handling
+
+  # ==================================================
+  # ENVIRONMENT-SPECIFIC CONFIGURATION
+  # ==================================================
+  configure :development do
+    set :logging, true
+    enable :dump_errors
+    set :show_exceptions, :after_handler
+    set :host_authorization, { permitted_hosts: permitted_hosts }
+  end
+
+  configure :test do
+    set :logging, false
+    set :show_exceptions, false
+    set :host_authorization, { permitted_hosts: [] }
+    # Disable CSRF protection in tests
+    set :protection, false
+  end
+
+  configure :production do
+    set :logging, true
+    set :dump_errors, false
+    set :show_exceptions, false
+    set :host_authorization, { permitted_hosts: permitted_hosts }
+    use SecurityMiddleware
+  end
+
+  # ==================================================
+  # COMMON CONFIGURATION
+  # ==================================================
+  configure do
+    set :root, File.expand_path('../..', __dir__)
+    set :views, File.join(root, 'views')
+    set :public_folder, File.join(root, 'public')
+    set :method_override, true
+
+    # Configure mail settings
+    configure_mail if ENV['SMTP_HOST']
+  end
+
+  # ==================================================
+  # CSRF PROTECTION (Supplementary to Rack::Protection)
+  # ==================================================
+  # Sinatra's Rack::Protection::AuthenticityToken handles most CSRF,
+  # but we add custom handling for our specific exempt paths and token format
+  CSRF_EXEMPT_PATHS = [
+    %r{^/api/},           # API routes use JWT auth
+    %r{^/webhooks/},      # Webhook endpoints verify signatures instead
+  ].freeze
+
+  before do
+    # Skip CSRF for safe methods (GET, HEAD, OPTIONS)
+    next if CsrfProtection.safe_method?(request.request_method)
+
+    # Skip CSRF for exempt paths (API uses JWT, webhooks use signatures)
+    next if CSRF_EXEMPT_PATHS.any? { |pattern| request.path_info.match?(pattern) }
+
+    # Skip CSRF validation in test environment
+    next if ENV['APP_ENV'] == 'test' || ENV['RACK_ENV'] == 'test'
+
+    # Validate CSRF token (our custom validation that accepts multiple token sources)
+    unless CsrfProtection.valid_token?(session, params, request)
+      if request.xhr? || request.content_type&.include?('application/json')
+        halt 403, { 'Content-Type' => 'application/json' },
+             { success: false, error: 'Invalid CSRF token' }.to_json
+      else
+        halt 403, 'Invalid CSRF token'
+      end
+    end
+  end
+
+  # ==================================================
+  # HELPER MODULES
+  # ==================================================
+  helpers CsrfHelpers
+
+  # ==================================================
+  # MAIL CONFIGURATION
+  # ==================================================
   def self.configure_mail
     Mail.defaults do
       delivery_method :smtp, {
@@ -35,74 +178,6 @@ class SourceLicenseApp < Sinatra::Base
         enable_starttls_auto: ENV['SMTP_TLS'] == 'true',
       }
     end
-  end
-
-  # Configure Sinatra
-  configure do
-    # Always disable Rack::Protection's HostAuthorization since we handle it in SecurityMiddleware
-    set :protection, except: [:host_authorization]
-  end
-
-  # Configure host authorization per environment
-  configure :development do
-    # Disable host authorization completely in development
-    set :host_authorization, { permitted_hosts: [] }
-    # No SecurityMiddleware in development
-  end
-
-  configure :test do
-    # Disable host authorization in test environment
-    set :host_authorization, { permitted_hosts: [] }
-    # No SecurityMiddleware in test
-  end
-
-  configure :production do
-    # Enable SecurityMiddleware for production security
-    use SecurityMiddleware
-
-    # Enable host authorization in production with allowed hosts
-    if ENV['ALLOWED_HOSTS']
-      permitted_hosts = ENV['ALLOWED_HOSTS'].split(',').map(&:strip)
-      set :host_authorization, { permitted_hosts: permitted_hosts }
-    else
-      # If no ALLOWED_HOSTS set, disable it for backward compatibility
-      set :host_authorization, { permitted_hosts: [] }
-    end
-  end
-
-  configure do
-    set :root, File.expand_path('../..', __dir__)
-    set :views, File.join(root, 'views')
-    set :public_folder, File.join(root, 'public')
-    set :show_exceptions, false
-    set :logging, true
-
-    # Enable method override for REST-like routes
-    set :method_override, true
-
-    # Secure session configuration
-    is_production = ENV['APP_ENV'] == 'production' || ENV['RACK_ENV'] == 'production'
-    is_render = ENV['RENDER'] == 'true'
-    is_https = ENV['HTTPS'] == 'true' || ENV['RAILS_FORCE_SSL'] == 'true' || is_render
-
-    # Use more permissive session settings for Render deployments (even in development)
-    # to handle load balancer/proxy scenarios
-    use Rack::Session::Cookie, {
-      key: is_production ? '_source_license_session' : 'rack.session',
-      secret: ENV.fetch('APP_SECRET') do
-        raise 'APP_SECRET must be set in production' if is_production
-
-
-        'dev_secret_change_me_this_is_a_much_longer_fallback_secret_that_meets_the_64_character_minimum_requirement'
-      end,
-      secure: is_https, # HTTPS when available
-      httponly: true, # Prevent XSS
-      same_site: is_render ? :none : :lax, # Use :none for Render to handle proxy/load balancer
-      expire_after: 24 * 60 * 60, # 24 hours
-    }
-
-    # Configure mail settings
-    configure_mail if ENV['SMTP_HOST']
   end
 
   # Include all controller modules

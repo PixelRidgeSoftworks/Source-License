@@ -32,7 +32,7 @@
             <div class="p-4">
                 <form action="/admin/admins/<%= @admin.id %>" method="post" class="admin-form">
                     <input type="hidden" name="_method" value="PUT">
-                    <input type="hidden" name="_token" value="<%= csrf_token %>">
+                    <%= csrf_input %>
 
                     <!-- Admin Info Section -->
                     <div class="form-section mb-4">

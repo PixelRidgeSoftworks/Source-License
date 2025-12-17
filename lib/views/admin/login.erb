@@ -25,7 +25,7 @@
 
                     <!-- Login Form -->
                     <form method="post" action="/admin/login" class="login-form">
-                        <input type="hidden" name="_token" value="<%= csrf_token %>">
+                        <%= csrf_input %>
 
                         <div class="form-group mb-3">
                             <label for="email" class="form-label">

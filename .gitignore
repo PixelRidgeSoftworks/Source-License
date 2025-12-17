@@ -74,3 +74,4 @@ logs/licenses.log
 COMPREHENSIVE_WEBHOOK_TESTING_GUIDE.md
 logs/payments.log
 SL_*
+logs/app.log

@@ -66,6 +66,14 @@ else
     threads_count = ENV.fetch('RAILS_MAX_THREADS', 16).to_i
     threads 4, threads_count
 
+    # Preload application for faster startup
+    preload_app!
+
+    # Clean up resources before fork (prevents SQLite fork warning)
+    before_fork do
+      DB.disconnect if defined?(DB)
+    end
+
     # Enable worker fork handling even in development
     on_worker_boot do
       Database.reconnect if defined?(Database) && Database.respond_to?(:reconnect)

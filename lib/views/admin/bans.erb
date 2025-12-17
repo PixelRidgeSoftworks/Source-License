@@ -430,10 +430,11 @@ function removeBan(email) {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest'
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-Token': '<%= csrf_token %>'
         },
         body: JSON.stringify({
-            _token: '<%= session[:csrf_token] %>'
+            csrf_token: '<%= csrf_token %>'
         })
     })
     .then(response => response.json())
@@ -462,10 +463,11 @@ function resetBanCount(email) {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest'
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-Token': '<%= csrf_token %>'
         },
         body: JSON.stringify({
-            _token: '<%= session[:csrf_token] %>'
+            csrf_token: '<%= csrf_token %>'
         })
     })
     .then(response => response.json())

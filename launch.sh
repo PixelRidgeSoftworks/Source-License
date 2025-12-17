@@ -8,7 +8,7 @@ echo ""
 echo "Press Ctrl+C to stop the server"
 echo ""
 
-cd "/root/Source-License"
+cd "$(dirname "$0")"
 
 if bundle exec puma -C puma.rb config.ru; then
     echo "Application stopped normally"

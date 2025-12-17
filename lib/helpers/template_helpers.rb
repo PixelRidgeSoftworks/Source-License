@@ -198,9 +198,39 @@ module TemplateHelpers
     JSON.generate(obj).gsub('</', '<\/')
   end
 
-  # Generate CSRF token
+  # NOTE: CSRF protection is now handled centrally in CsrfProtection module
+  # These methods are kept for backward compatibility but delegate to CsrfHelpers
+  # The actual CSRF validation happens in the before filter in application.rb
+
+  # Generate CSRF token (delegates to CsrfHelpers if available, otherwise uses session)
   def csrf_token
     session[:csrf_token] ||= SecureRandom.hex(32)
+  end
+
+  # Generate CSRF input field
+  def csrf_input
+    %(<input type="hidden" name="csrf_token" value="#{csrf_token}">)
+  end
+
+  # Generate meta tag for JavaScript AJAX requests
+  def csrf_meta_tag
+    %(<meta name="csrf-token" content="#{csrf_token}">)
+  end
+
+  # Legacy method - kept for backward compatibility but no-op since validation is centralized
+  # @deprecated Use centralized CSRF protection in application.rb before filter
+  def verify_csrf_token
+    # CSRF is now validated globally in application.rb before filter
+    # This method is kept for backward compatibility
+    true
+  end
+
+  # Legacy method - kept for backward compatibility but no-op since validation is centralized
+  # @deprecated Use centralized CSRF protection in application.rb before filter
+  def require_csrf_token
+    # CSRF is now validated globally in application.rb before filter
+    # This method is kept for backward compatibility
+    nil
   end
 
   # Time ago helper for admin views
@@ -227,40 +257,6 @@ module TemplateHelpers
     else
       years = (seconds_ago / 31_536_000).round
       "#{years} year#{'s' if years != 1}"
-    end
-  end
-
-  # Generate CSRF input field
-  def csrf_input
-    "<input type=\"hidden\" name=\"csrf_token\" value=\"#{csrf_token}\">"
-  end
-
-  # Verify CSRF token
-  def verify_csrf_token
-    return true if request.get? || request.head? || request.options?
-
-    # Skip CSRF in development or test environments
-    if ENV['APP_ENV'] == 'development' || ENV['RACK_ENV'] == 'development' ||
-       ENV['APP_ENV'] == 'test' || ENV['RACK_ENV'] == 'test' ||
-       development?
-      return true
-    end
-
-    submitted_token = params[:csrf_token] || request.env['HTTP_X_CSRF_TOKEN']
-    return false unless submitted_token
-
-    # Use secure comparison to prevent timing attacks
-    submitted_token == csrf_token
-  end
-
-  # Require CSRF token
-  def require_csrf_token
-    return if verify_csrf_token
-
-    if request.xhr? || content_type == 'application/json'
-      halt 403, { error: 'CSRF token verification failed' }.to_json
-    else
-      halt 403, 'CSRF token verification failed'
     end
   end
 

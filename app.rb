@@ -6,6 +6,7 @@
 # This is the main entry point for the application
 
 require 'sinatra/base'
+require 'sinatra/contrib'
 require 'sinatra/json'
 require 'sinatra/cookies'
 require 'dotenv/load'
@@ -33,6 +34,7 @@ require_relative 'lib/user_auth'
 require_relative 'lib/security'
 require_relative 'lib/logger'
 require_relative 'lib/settings_manager'
+require_relative 'lib/csrf_protection'
 
 # Load the modularized application
 require_relative 'lib/controllers/core/application'

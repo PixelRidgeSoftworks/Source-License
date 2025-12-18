@@ -5,6 +5,7 @@
 
 require 'sequel'
 require 'logger'
+require 'dotenv'
 
 class Database
   class << self
@@ -12,6 +13,8 @@ class Database
     def setup
       # Skip setup if database is already configured (e.g., in tests)
       return if defined?(DB) && DB.is_a?(Sequel::Database)
+
+      Dotenv.load(File.expand_path('../.env', __dir__))
 
       adapter = ENV['DATABASE_ADAPTER'] || 'mysql'
 

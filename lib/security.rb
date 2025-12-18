@@ -156,9 +156,10 @@ module SecurityHelpers
 
   # Secure Session Configuration
   def configure_secure_sessions
-    use Rack::Session::Cookie, {
+    enable :sessions
+    set :session_secret, ENV.fetch('APP_SECRET') { raise 'APP_SECRET must be set' }
+    set :sessions, {
       key: '_source_license_session',
-      secret: ENV.fetch('APP_SECRET') { raise 'APP_SECRET must be set' },
       secure: ENV['APP_ENV'] == 'production', # HTTPS only in production
       httponly: true, # Prevent XSS
       same_site: :strict, # CSRF protection

@@ -6,8 +6,6 @@
 
 # Source License - Professional Software Licensing Platform
 
-> **IMPORTANT NOTE:** Source-License has been put on brief hiatus while the developer in charge recovers from an injury. Thank you for your understanding
-
 > **ALPHA RELEASE:** Source License is currently in Alpha. While feature-complete for most use cases, you may encounter issues. Please report bugs via [GitHub Issues](https://github.com/PixelRidgeSoftworks/Source-License/issues).
 
 ## [📱 Live Demo](https://source-license.onrender.com/) | [👨‍💼 Admin Demo](https://source-license.onrender.com/admin) | [📖 Documentation Wiki](https://github.com/PixelRidgeSoftworks/Source-License/wiki)

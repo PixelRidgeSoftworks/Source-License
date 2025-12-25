@@ -3,6 +3,20 @@
 # Source-License: PayPal Payment Processor
 # Handles PayPal payment processing with enhanced security
 
+# TODO: Refactor to use webhooks instead of the REST API
+# TODO: Add subscription management methods
+# TODO: Implement better error handling and logging
+# TODO: Add support for PayPal Vault for storing payment methods
+# TODO: Implement retry logic for transient API errors
+# TODO: Add more detailed validation of PayPal responses
+# TODO: Implement rate limiting for API requests
+# TODO: Add support for PayPal's advanced fraud protection features
+# TODO: Write unit and integration tests for all methods
+# TODO: Document all methods and classes thoroughly
+# TODO: Ensure compliance with PCI DSS standards
+# TODO: Add localization support for different currencies and regions
+# TODO: Implement idempotency for payment requests
+
 require 'net/http'
 require 'uri'
 require 'json'

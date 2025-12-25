@@ -9,10 +9,12 @@ require 'jwt'
 # Handles all cryptographic operations for license security
 class SecureLicenseService
   class << self
+    # TODO: Add production environment checks and refuse to fallback to default, raise errors instead
     # Salt for hashing machine data (should be in environment variables in production)
     MACHINE_SALT = ENV.fetch('MACHINE_HASH_SALT', 'default_salt_change_in_production')
 
     # JWT signing key (should be in environment variables in production)
+    # TODO: Add production environment checks and refuse to fallback to default, raise errors instead
     JWT_SECRET = ENV.fetch('JWT_SECRET', SecureRandom.hex(32))
     JWT_ALGORITHM = 'HS256'
 

@@ -264,7 +264,7 @@ class LicenseGenerator
 
     # Log license actions for audit trail
     def log_license_action(license, action, details = nil)
-      # In a production system, you might want to create a separate audit log table
+      # TODO: Implement proper separate audit logging mechanism
       # For now, we'll just log to the application logger
       message = "License #{license.license_key} #{action}"
       message += " - #{details}" if details

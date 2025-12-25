@@ -48,7 +48,8 @@ class Webhooks::PaypalWebhookHandler
       return false unless webhook_id
 
       # PayPal webhook signature verification
-      # This is a simplified implementation - in production you'd need proper verification
+      # This is a simplified implementation
+      # TODO: Implement full verification using PayPal SDK or API calls
       auth_algo = headers['PAYPAL-AUTH-ALGO']
       transmission_id = headers['PAYPAL-TRANSMISSION-ID']
       cert_id = headers['PAYPAL-CERT-ID']
@@ -58,7 +59,7 @@ class Webhooks::PaypalWebhookHandler
       return false unless [auth_algo, transmission_id, cert_id, transmission_sig, transmission_time].all?
 
       # For now, we'll accept all webhooks if the webhook ID is configured
-      # In production, implement proper PayPal webhook signature verification
+      # TODO: Implement actual signature verification logic
       true
     end
 

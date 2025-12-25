@@ -73,17 +73,39 @@ jobs:
         echo "JWT_SECRET=codeql_test_jwt_secret" >> $GITHUB_ENV
         bundle install
 
+    - name: Extract inline JavaScript from ERB views
+      run: |
+        mkdir -p tmp/codeql_inline_js
+
+        # Extract contents of <script>...</script> blocks from ERB views into .js files
+        for f in $(git ls-files 'lib/views/**/*.erb' || true); do
+          outfile="tmp/codeql_inline_js/$(basename "$f" .erb).js"
+          # Use awk to capture text between <script> and </script> tags (handles multiple blocks)
+          awk 'BEGIN{in=0} /<script/{in=1; next} /<\/script>/{in=0; next} in{print}' "$f" >> "$outfile"
+
+          if [ -s "$outfile" ]; then
+            echo "Extracted inline JS to $outfile"
+          else
+            rm -f "$outfile"
+          fi
+        done
+
+        if [ -d tmp/codeql_inline_js ]; then
+          echo "Inline JS extraction complete:"; ls -la tmp/codeql_inline_js || true
+        else
+          echo "No inline JS found in views"
+        fi
+
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v4
       with:
-        languages: ruby
+        # Enable analysis for Ruby and JavaScript (we extract inline JS into tmp/codeql_inline_js)
+        languages: ruby,javascript
         queries: security-extended
         config-file: ./.github/codeql/codeql-config.yml
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v4
-      with:
-        category: "/language:ruby"
 
   security-review:
     name: Security Review

@@ -44,7 +44,47 @@ require 'sequel'
 require 'database_cleaner/sequel'
 
 # Ensure Ruby Logger constant is defined before libraries that depend on it
-require 'logger'
+begin
+  require 'logger'
+rescue LoadError
+  # Provide a minimal Logger fallback if the stdlib Logger isn't available in the environment
+  class ::Logger
+    DEBUG = 0
+    INFO = 1
+    WARN = 2
+    ERROR = 3
+    FATAL = 4
+
+    def initialize(*); end
+    def debug(*) end
+    def info(*) end
+    def warn(*) end
+    def error(*) end
+    def fatal(*) end
+  end
+end
+
+# As a safety-net, ensure Logger is defined
+unless defined?(Logger)
+  class ::Logger
+
+    def initialize(*); end
+    def debug(*) end
+    def info(*) end
+    def warn(*) end
+    def error(*) end
+    def fatal(*) end
+  end
+end
+
+# Ensure a minimal Logger::Formatter exists for ActiveSupport
+unless defined?(Logger::Formatter)
+  class ::Logger::Formatter
+    def call(severity, time, _progname, msg)
+      "[#{time}] #{severity}: #{msg}\n"
+    end
+  end
+end
 
 require 'factory_bot'
 require 'faker'

@@ -73,85 +73,15 @@ jobs:
         echo "JWT_SECRET=codeql_test_jwt_secret" >> $GITHUB_ENV
         bundle install
 
-    - name: Check for JavaScript files
-      id: check_js
-      run: |
-        # Check if there are actual .js files in the repository (excluding node_modules, vendor)
-        if find . -path ./node_modules -prune -o -path ./vendor -prune -o -name '*.js' -type f -print | grep -q .; then
-          echo "has_javascript=true" >> $GITHUB_OUTPUT
-          echo "Found JavaScript files in repository"
-        else
-          echo "has_javascript=false" >> $GITHUB_OUTPUT
-          echo "No JavaScript files found in repository"
-        fi
-
-    - name: Extract inline JavaScript from ERB views
-      id: extract_js
-      if: steps.check_js.outputs.has_javascript == 'false'
-      run: |
-        mkdir -p tmp/codeql_inline_js
-        js_found=false
-
-        # Extract contents of <script>...</script> blocks from ERB views into .js files
-        for f in $(find lib/views -name '*.erb' 2>/dev/null || true); do
-          if [ ! -f "$f" ]; then continue; fi
-          
-          outfile="tmp/codeql_inline_js/$(basename "$f" .erb).js"
-          
-          # Extract script blocks, remove ERB tags
-          perl -0777 -ne 'while (/<script[^>]*>(.*?)<\/script>/isg) { $c=$1; $c=~s/<%.*?%>/""/gs; $c=~s/^\s+|\s+$//g; print $c."\n" if $c=~/\S/ }' "$f" > "$outfile" 2>/dev/null || true
-
-          # Check if we extracted meaningful content
-          if [ -s "$outfile" ] && grep -q '[^[:space:]]' "$outfile" 2>/dev/null; then
-            tmpwrap="$(mktemp)"
-            echo "(function(){" > "$tmpwrap"
-            cat "$outfile" >> "$tmpwrap"
-            echo "})();" >> "$tmpwrap"
-            mv "$tmpwrap" "$outfile"
-            echo "Extracted inline JS from $f"
-            js_found=true
-          else
-            rm -f "$outfile" 2>/dev/null || true
-          fi
-        done
-
-        if [ "$js_found" = true ]; then
-          echo "has_extracted_js=true" >> $GITHUB_OUTPUT
-          git add -f tmp/codeql_inline_js/*.js || true
-          echo "Staged extracted JS files"
-        else
-          echo "has_extracted_js=false" >> $GITHUB_OUTPUT
-          echo "No inline JavaScript found in ERB views"
-          rm -rf tmp/codeql_inline_js
-        fi
-
-    - name: Determine CodeQL languages
-      id: determine_languages
-      run: |
-        if [ "${{ steps.check_js.outputs.has_javascript }}" = "true" ] || [ "${{ steps.extract_js.outputs.has_extracted_js }}" = "true" ]; then
-          echo "languages=ruby,javascript" >> $GITHUB_OUTPUT
-          echo "Will analyze: Ruby and JavaScript"
-        else
-          echo "languages=ruby" >> $GITHUB_OUTPUT
-          echo "Will analyze: Ruby only"
-        fi
-
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v4
       with:
-        languages: ${{ steps.determine_languages.outputs.languages }}
+        languages: ruby
         queries: security-extended
         config-file: ./.github/codeql/codeql-config.yml
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v4
-
-    - name: Cleanup extracted JS files
-      if: always()
-      run: |
-        git reset tmp/codeql_inline_js/*.js 2>/dev/null || true
-        rm -rf tmp/codeql_inline_js 2>/dev/null || true
-        echo "Cleaned up temporary files"
 
   security-review:
     name: Security Review

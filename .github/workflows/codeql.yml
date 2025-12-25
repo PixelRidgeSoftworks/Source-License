@@ -80,19 +80,32 @@ jobs:
         # Extract contents of <script>...</script> blocks from ERB views into .js files
         for f in $(git ls-files 'lib/views/**/*.erb' || true); do
           outfile="tmp/codeql_inline_js/$(basename "$f" .erb).js"
-          # Use sed to capture text between <script> and </script> tags (handles multiple blocks and attributes)
-          sed -n -E '/<script[^>]*>/,/<\/script>/ { /<script[^>]*>/d; /<\/script>/d; p }' "$f" >> "$outfile"
+          # Extract script blocks, remove ERB tags, and sanitize using perl (handles multiline ERB)
+          perl -0777 -ne 'while (/<script[^>]*>(.*?)<\/script>/isg) { $c=$1; $c=~s/<%.*?%>/""/gs; $c=~s/^\s+|\s+$//g; print $c."\n" }' "$f" >> "$outfile"
 
-          # If the output file contains only whitespace or is empty, remove it
-          if [ -s "$outfile" ] && [ -n "$(grep -q '[^[:space:]]' "$outfile" 2>/dev/null || true)" ]; then
-            echo "Extracted inline JS to $outfile"
+          # Wrap extracted code in an IIFE to improve syntactic validity, or create a placeholder if empty
+          if [ -s "$outfile" ] && grep -q '[^[:space:]]' "$outfile"; then
+            tmpwrap="$(mktemp)"
+            echo "(function(){" > "$tmpwrap"
+            cat "$outfile" >> "$tmpwrap"
+            echo "})();" >> "$tmpwrap"
+            mv "$tmpwrap" "$outfile"
+            echo "Extracted and wrapped inline JS to $outfile"
           else
+            # No meaningful JS extracted; create a minimal placeholder so CodeQL sees a .js file
             rm -f "$outfile" || true
+            echo "/* no inline JS extracted from $f */" > "$outfile"
+            echo "void 0;" >> "$outfile"
+            echo "Created placeholder JS file $outfile"
           fi
         done
 
-        if [ -d tmp/codeql_inline_js ]; then
-          echo "Inline JS extraction complete:"; ls -la tmp/codeql_inline_js || true
+        if ls tmp/codeql_inline_js/*.js 1> /dev/null 2>&1; then
+          echo "Inline JS extraction complete. Samples:"
+          for jf in tmp/codeql_inline_js/*.js; do
+            echo "---- $jf ----"
+            head -n 20 "$jf" || true
+          done
         else
           echo "No inline JS found in views"
         fi

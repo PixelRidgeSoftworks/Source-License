@@ -31,7 +31,7 @@ Source License is a complete solution for software vendors who need to sell, man
 ### 💰 Complete E-Commerce Solution
 - **Product Management**: Create and manage software products with pricing, descriptions, and download files
 - **Shopping Cart & Checkout**: Full e-commerce flow with cart functionality and secure checkout
-- **Payment Processing**: Integrated Stripe and PayPal support with webhook handling
+- **Payment Processing**: Integrated Stripe and PayPal support with webhook-first PayPal flow and signature verification
 - **Order Management**: Complete order tracking and fulfillment system
 
 ### 🔐 Advanced License Management
@@ -66,7 +66,7 @@ Source License is a complete solution for software vendors who need to sell, man
 - **License Validation**: Real-time license verification endpoints
 - **License Activation**: Machine-based activation and deactivation
 - **Order Processing**: Complete API for order creation and management
-- **Webhook Support**: Stripe and PayPal webhook handling
+- **Webhook Support**: Stripe and PayPal webhook handling (PayPal uses verify-webhook-signature API for signature verification)
 - **Settings Management**: API for configuration management
 
 ### 📊 Subscription Management
@@ -121,6 +121,8 @@ JWT_SECRET=your_jwt_secret_key
 STRIPE_PUBLISHABLE_KEY=pk_test_...
 STRIPE_SECRET_KEY=sk_test_...
 PAYPAL_CLIENT_ID=your_client_id
+# Optional: set to 'true' to use webhook-first PayPal flow. When enabled, fulfillment occurs via verified webhooks.
+PAYPAL_USE_WEBHOOKS=true
 ```
 
 **📖 For complete installation instructions, database setup, and configuration options, see the [Installation Guide](https://github.com/PixelRidgeSoftworks/Source-License/wiki/Installation-Guide).**

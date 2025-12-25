@@ -1,59 +1,68 @@
 # frozen_string_literal: true
 
 # Source-License: PayPal Payment Processor
-# Handles PayPal payment processing with enhanced security
-
-# TODO: Refactor to use webhooks instead of the REST API
-# TODO: Add subscription management methods
-# TODO: Implement better error handling and logging
-# TODO: Add support for PayPal Vault for storing payment methods
-# TODO: Implement retry logic for transient API errors
-# TODO: Add more detailed validation of PayPal responses
-# TODO: Implement rate limiting for API requests
-# TODO: Add support for PayPal's advanced fraud protection features
-# TODO: Write unit and integration tests for all methods
-# TODO: Document all methods and classes thoroughly
-# TODO: Ensure compliance with PCI DSS standards
-# TODO: Add localization support for different currencies and regions
-# TODO: Implement idempotency for payment requests
+# Handles PayPal payment processing with webhook-first flow and improved security
 
 require 'net/http'
 require 'uri'
 require 'json'
+require 'securerandom'
 require_relative 'base_payment_processor'
+require_relative '../logging/payment_logger'
 
 class Payments::PaypalProcessor < Payments::BasePaymentProcessor
   class << self
+    # Process a PayPal payment. When webhooks are enabled this will be idempotent
+    # and return a result indicating that fulfillment will occur via webhook.
     def process_payment(order, payment_data = {})
-      # Capture the PayPal order
+      PaymentLogger.log_payment_event('payment_attempt', {
+        order_id: order.id,
+        method: 'paypal',
+        payment_data: payment_data,
+      })
+
+      use_webhooks = ENV['PAYPAL_USE_WEBHOOKS'] == 'true'
+
+      if use_webhooks
+        # Defer finalization to webhook processing to support asynchronous capture
+        order.update(status: 'pending', payment_method: 'paypal', payment_intent_id: payment_data[:order_id])
+
+        PaymentLogger.log_payment_event('payment_deferred_to_webhook',
+                                        { order_id: order.id, order_id_from_provider: payment_data[:order_id] })
+
+        return { success: true, message: 'Payment deferred; awaiting webhook for capture' }
+      end
+
+      # Fallback: attempt immediate capture
       response = capture_paypal_order(payment_data[:order_id])
 
-      if response['status'] == 'COMPLETED'
+      if response['status'] == 'COMPLETED' || response.dig('purchase_units', 0, 'payments', 'captures')
+        capture_id = response['id'] || response.dig('purchase_units', 0, 'payments', 'captures', 0, 'id')
+
         order.update(
           status: 'completed',
           completed_at: Time.now,
-          transaction_id: response['id']
+          transaction_id: capture_id,
+          payment_intent_id: payment_data[:order_id]
         )
 
-        {
-          success: true,
-          transaction_id: response['id'],
-        }
+        PaymentLogger.log_payment_event('payment_success', { order_id: order.id, transaction_id: capture_id })
+
+        { success: true, transaction_id: capture_id }
       else
         order.update(status: 'failed')
-        {
-          success: false,
-          error: 'PayPal payment was not completed',
-        }
+        PaymentLogger.log_payment_event('payment_failed',
+                                        { order_id: order.id, error: 'PayPal payment not completed',
+                                          response: response, })
+        { success: false, error: 'PayPal payment was not completed' }
       end
-    rescue StandardError
+    rescue StandardError => e
       order.update(status: 'failed')
-      {
-        success: false,
-        error: 'PayPal payment processing failed',
-      }
+      PaymentLogger.log_security_event('payment_failed', { order_id: order.id, error: e.message })
+      { success: false, error: "PayPal payment processing failed: #{e.message}" }
     end
 
+    # Create a PayPal order and return approval URL and order id
     def create_payment_intent(order)
       access_token = paypal_access_token
 
@@ -68,56 +77,42 @@ class Payments::PaypalProcessor < Payments::BasePaymentProcessor
           custom_id: order.id.to_s,
         }],
         application_context: {
-          return_url: "#{base_url}/success?order_id=#{order.id}",
+          return_url: "#{base_url}/payments/paypal/return?order_id=#{order.id}",
           cancel_url: "#{base_url}/cart",
         },
       }
 
-      response = make_paypal_request(
-        'POST',
-        '/v2/checkout/orders',
-        order_data,
-        access_token
-      )
+      response = make_paypal_request('POST', '/v2/checkout/orders', order_data, access_token)
 
       raise 'Failed to create PayPal order' unless response['id']
 
       order.update(payment_intent_id: response['id'])
 
-      # Find approval URL
       approval_url = response['links']&.find { |link| link['rel'] == 'approve' }&.dig('href')
 
-      {
-        order_id: response['id'],
-        approval_url: approval_url,
-      }
+      PaymentLogger.log_payment_event('payment_intent_created', { order_id: order.id, paypal_order_id: response['id'] })
+
+      { order_id: response['id'], approval_url: approval_url }
+    rescue StandardError => e
+      PaymentLogger.log_security_event('payment_intent_error', { order_id: order.id, error: e.message })
+      raise
     end
 
+    # Verify a PayPal order direct-API check
     def verify_payment(order_id)
       access_token = paypal_access_token
-
-      response = make_paypal_request(
-        'GET',
-        "/v2/checkout/orders/#{order_id}",
-        nil,
-        access_token
-      )
-
+      response = make_paypal_request('GET', "/v2/checkout/orders/#{order_id}", nil, access_token)
       response['status'] == 'COMPLETED'
-    rescue StandardError
+    rescue StandardError => e
+      PaymentLogger.log_security_event('payment_verify_error', { order_id: order_id, error: e.message })
       false
     end
 
+    # Process a refund for an order
     def process_refund(order, amount, reason)
       access_token = paypal_access_token
 
-      # Get capture ID from the order
-      order_details = make_paypal_request(
-        'GET',
-        "/v2/checkout/orders/#{order.payment_intent_id}",
-        nil,
-        access_token
-      )
+      order_details = make_paypal_request('GET', "/v2/checkout/orders/#{order.payment_intent_id}", nil, access_token)
 
       capture_id = order_details.dig('purchase_units', 0, 'payments', 'captures', 0, 'id')
       return { success: false, error: 'Capture ID not found' } unless capture_id
@@ -130,150 +125,143 @@ class Payments::PaypalProcessor < Payments::BasePaymentProcessor
         note_to_payer: reason || 'Refund processed',
       }
 
-      response = make_paypal_request(
-        'POST',
-        "/v2/payments/captures/#{capture_id}/refund",
-        refund_data,
-        access_token
-      )
+      response = make_paypal_request('POST', "/v2/payments/captures/#{capture_id}/refund", refund_data, access_token)
 
       if response['status'] == 'COMPLETED'
         order.update(status: 'refunded') if amount == order.amount
-
-        {
-          success: true,
-          refund_id: response['id'],
-          amount: amount,
-        }
+        PaymentLogger.log_payment_event('refund_processed',
+                                        { order_id: order.id, refund_id: response['id'], amount: amount })
+        { success: true, refund_id: response['id'], amount: amount }
       else
-        {
-          success: false,
-          error: 'PayPal refund failed',
-        }
+        PaymentLogger.log_payment_event('refund_failed', { order_id: order.id, response: response })
+        { success: false, error: 'PayPal refund failed' }
       end
-    rescue StandardError
-      {
-        success: false,
-        error: 'PayPal refund processing failed',
-      }
+    rescue StandardError => e
+      PaymentLogger.log_security_event('refund_processing_failed', { order_id: order.id, error: e.message })
+      { success: false, error: "PayPal refund processing failed: #{e.message}" }
     end
 
-    # Subscription management methods
+    # Subscription management
     def create_subscription(license)
-      # PayPal subscription implementation
-      # This would involve creating a PayPal billing plan and subscription
-      # Similar to the order process but for recurring payments
       access_token = paypal_access_token
       product = license.product
 
-      # Create PayPal product for subscription
       product_data = {
         name: product.name,
-        description: product.description,
+        description: product.description || product.name,
         type: 'SERVICE',
         category: 'SOFTWARE',
       }
 
-      paypal_product = make_paypal_request(
-        'POST',
-        '/v1/catalogs/products',
-        product_data,
-        access_token
-      )
+      paypal_product = make_paypal_request('POST', '/v1/catalogs/products', product_data, access_token)
 
-      # Create billing plan
       plan_data = {
         product_id: paypal_product['id'],
         name: "#{product.name} Subscription",
-        description: "Monthly subscription for #{product.name}",
+        description: "Recurring subscription for #{product.name}",
         billing_cycles: [{
-          frequency: {
-            interval_unit: 'MONTH',
-            interval_count: 1,
-          },
+          frequency: { interval_unit: 'MONTH', interval_count: 1 },
           tenure_type: 'REGULAR',
           sequence: 1,
-          total_cycles: 0, # Infinite
-          pricing_scheme: {
-            fixed_price: {
-              value: format('%.2f', product.price),
-              currency_code: 'USD',
-            },
-          },
+          total_cycles: 0,
+          pricing_scheme: { fixed_price: { value: format('%.2f', product.price),
+                                           currency_code: product.currency || 'USD', } },
         }],
-        payment_preferences: {
-          auto_bill_outstanding: true,
-          setup_fee_failure_action: 'CONTINUE',
-          payment_failure_threshold: 3,
-        },
+        payment_preferences: { auto_bill_outstanding: true, setup_fee_failure_action: 'CONTINUE',
+                               payment_failure_threshold: 3, },
       }
 
-      billing_plan = make_paypal_request(
-        'POST',
-        '/v1/billing/plans',
-        plan_data,
-        access_token
-      )
+      billing_plan = make_paypal_request('POST', '/v1/billing/plans', plan_data, access_token)
 
-      # Create subscription
       subscription_data = {
         plan_id: billing_plan['id'],
-        subscriber: {
-          email_address: license.customer_email,
-        },
-        application_context: {
-          brand_name: 'Source License',
-          return_url: "#{base_url}/subscription/success",
-          cancel_url: "#{base_url}/subscription/cancel",
-        },
+        subscriber: { email_address: license.customer_email },
+        application_context: { brand_name: 'Source License', return_url: "#{base_url}/subscription/success",
+                               cancel_url: "#{base_url}/subscription/cancel", },
       }
 
-      subscription = make_paypal_request(
-        'POST',
-        '/v1/billing/subscriptions',
-        subscription_data,
-        access_token
-      )
+      subscription = make_paypal_request('POST', '/v1/billing/subscriptions', subscription_data, access_token)
 
-      # Update license subscription record
-      license.subscription.update(external_subscription_id: subscription['id'])
-
-      subscription['id']
+      if subscription['id']
+        license.subscription.update(external_subscription_id: subscription['id']) if license.subscription
+        PaymentLogger.log_payment_event('subscription_created',
+                                        { license_id: license.id, paypal_subscription_id: subscription['id'] })
+        { success: true, subscription_id: subscription['id'], approval_url: subscription.dig('links')&.find do |l|
+          l['rel'] == 'approve'
+        end&.dig('href'), }
+      else
+        PaymentLogger.log_payment_event('subscription_create_failed',
+                                        { license_id: license.id, response: subscription })
+        { success: false, error: 'Failed to create PayPal subscription' }
+      end
+    rescue StandardError => e
+      PaymentLogger.log_security_event('subscription_create_error', { license_id: license.id, error: e.message })
+      { success: false, error: e.message }
     end
 
-    def cancel_subscription(subscription)
+    def cancel_subscription(subscription, reason = 'User requested cancellation')
       access_token = paypal_access_token
 
-      begin
-        cancel_data = {
-          reason: 'User requested cancellation',
-        }
+      make_paypal_request('POST', "/v1/billing/subscriptions/#{subscription.external_subscription_id}/cancel",
+                          { reason: reason }, access_token)
 
-        make_paypal_request(
-          'POST',
-          "/v1/billing/subscriptions/#{subscription.external_subscription_id}/cancel",
-          cancel_data,
-          access_token
-        )
+      subscription.cancel!
+      PaymentLogger.log_payment_event('subscription_canceled',
+                                      { subscription_id: subscription.id,
+                                        external_id: subscription.external_subscription_id, })
 
-        subscription.cancel!
-        true
-      rescue StandardError
-        false
+      { success: true }
+    rescue StandardError => e
+      PaymentLogger.log_security_event('subscription_cancel_failed',
+                                       { subscription_id: subscription.id, error: e.message })
+      { success: false, error: e.message }
+    end
+
+    # Webhook signature verification using PayPal API
+    def verify_webhook_signature(payload, headers)
+      webhook_id = ENV.fetch('PAYPAL_WEBHOOK_ID', nil)
+      return false unless webhook_id
+
+      access_token = paypal_access_token
+
+      verification_request = {
+        transmission_id: headers['PAYPAL-TRANSMISSION-ID'],
+        transmission_time: headers['PAYPAL-TRANSMISSION-TIME'],
+        cert_url: headers['PAYPAL-CERT-URL'],
+        auth_algo: headers['PAYPAL-AUTH-ALGO'],
+        transmission_sig: headers['PAYPAL-TRANSMISSION-SIG'],
+        webhook_id: webhook_id,
+        webhook_event: JSON.parse(payload),
+      }
+
+      response = make_paypal_request('POST', '/v1/notifications/verify-webhook-signature', verification_request,
+                                     access_token)
+
+      valid = response['verification_status'] == 'SUCCESS'
+
+      unless valid
+        PaymentLogger.log_security_event('webhook_signature_invalid', { provider: 'paypal', details: response })
       end
+
+      valid
+    rescue StandardError => e
+      PaymentLogger.log_security_event('webhook_verification_error', { provider: 'paypal', error: e.message })
+      false
     end
 
     private
 
+    # Capture an order, with idempotency checks
     def capture_paypal_order(order_id)
       access_token = paypal_access_token
 
-      make_paypal_request(
-        'POST',
-        "/v2/checkout/orders/#{order_id}/capture",
-        {},
-        access_token
-      )
+      # Check order status first
+      order = make_paypal_request('GET', "/v2/checkout/orders/#{order_id}", nil, access_token)
+
+      return order if order['status'] == 'COMPLETED'
+
+      # Attempt capture
+      make_paypal_request('POST', "/v2/checkout/orders/#{order_id}/capture", {}, access_token)
     end
 
     def paypal_access_token
@@ -282,7 +270,6 @@ class Payments::PaypalProcessor < Payments::BasePaymentProcessor
 
       raise 'PayPal credentials not configured' unless client_id && client_secret
 
-      # Validate credential format
       unless client_id.match?(/^[A-Za-z0-9_-]+$/) && client_secret.match?(/^[A-Za-z0-9_-]+$/)
         raise 'Invalid PayPal credential format'
       end
@@ -310,6 +297,8 @@ class Payments::PaypalProcessor < Payments::BasePaymentProcessor
 
       http = Net::HTTP.new(uri.host, uri.port)
       http.use_ssl = true
+      http.open_timeout = 10
+      http.read_timeout = 30
 
       request = case method.upcase
                 when 'GET'
@@ -327,26 +316,29 @@ class Payments::PaypalProcessor < Payments::BasePaymentProcessor
       request['Authorization'] = "Bearer #{access_token}"
       request['Content-Type'] = 'application/json'
       request['Accept'] = 'application/json'
+      request['PayPal-Request-Id'] = SecureRandom.uuid # Idempotency header
 
       request.body = data.to_json if data
 
       response = http.request(request)
 
-      raise "PayPal API request failed: #{response.code} #{response.message}" unless response.is_a?(Net::HTTPSuccess)
+      unless response.is_a?(Net::HTTPSuccess)
+        body = begin
+          JSON.parse(response.body)
+        rescue StandardError
+          { message: response.body }
+        end
+        raise "PayPal API request failed: #{response.code} #{response.message} - #{body}"
+      end
 
       JSON.parse(response.body)
     end
 
     def paypal_base_url
-      if ENV['PAYPAL_ENVIRONMENT'] == 'production'
-        'https://api.paypal.com'
-      else
-        'https://api.sandbox.paypal.com'
-      end
+      ENV['PAYPAL_ENVIRONMENT'] == 'production' ? 'https://api.paypal.com' : 'https://api.sandbox.paypal.com'
     end
 
     def base_url
-      # Get the base URL for return/cancel URLs
       if ENV['APP_ENV'] == 'production'
         "https://#{ENV['APP_HOST'] || 'localhost'}"
       else

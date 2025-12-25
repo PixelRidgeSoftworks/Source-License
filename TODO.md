@@ -18,10 +18,10 @@
   - Description: Implement support for wildcard subdomains in `ALLOWED_HOSTS` and require a Host header for all requests in production.
   - Next steps: add validation middleware, tests for host header behavior, document deploy-time configuration.
 
-- **Webhook signature verification & verification improvements**
+- **Webhook signature verification & verification improvements (partial)**
   - Files: `lib/webhooks/paypal_webhook_handler.rb`, `lib/webhooks/stripe/payment_event_handler.rb`
-  - Description: Implement full verification of PayPal webhooks (use PayPal SDK or verification calls) and Stripe product/price catalog sync at startup or when products change.
-  - Next steps: add unit/integration tests and e2e webhook tests, add replay protection and signature validation reporting.
+  - Description: PayPal webhook verification implemented using the `verify-webhook-signature` API, plus simple replay protection (file-backed transmission id storage). Stripe catalog sync still outstanding.
+  - Next steps: add unit/integration tests and e2e webhook tests, enhance replay protection (use DB), add signature validation reporting and implement Stripe product/price catalog sync.
 
 - **Audit logging for license actions**
   - Files: `lib/license_generator.rb` (note: TODO at line implementing proper separate audit logging mechanism)
@@ -37,10 +37,10 @@
   - Description: Remove `puts` debug lines and implement a consistent logging approach per processor.
   - Next steps: replace `puts` with structured logger, add tests.
 
-- **Refactor PayPal integration to use webhooks & add missing features**
+- **Refactor PayPal integration to use webhooks & add missing features (in progress)**
   - Files: `lib/payments/paypal_processor.rb`, `lib/webhooks/paypal_webhook_handler.rb`
-  - Description: Migrate logic away from polling/REST to webhook-driven design; add subscription management, idempotency, retry logic, rate limiting, improved error handling, PCI compliance notes, tests and docs.
-  - Next steps: design webhook flows, add end-to-end tests, confirm PCI scope and storage strategy for payment data.
+  - Description: Webhook-first processing and signature verification implemented; subscription creation/cancel flow improved; added idempotency headers and structured logging. Remaining work: comprehensive tests, retry/backoff, rate limiting, PayPal Vault support, PCI compliance and documentation.
+  - Next steps: add unit & e2e webhook tests, implement retry strategies, store webhook events and processed ids in DB, and finalize PCI scope documentation.
 
 - **Stripe improvements**
   - Files: `lib/payments/stripe_processor.rb`, `lib/webhooks/stripe/payment_event_handler.rb`
@@ -56,9 +56,9 @@
   - Description: maintain a catalog of Stripe prices and products either at launch or when updated, to avoid relying solely on event payloads.
   - Next steps: implement sync job and caching, add tests.
 
-- **PayPal signature verification**
+- **PayPal signature verification (implemented, tests required)**
   - Files: `lib/webhooks/paypal_webhook_handler.rb`
-  - Description: Implement full signature verification using SDK or API calls; add tests for invalid signatures.
+  - Description: Server now verifies signatures using PayPal `/v1/notifications/verify-webhook-signature` API and includes simple replay protection; add tests for invalid signatures, replay attacks, and monitoring/reporting.
 
 ---
 

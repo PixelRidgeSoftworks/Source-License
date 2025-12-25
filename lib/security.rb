@@ -133,25 +133,13 @@ module SecurityHelpers
     end
   end
 
-  def verify_paypal_webhook_signature(_payload, headers)
-    # PayPal webhook verification implementation
-    # This requires the PayPal SDK webhook verification
+  def verify_paypal_webhook_signature(payload, headers)
+    # Delegate to the payments layer which implements PayPal's verification API call
     return false unless ENV['PAYPAL_WEBHOOK_ID']
 
-    begin
-      # PayPal webhook verification would go here
-      # For now, we'll implement basic verification
-      auth_algo = headers['PAYPAL-AUTH-ALGO']
-      transmission_id = headers['PAYPAL-TRANSMISSION-ID']
-      cert_id = headers['PAYPAL-CERT-ID']
-      transmission_sig = headers['PAYPAL-TRANSMISSION-SIG']
-      transmission_time = headers['PAYPAL-TRANSMISSION-TIME']
-
-      # All required headers must be present
-      auth_algo && transmission_id && cert_id && transmission_sig && transmission_time
-    rescue StandardError
-      false
-    end
+    Payments::PaypalProcessor.verify_webhook_signature(payload, headers)
+  rescue StandardError
+    false
   end
 
   # Secure Session Configuration

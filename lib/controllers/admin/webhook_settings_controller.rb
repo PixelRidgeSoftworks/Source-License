@@ -288,7 +288,35 @@ module AdminControllers::WebhookSettingsController
     end
   end
 
-  def self.simulate_paypal_webhook(_event_data)
-    { success: true, message: 'PayPal webhook simulation (not implemented yet)' }
+  def self.simulate_paypal_webhook(event_data)
+    payload = event_data.to_json
+
+    # Minimal headers required by PayPal verification
+    headers = {
+      'PAYPAL-TRANSMISSION-ID' => "sim_#{SecureRandom.hex(8)}",
+      'PAYPAL-TRANSMISSION-SIG' => 'simulated',
+      'PAYPAL-AUTH-ALGO' => 'SHA256',
+      'PAYPAL-CERT-ID' => 'simulated-cert',
+      'PAYPAL-TRANSMISSION-TIME' => Time.now.iso8601,
+    }
+
+    # Temporarily stub verification to allow simulation in dev environment
+    original_verify = begin
+      Payments::PaypalProcessor.method(:verify_webhook_signature)
+    rescue StandardError
+      nil
+    end
+    Payments::PaypalProcessor.define_singleton_method(:verify_webhook_signature) do |_payload, _headers|
+      true
+    end
+
+    result = Webhooks::PaypalWebhookHandler.handle_webhook(payload, headers)
+
+    # Restore original method if present
+    Payments::PaypalProcessor.define_singleton_method(:verify_webhook_signature, original_verify) if original_verify
+
+    result
+  rescue StandardError => e
+    { success: false, error: e.message }
   end
 end

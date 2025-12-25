@@ -6,6 +6,7 @@
 require 'json'
 require 'net/http'
 require 'uri'
+require 'fileutils'
 require_relative '../logging/payment_logger'
 
 # Define the Webhooks namespace hierarchy first
@@ -43,24 +44,31 @@ class Webhooks::PaypalWebhookHandler
     private
 
     # Verify webhook signature for security
-    def verify_webhook_signature(_payload, headers)
-      webhook_id = ENV.fetch('PAYPAL_WEBHOOK_ID', nil)
-      return false unless webhook_id
+    def verify_webhook_signature(payload, headers)
+      # Use payments layer verification which calls PayPal verify-webhook-signature API
+      valid = Payments::PaypalProcessor.verify_webhook_signature(payload, headers)
 
-      # PayPal webhook signature verification
-      # This is a simplified implementation
-      # TODO: Implement full verification using PayPal SDK or API calls
-      auth_algo = headers['PAYPAL-AUTH-ALGO']
+      # Add simple replay protection by persisting the transmission id
       transmission_id = headers['PAYPAL-TRANSMISSION-ID']
-      cert_id = headers['PAYPAL-CERT-ID']
-      transmission_sig = headers['PAYPAL-TRANSMISSION-SIG']
-      transmission_time = headers['PAYPAL-TRANSMISSION-TIME']
 
-      return false unless [auth_algo, transmission_id, cert_id, transmission_sig, transmission_time].all?
+      return false unless transmission_id && valid
 
-      # For now, we'll accept all webhooks if the webhook ID is configured
-      # TODO: Implement actual signature verification logic
+      processed_dir = File.join(ENV['TMP_DIR'] || 'tmp', 'webhooks', 'paypal')
+      FileUtils.mkdir_p(processed_dir)
+
+      processed_flag = File.join(processed_dir, transmission_id)
+      if File.exist?(processed_flag)
+        PaymentLogger.log_security_event('webhook_replay_detected', { provider: 'paypal', transmission_id: transmission_id })
+        return false
+      end
+
+      # Mark as processed (durable for simple replay protection)
+      File.write(processed_flag, Time.now.iso8601)
+
       true
+    rescue StandardError => e
+      PaymentLogger.log_security_event('webhook_verify_error', { provider: 'paypal', error: e.message })
+      false
     end
 
     # Process different types of webhook events

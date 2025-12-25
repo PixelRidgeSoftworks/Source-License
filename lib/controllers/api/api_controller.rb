@@ -575,10 +575,18 @@ module ApiController
   end
 
   # Handle PayPal webhooks
-  def self.handle_paypal_webhook(_request)
-    # PayPal webhook handling implementation
-    # This would verify the webhook signature and process the payment
-    logger.info 'PayPal webhook received'
+  def self.handle_paypal_webhook(request)
+    request.body.rewind
+    payload = request.body.read
+
+    headers = request.env.select { |k, _v| k.start_with?('HTTP_PAYPAL') }
+      .transform_keys { |k| k.sub('HTTP_', '') }
+
+    result = Webhooks::PaypalWebhookHandler.handle_webhook(payload, headers)
+
+    status 400 unless result[:success]
+
+    result
   end
 
   # Handle successful payment

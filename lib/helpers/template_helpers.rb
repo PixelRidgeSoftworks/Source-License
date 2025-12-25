@@ -15,17 +15,26 @@ module TemplateHelpers
     CGI.escapeHTML(text.to_s)
   end
 
-  # URL encode text
+  # URL encode text (use %20 for spaces)
   def u(text)
-    URI.encode_www_form_component(text.to_s)
+    URI.encode_www_form_component(text.to_s).gsub('+', '%20')
   end
 
-  # Truncate text with ellipsis
+  # Truncate text with ellipsis (avoid cutting mid-word when possible)
   def truncate(text, length = 100, suffix = '...')
     return '' unless text
     return text if text.length <= length
 
-    text[0..(length - 1)] + suffix
+    cut = text[0, length]
+
+    # If the next character is not a space and we're in the middle of a word,
+    # trim back to the last space to avoid partial words
+    if text[length] && !text[length].match?('\s')
+      idx = cut.rindex(' ')
+      cut = cut[0, idx] if idx
+    end
+
+    cut.rstrip + suffix
   end
 
   # Time ago in words
@@ -52,7 +61,8 @@ module TemplateHelpers
   def format_currency(amount, currency = 'USD')
     return '$0.00' unless amount
 
-    formatted = format('%.2f', amount.to_f)
+    # Use format_number for proper thousands separators when appropriate
+    formatted = format_number(amount.to_f, 2)
 
     case currency.upcase
     when 'USD'
@@ -193,9 +203,10 @@ module TemplateHelpers
     !!(ENV.fetch('PAYPAL_CLIENT_ID', nil) && ENV.fetch('PAYPAL_CLIENT_SECRET', nil))
   end
 
-  # Convert Ruby object to JSON for JavaScript
+  # Convert Ruby object to JSON for JavaScript and escape opening angle brackets
   def json_for_js(obj)
-    JSON.generate(obj).gsub('</', '<\/')
+    # Escape '<' to '<\/' so that script tags are safely escaped in embedded JSON
+    JSON.generate(obj).gsub('<', '<\/')
   end
 
   # NOTE: CSRF protection is now handled centrally in CsrfProtection module
@@ -207,9 +218,10 @@ module TemplateHelpers
     session[:csrf_token] ||= SecureRandom.hex(32)
   end
 
-  # Generate CSRF input field
+  # Generate CSRF input field (provide legacy authenticity_token for compatibility)
   def csrf_input
-    %(<input type="hidden" name="csrf_token" value="#{csrf_token}">)
+    %(<input type="hidden" name="authenticity_token" value="#{csrf_token}">) +
+      %(<input type="hidden" name="csrf_token" value="#{csrf_token}">)
   end
 
   # Generate meta tag for JavaScript AJAX requests
@@ -286,7 +298,17 @@ module TemplateHelpers
 
   # Generate pagination links
   def paginate(collection, page, per_page)
-    total_pages = (collection.count.to_f / per_page).ceil
+    total = if collection.respond_to?(:total_count)
+              collection.total_count
+            elsif collection.respond_to?(:count)
+              collection.count
+            elsif collection.respond_to?(:size)
+              collection.size
+            else
+              0
+            end
+
+    total_pages = (total.to_f / per_page).ceil
     current_page = page.to_i
 
     return '' if total_pages <= 1
@@ -372,7 +394,11 @@ module TemplateHelpers
       unit_index += 1
     end
 
-    "#{format('%.1f', size)} #{units[unit_index]}"
+    if units[unit_index] == 'B'
+      "#{size.to_i} #{units[unit_index]}"
+    else
+      "#{format('%.1f', size)} #{units[unit_index]}"
+    end
   end
 
   # Environment-specific asset URL

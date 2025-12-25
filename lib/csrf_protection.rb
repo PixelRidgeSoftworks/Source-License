@@ -80,9 +80,10 @@ module CsrfHelpers
     session[:csrf_token] ||= CsrfProtection.generate_token
   end
 
-  # Generate hidden input field with CSRF token
+  # Generate hidden input field with CSRF token (include legacy authenticity_token)
   def csrf_input
-    %(<input type="hidden" name="#{CsrfProtection::TOKEN_PARAM}" value="#{csrf_token}">)
+    %(<input type="hidden" name="authenticity_token" value="#{csrf_token}">) +
+      %(<input type="hidden" name="#{CsrfProtection::TOKEN_PARAM}" value="#{csrf_token}">)
   end
 
   # Generate meta tag for JavaScript access

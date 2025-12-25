@@ -37,7 +37,6 @@ class ModelsTest < Minitest::Test
     # Test features_list method if implemented
     skip unless product.respond_to?(:features_list)
 
-
     assert_equal features, product.features_list
   end
 
@@ -117,7 +116,6 @@ class ModelsTest < Minitest::Test
     # Test valid? method if implemented
     skip unless license.respond_to?(:valid?)
 
-
     assert_predicate license, :valid?
   end
 
@@ -127,7 +125,6 @@ class ModelsTest < Minitest::Test
     assert_equal 'suspended', license.status
 
     skip unless license.respond_to?(:valid?)
-
 
     refute_predicate license, :valid?
   end
@@ -203,7 +200,6 @@ class ModelsTest < Minitest::Test
     assert_equal product.id, license.product.id if license.respond_to?(:product)
 
     skip unless license.respond_to?(:order)
-
 
     assert_equal order.id, license.order.id
   end

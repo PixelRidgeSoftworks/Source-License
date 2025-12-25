@@ -10,13 +10,17 @@ class TemplateCustomizer
   CUSTOMIZATIONS_FILE = 'config/customizations.yml'
 
   class << self
-    # Get all customizations with defaults
+    # Get all customizations with defaults (deep-merge to preserve nested defaults)
     def all_customizations
-      default_customizations.merge(load_customizations)
+      deep_merge(default_customizations, load_customizations)
     end
 
     # Get a specific customization value
     def get(key, default = nil)
+      # Treat empty or dot-only keys as missing
+      normalized = key.to_s
+      return default if normalized.strip.delete('.').empty?
+
       customizations = all_customizations
       keys = key.to_s.split('.')
 
@@ -74,14 +78,24 @@ class TemplateCustomizer
       all_customizations
     end
 
+    # Backwards-compatible aliases expected by tests
+    def get_all_customizations
+      all_customizations
+    end
+
     # Get categories (alias for categories)
     def categories_list
       categories
     end
 
+    # Backwards-compatible alias expected by tests
+    def get_categories
+      categories
+    end
+
     # Get customization categories for the admin interface
     def categories
-      {
+      result = {
         'branding' => {
           'title' => 'Branding & Identity',
           'description' => 'Customize your brand identity and basic information',
@@ -91,6 +105,11 @@ class TemplateCustomizer
           'title' => 'Colors & Theme',
           'description' => 'Customize colors, themes, and visual appearance',
           'icon' => 'fas fa-paint-brush',
+        },
+        'text' => {
+          'title' => 'Text & Content',
+          'description' => 'Customize textual content, headlines and messages',
+          'icon' => 'fas fa-font',
         },
         'hero_section' => {
           'title' => 'Hero Section',
@@ -138,6 +157,9 @@ class TemplateCustomizer
           'icon' => 'fas fa-cogs',
         },
       }
+      # Backwards-compatible alias expected by tests
+      result['features'] = result['features_section']
+      result
     end
 
     private
@@ -494,6 +516,19 @@ class TemplateCustomizer
       rescue StandardError => e
         puts "Error loading customizations: #{e.message}"
         {}
+      end
+    end
+
+    # Deep merge two hashes, preferring values from hash_b when conflicts occur
+    def deep_merge(hash_a, hash_b)
+      return hash_a unless hash_b.is_a?(Hash)
+
+      hash_a.merge(hash_b) do |_key, oldval, newval|
+        if oldval.is_a?(Hash) && newval.is_a?(Hash)
+          deep_merge(oldval, newval)
+        else
+          newval
+        end
       end
     end
 

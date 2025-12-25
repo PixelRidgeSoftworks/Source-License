@@ -183,10 +183,10 @@ class Payments::PaypalProcessor < Payments::BasePaymentProcessor
       subscription = make_paypal_request('POST', '/v1/billing/subscriptions', subscription_data, access_token)
 
       if subscription['id']
-        license.subscription.update(external_subscription_id: subscription['id']) if license.subscription
+        license.subscription&.update(external_subscription_id: subscription['id'])
         PaymentLogger.log_payment_event('subscription_created',
                                         { license_id: license.id, paypal_subscription_id: subscription['id'] })
-        { success: true, subscription_id: subscription['id'], approval_url: subscription.dig('links')&.find do |l|
+        { success: true, subscription_id: subscription['id'], approval_url: subscription['links']&.find do |l|
           l['rel'] == 'approve'
         end&.dig('href'), }
       else

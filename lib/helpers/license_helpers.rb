@@ -5,16 +5,17 @@
 
 # License-specific helper functions
 module LicenseHelpers
-  # Check if license key format is valid
+  # Check if license key format is valid (must be uppercase and digits)
   def valid_license_format?(key)
     key.to_s.match?(/\A[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}\z/)
   end
 
   # Format license key for display
   def format_license_key(key)
-    return 'Invalid' unless valid_license_format?(key)
+    k = key.to_s.upcase
+    return 'Invalid' unless valid_license_format?(k)
 
-    key.upcase
+    k
   end
 
   # Generate license status icon

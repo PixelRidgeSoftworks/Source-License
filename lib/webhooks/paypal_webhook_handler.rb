@@ -57,23 +57,27 @@ class Webhooks::PaypalWebhookHandler
         DB.transaction do
           existing = WebhookReplay.where(provider: 'paypal', transmission_id: transmission_id).first
           if existing
-            PaymentLogger.log_security_event('webhook_replay_detected', { provider: 'paypal', transmission_id: transmission_id })
+            PaymentLogger.log_security_event('webhook_replay_detected',
+                                             { provider: 'paypal', transmission_id: transmission_id })
             raise Sequel::Rollback
           end
 
           # Create record marking this transmission as processed
-          WebhookReplay.create(provider: 'paypal', transmission_id: transmission_id, event_id: JSON.parse(payload)['id'])
+          WebhookReplay.create(provider: 'paypal', transmission_id: transmission_id,
+                               event_id: JSON.parse(payload)['id'])
         end
 
         # Re-check existence: if we rolled back due to duplicate, treat as replay
         if WebhookReplay.where(provider: 'paypal', transmission_id: transmission_id).first.nil?
-          PaymentLogger.log_security_event('webhook_replay_detected', { provider: 'paypal', transmission_id: transmission_id })
+          PaymentLogger.log_security_event('webhook_replay_detected',
+                                           { provider: 'paypal', transmission_id: transmission_id })
           return false
         end
 
         true
       rescue Sequel::UniqueConstraintViolation
-        PaymentLogger.log_security_event('webhook_replay_detected', { provider: 'paypal', transmission_id: transmission_id })
+        PaymentLogger.log_security_event('webhook_replay_detected',
+                                         { provider: 'paypal', transmission_id: transmission_id })
         false
       rescue StandardError => e
         PaymentLogger.log_security_event('webhook_verify_error', { provider: 'paypal', error: e.message })

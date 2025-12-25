@@ -42,10 +42,19 @@ require 'minitest/reporters'
 require 'rack/test'
 require 'sequel'
 require 'database_cleaner/sequel'
+
+# Ensure Ruby Logger constant is defined before libraries that depend on it
+require 'logger'
+
 require 'factory_bot'
 require 'faker'
 require 'webmock/minitest'
 require 'vcr'
+
+# Load ActiveSupport core extensions used in tests (time helpers, numeric formatting)
+require 'active_support/core_ext/integer/time'
+require 'active_support/core_ext/numeric/bytes'
+require 'active_support/core_ext/numeric/conversions'
 
 # Configure Minitest reporters
 Minitest::Reporters.use! [
@@ -88,6 +97,41 @@ def create_all_test_tables
     DateTime :updated_at, default: Sequel::CURRENT_TIMESTAMP
   end
 
+  # Create users table (customer accounts)
+  DB.create_table?(:users) do
+    primary_key :id
+    String :email, null: false, unique: true, size: 255
+    String :name, size: 255
+    String :password_hash, null: false, size: 255
+    String :status, default: 'active', size: 50
+
+    Boolean :email_verified, default: false
+    String :email_verification_token, size: 255
+    DateTime :email_verification_sent_at
+    DateTime :email_verified_at
+
+    DateTime :password_changed_at
+    String :password_reset_token, size: 255
+    DateTime :password_reset_sent_at
+
+    DateTime :created_at, null: false, default: Sequel::CURRENT_TIMESTAMP
+    DateTime :updated_at, null: false, default: Sequel::CURRENT_TIMESTAMP
+    DateTime :last_login_at
+    String :last_login_ip, size: 45
+    String :last_login_user_agent, size: 500
+    Integer :login_count, default: 0
+
+    DateTime :activated_at
+    DateTime :deactivated_at
+    DateTime :suspended_at
+
+    index :email
+    index :status
+    index :email_verification_token
+    index :password_reset_token
+    index :last_login_at
+  end
+
   # Create products table
   DB.create_table?(:products) do
     primary_key :id
@@ -104,6 +148,31 @@ def create_all_test_tables
     TrueClass :active, default: true
     DateTime :created_at, default: Sequel::CURRENT_TIMESTAMP
     DateTime :updated_at, default: Sequel::CURRENT_TIMESTAMP
+  end
+
+  # Create product_categories table (migration 23)
+  DB.create_table?(:product_categories) do
+    primary_key :id
+    String :name, null: false, size: 100
+    String :slug, null: false, size: 100
+    Text :description
+    String :color, size: 7, default: '#6c757d'
+    String :icon, size: 50, default: 'fas fa-folder'
+    Integer :sort_order, default: 0
+    TrueClass :active, default: true
+    DateTime :created_at, default: Sequel::CURRENT_TIMESTAMP
+    DateTime :updated_at, default: Sequel::CURRENT_TIMESTAMP
+
+    index :slug, unique: true
+    index :name
+    index :active
+  end
+
+  # Add category_id to products if not present (mimic migration behavior)
+  unless DB[:products].columns.include?(:category_id)
+    DB.alter_table :products do
+      add_foreign_key :category_id, :product_categories, null: true, on_delete: :set_null
+    end
   end
 
   # Create orders table
@@ -129,6 +198,20 @@ def create_all_test_tables
     Integer :quantity, default: 1
     Decimal :price, size: [10, 2], null: false
     DateTime :created_at, default: Sequel::CURRENT_TIMESTAMP
+  end
+
+  # Create order_taxes table (applied taxes on orders)
+  DB.create_table?(:order_taxes) do
+    primary_key :id
+    foreign_key :order_id, :orders, null: false, on_delete: :cascade
+    foreign_key :tax_id, :taxes, null: true
+    String :tax_name, null: false, size: 255
+    Decimal :rate, size: [8, 4], null: false
+    Decimal :amount, size: [10, 2], null: false
+    DateTime :created_at, null: false, default: Sequel::CURRENT_TIMESTAMP
+
+    index :order_id
+    index :tax_id
   end
 
   # Create licenses table
@@ -164,6 +247,44 @@ def create_all_test_tables
     DateTime :updated_at, default: Sequel::CURRENT_TIMESTAMP
   end
 
+  # Create billing_cycles table used by BillingCycle model
+  DB.create_table?(:billing_cycles) do
+    primary_key :id
+    String :name, null: false
+    String :display_name, null: false
+    Integer :days, null: false, default: 30
+    String :stripe_interval, default: 'month'
+    Integer :stripe_interval_count, default: 1
+    TrueClass :active, default: true
+    DateTime :created_at, default: Sequel::CURRENT_TIMESTAMP
+    DateTime :updated_at, default: Sequel::CURRENT_TIMESTAMP
+  end
+
+  # Create subscription_billing_histories table used by SubscriptionBillingHistory model
+  DB.create_table?(:subscription_billing_histories) do
+    primary_key :id
+    foreign_key :subscription_id, :subscriptions, on_delete: :cascade
+    Decimal :amount, size: [10, 2], null: false
+    String :status, default: 'pending'
+    DateTime :billing_period_start
+    DateTime :billing_period_end
+    DateTime :paid_at
+    DateTime :failed_at
+    String :failure_reason, text: true
+    DateTime :created_at, default: Sequel::CURRENT_TIMESTAMP
+    DateTime :updated_at, default: Sequel::CURRENT_TIMESTAMP
+  end
+
+  # Create taxes table used by Tax model
+  DB.create_table?(:taxes) do
+    primary_key :id
+    String :name, null: false
+    Decimal :rate, size: [5, 2], null: false, default: 0.0
+    String :status, default: 'active'
+    DateTime :created_at, default: Sequel::CURRENT_TIMESTAMP
+    DateTime :updated_at, default: Sequel::CURRENT_TIMESTAMP
+  end
+
   # Create license_activations table
   DB.create_table?(:license_activations) do
     primary_key :id
@@ -178,6 +299,29 @@ def create_all_test_tables
     DateTime :activated_at, default: Sequel::CURRENT_TIMESTAMP
     DateTime :last_seen_at, default: Sequel::CURRENT_TIMESTAMP
     DateTime :deactivated_at
+  end
+
+  # Create billing_addresses table used by BillingAddress model
+  DB.create_table?(:billing_addresses) do
+    primary_key :id
+    foreign_key :user_id, :users, null: false, on_delete: :cascade
+    String :name, null: false
+    String :first_name, null: false
+    String :last_name, null: false
+    String :company
+    String :address_line_1, null: false
+    String :address_line_2
+    String :city, null: false
+    String :state_province, null: false
+    String :postal_code, null: false
+    String :country, null: false
+    String :phone
+    TrueClass :is_default, default: false
+    DateTime :created_at, default: Sequel::CURRENT_TIMESTAMP
+    DateTime :updated_at, default: Sequel::CURRENT_TIMESTAMP
+
+    index :user_id
+    index :is_default
   end
 
   # Create webhook_replays table for durable webhook replay protection
@@ -259,9 +403,73 @@ class Minitest::Test
 
   def create_test_tables
     create_admin_table
+    create_user_table
+    create_billing_addresses_table
     create_product_table
     create_order_tables
     create_license_tables
+    create_billing_cycles_table
+    create_subscription_billing_histories_table
+  end
+
+  def create_billing_addresses_table
+    DB.create_table?(:billing_addresses) do
+      primary_key :id
+      foreign_key :user_id, :users, null: false, on_delete: :cascade
+      String :name, null: false
+      String :first_name, null: false
+      String :last_name, null: false
+      String :company
+      String :address_line_1, null: false
+      String :address_line_2
+      String :city, null: false
+      String :state_province, null: false
+      String :postal_code, null: false
+      String :country, null: false
+      String :phone
+      TrueClass :is_default, default: false
+      DateTime :created_at, default: Sequel::CURRENT_TIMESTAMP
+      DateTime :updated_at, default: Sequel::CURRENT_TIMESTAMP
+
+      index :user_id
+      index :is_default
+    end
+  end
+
+  def create_user_table
+    DB.create_table?(:users) do
+      primary_key :id
+      String :email, null: false, unique: true, size: 255
+      String :name, size: 255
+      String :password_hash, null: false, size: 255
+      String :status, default: 'active', size: 50
+
+      Boolean :email_verified, default: false
+      String :email_verification_token, size: 255
+      DateTime :email_verification_sent_at
+      DateTime :email_verified_at
+
+      DateTime :password_changed_at
+      String :password_reset_token, size: 255
+      DateTime :password_reset_sent_at
+
+      DateTime :created_at, null: false, default: Sequel::CURRENT_TIMESTAMP
+      DateTime :updated_at, null: false, default: Sequel::CURRENT_TIMESTAMP
+      DateTime :last_login_at
+      String :last_login_ip, size: 45
+      String :last_login_user_agent, size: 500
+      Integer :login_count, default: 0
+
+      DateTime :activated_at
+      DateTime :deactivated_at
+      DateTime :suspended_at
+
+      index :email
+      index :status
+      index :email_verification_token
+      index :password_reset_token
+      index :last_login_at
+    end
   end
 
   def create_admin_table
@@ -314,6 +522,19 @@ class Minitest::Test
       Integer :quantity, default: 1
       Decimal :price, size: [10, 2], null: false
       DateTime :created_at, default: Sequel::CURRENT_TIMESTAMP
+    end
+
+    DB.create_table?(:order_taxes) do
+      primary_key :id
+      foreign_key :order_id, :orders, null: false, on_delete: :cascade
+      foreign_key :tax_id, :taxes, null: true
+      String :tax_name, null: false, size: 255
+      Decimal :rate, size: [8, 4], null: false
+      Decimal :amount, size: [10, 2], null: false
+      DateTime :created_at, null: false, default: Sequel::CURRENT_TIMESTAMP
+
+      index :order_id
+      index :tax_id
     end
   end
 
@@ -384,6 +605,36 @@ class Minitest::Test
     end
   end
 
+  def create_billing_cycles_table
+    DB.create_table?(:billing_cycles) do
+      primary_key :id
+      String :name, null: false
+      String :display_name, null: false
+      Integer :days, null: false, default: 30
+      String :stripe_interval, default: 'month'
+      Integer :stripe_interval_count, default: 1
+      TrueClass :active, default: true
+      DateTime :created_at, default: Sequel::CURRENT_TIMESTAMP
+      DateTime :updated_at, default: Sequel::CURRENT_TIMESTAMP
+    end
+  end
+
+  def create_subscription_billing_histories_table
+    DB.create_table?(:subscription_billing_histories) do
+      primary_key :id
+      foreign_key :subscription_id, :subscriptions, on_delete: :cascade
+      Decimal :amount, size: [10, 2], null: false
+      String :status, default: 'pending'
+      DateTime :billing_period_start
+      DateTime :billing_period_end
+      DateTime :paid_at
+      DateTime :failed_at
+      String :failure_reason, text: true
+      DateTime :created_at, default: Sequel::CURRENT_TIMESTAMP
+      DateTime :updated_at, default: Sequel::CURRENT_TIMESTAMP
+    end
+  end
+
   def setup_test_env
     ENV['APP_SECRET'] =
       'test_secret_key_for_testing_only_this_is_a_very_long_secret_key_that_meets_minimum_requirements_64_chars'
@@ -443,7 +694,8 @@ module TestHelpers
   def create_test_admin(email: 'admin@test.com', password: 'test_password')
     Admin.create(
       email: email,
-      password_hash: BCrypt::Password.create(password)
+      password_hash: BCrypt::Password.create(password),
+      status: 'active'
     )
   end
 
@@ -466,7 +718,16 @@ module TestHelpers
 end
 
 Minitest::Test.include(TestHelpers)
+# Provide a small compatibility shim so FactoryBot (which expects ActiveRecord-like `save!`) works
+# with Sequel models in tests. This defines `save!` to raise `Sequel::ValidationFailed` when a save fails.
+class Sequel::Model
+  def save!(*)
+    saved = save(*)
+    raise Sequel::ValidationFailed, 'Validation failed' unless saved
 
+    self
+  end
+end
 puts 'Test environment setup complete!'
 puts "Database: #{DB.opts[:database] || 'SQLite in-memory'}"
 puts "Tables created: #{DB.tables.join(', ')}"

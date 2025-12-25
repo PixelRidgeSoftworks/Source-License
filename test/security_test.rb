@@ -320,6 +320,15 @@ class SecurityTest < Minitest::Test
     refute mw.send(:suspicious_request?, req)
   end
 
+  def test_many_spaces_query_does_not_trigger_regex
+    # Ensure token-based pre-check avoids running regex on inputs with many spaces
+    mw = SecurityMiddleware.new(->(_env) { [200, {}, ['ok']] })
+    req = Rack::Request.new({ 'QUERY_STRING' => ' ' * 2000, 'REQUEST_METHOD' => 'GET', 'PATH_INFO' => '/',
+                              'rack.input' => StringIO.new, })
+
+    refute mw.send(:suspicious_request?, req)
+  end
+
   def test_overly_long_query_triggers_length_guard
     mw = SecurityMiddleware.new(->(_env) { [200, {}, ['ok']] })
     req = Rack::Request.new({ 'QUERY_STRING' => 'a' * 2050, 'REQUEST_METHOD' => 'GET', 'PATH_INFO' => '/',

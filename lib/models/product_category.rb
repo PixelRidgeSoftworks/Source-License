@@ -50,7 +50,8 @@ class ProductCategory < Sequel::Model
     end
 
     # Validate color format (hex color)
-    return unless color && !color.match(/\A#[0-9A-Fa-f]{6}\z/)
+    # Use Regexp#match? to avoid allocating MatchData when only checking boolean
+    return unless color && !/\A#[0-9A-Fa-f]{6}\z/.match?(color)
 
     errors.add(:color, 'must be a valid hex color (e.g., #007bff)')
   end

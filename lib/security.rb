@@ -349,7 +349,8 @@ class SecurityMiddleware
       # Match '=' or %3D followed by up to 200 non-space/non-& chars then an injection char (', --, ;)
       /(?:%3D|=)(?:[^&\s]{0,200})(?:%27|'|--|%3B|;)/i,
       # OR-like patterns using percent-encoding or plain chars (e.g., "' OR" or encoded equivalents)
-      /(?:%27|'|%22|")?(?:\s|%20)*(?:%6F|o|%4F)(?:%72|r|%52)(?:\s|%20)+/i,
+      # Bound whitespace repeats to avoid performance issues on inputs with many spaces
+      /(?:%27|'|%22|")?(?:\s|%20){0,10}(?:%6F|o|%4F)(?:%72|r|%52)(?:\s|%20){1,10}/i,
     ]
 
     query_string = request.query_string || ''

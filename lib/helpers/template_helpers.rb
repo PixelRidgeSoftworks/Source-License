@@ -379,7 +379,7 @@ module TemplateHelpers
   def asset_url(path)
     return path if development?
 
-    # In production, you might want to use a CDN
+    # TODO: use a CDN
     cdn_host = ENV.fetch('CDN_HOST', nil)
     cdn_host ? "#{cdn_host}#{path}" : path
   end

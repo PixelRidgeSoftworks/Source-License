@@ -184,7 +184,6 @@ module SecurityHelpers
       puts "SECURITY_EVENT: #{security_log.to_json}"
     end
 
-    # In production, you might want to send to a SIEM or security service
     return unless ENV['SECURITY_WEBHOOK_URL']
 
     send_security_alert(security_log)
@@ -316,7 +315,9 @@ class SecurityMiddleware
     # Get the host from the request
     host = request.host
 
-    # In production, require a host header for security
+    # TODO: Implement wildcard subdomain support in ALLOWED_HOSTS
+    # For now, only exact matches are supported
+    # TODO: Require a host header in all requests when in production
     unless host
       if respond_to?(:log_security_event)
         log_security_event('missing_host_header', {

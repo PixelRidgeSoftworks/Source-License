@@ -3,6 +3,12 @@
 # Source-License: Stripe Payment Processor
 # Handles Stripe payment processing with enhanced security
 
+# TODO: Implement logging for all payment actions
+# TODO: Add support for 3D Secure authentication flows (If not already handled)
+# TODO: Test with Mastercard
+# TODO: Add support for Apple Pay and Google Pay via Stripe
+# TODO: Implement webhook abstraction layer so users can decide what to do on events
+
 require 'stripe'
 require_relative 'base_payment_processor'
 

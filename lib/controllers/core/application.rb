@@ -29,7 +29,7 @@ class SourceLicenseApp < Sinatra::Base
   # ==================================================
   # SESSION CONFIGURATION
   # ==================================================
-  # Require a proper session secret in production - fail fast if missing
+  # Require a proper session secret - fail fast if missing
   session_secret = ENV.fetch('APP_SECRET', nil)
   is_production = ENV['APP_ENV'] == 'production' || ENV['RACK_ENV'] == 'production'
 

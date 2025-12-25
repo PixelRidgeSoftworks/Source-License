@@ -80,13 +80,14 @@ jobs:
         # Extract contents of <script>...</script> blocks from ERB views into .js files
         for f in $(git ls-files 'lib/views/**/*.erb' || true); do
           outfile="tmp/codeql_inline_js/$(basename "$f" .erb).js"
-          # Use awk to capture text between <script> and </script> tags (handles multiple blocks)
-          awk 'BEGIN{in=0} /<script/{in=1; next} /<\/script>/{in=0; next} in{print}' "$f" >> "$outfile"
+          # Use sed to capture text between <script> and </script> tags (handles multiple blocks and attributes)
+          sed -n -E '/<script[^>]*>/,/<\/script>/ { /<script[^>]*>/d; /<\/script>/d; p }' "$f" >> "$outfile"
 
-          if [ -s "$outfile" ]; then
+          # If the output file contains only whitespace or is empty, remove it
+          if [ -s "$outfile" ] && [ -n "$(grep -q '[^[:space:]]' "$outfile" 2>/dev/null || true)" ]; then
             echo "Extracted inline JS to $outfile"
           else
-            rm -f "$outfile"
+            rm -f "$outfile" || true
           fi
         done
 

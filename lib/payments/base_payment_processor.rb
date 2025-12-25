@@ -66,7 +66,7 @@ class Payments::BasePaymentProcessor
       }
 
       # Log to payment log file or service
-      puts "PAYMENT_EVENT: #{event_log.to_json}" # In production, use proper logging
+      puts "PAYMENT_EVENT: #{event_log.to_json}" # TODO: Remove this and handle logging in the specific processor
     end
 
     def base_url

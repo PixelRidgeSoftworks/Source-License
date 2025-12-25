@@ -246,7 +246,7 @@ module Auth::SessionManager
     return false if load_balancer_environment?
 
     # Check if IPs are from different countries/regions
-    # In production, use a geolocation service like MaxMind
+    # TODO: use a geolocation service like MaxMind
 
     # Simple check: if session is less than 30 minutes old and IPs are very different
     session_age = Time.now.to_i - session_created_at.to_i
@@ -273,12 +273,13 @@ module Auth::SessionManager
 
   def malicious_ip?(ip)
     # Check against known malicious IP patterns
-    # In production, integrate with threat intelligence feeds
+    # TODO: integrate with threat intelligence feeds
 
     # Simple checks for obviously malicious patterns
     return true if ip.start_with?('127.', '169.254.', '::1') # Local/invalid IPs
 
-    # Check against a basic blacklist (in production, use external feeds)
+    # Check against a basic blacklist
+    # TODO: use external feeds
     malicious_patterns = [
       /^10\./, # Private networks shouldn't reach public apps
       /^192\.168\./, # Private networks

@@ -367,8 +367,8 @@ class Webhooks::Stripe::PaymentEventHandler < Webhooks::Stripe::BaseEventHandler
 
     # Create or retrieve Stripe price for a product
     def create_or_get_stripe_price(product)
-      # For now, create a new price each time. In production, you might want to
-      # cache these or create them when products are created
+      # For now, create a new price each time.
+      # TODO: Read products from database at launch time or when new products are added, and use the Stripe API to maintain a catalog of prices and products.
       ::Stripe::Price.create({
         currency: 'usd',
         unit_amount: (product.price * 100).to_i, # Convert to cents

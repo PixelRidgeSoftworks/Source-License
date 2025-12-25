@@ -48,24 +48,37 @@ class Webhooks::PaypalWebhookHandler
       # Use payments layer verification which calls PayPal verify-webhook-signature API
       valid = Payments::PaypalProcessor.verify_webhook_signature(payload, headers)
 
-      # Add simple replay protection by persisting the transmission id
+      # Add durable DB-backed replay protection by recording transmission id
       transmission_id = headers['PAYPAL-TRANSMISSION-ID']
 
       return false unless transmission_id && valid
 
-      processed_dir = File.join(ENV['TMP_DIR'] || 'tmp', 'webhooks', 'paypal')
-      FileUtils.mkdir_p(processed_dir)
+      begin
+        DB.transaction do
+          existing = WebhookReplay.where(provider: 'paypal', transmission_id: transmission_id).first
+          if existing
+            PaymentLogger.log_security_event('webhook_replay_detected', { provider: 'paypal', transmission_id: transmission_id })
+            raise Sequel::Rollback
+          end
 
-      processed_flag = File.join(processed_dir, transmission_id)
-      if File.exist?(processed_flag)
+          # Create record marking this transmission as processed
+          WebhookReplay.create(provider: 'paypal', transmission_id: transmission_id, event_id: JSON.parse(payload)['id'])
+        end
+
+        # Re-check existence: if we rolled back due to duplicate, treat as replay
+        if WebhookReplay.where(provider: 'paypal', transmission_id: transmission_id).first.nil?
+          PaymentLogger.log_security_event('webhook_replay_detected', { provider: 'paypal', transmission_id: transmission_id })
+          return false
+        end
+
+        true
+      rescue Sequel::UniqueConstraintViolation
         PaymentLogger.log_security_event('webhook_replay_detected', { provider: 'paypal', transmission_id: transmission_id })
-        return false
+        false
+      rescue StandardError => e
+        PaymentLogger.log_security_event('webhook_verify_error', { provider: 'paypal', error: e.message })
+        false
       end
-
-      # Mark as processed (durable for simple replay protection)
-      File.write(processed_flag, Time.now.iso8601)
-
-      true
     rescue StandardError => e
       PaymentLogger.log_security_event('webhook_verify_error', { provider: 'paypal', error: e.message })
       false

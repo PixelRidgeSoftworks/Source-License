@@ -20,8 +20,8 @@
 
 - **Webhook signature verification & verification improvements (partial)**
   - Files: `lib/webhooks/paypal_webhook_handler.rb`, `lib/webhooks/stripe/payment_event_handler.rb`
-  - Description: PayPal webhook verification implemented using the `verify-webhook-signature` API, plus simple replay protection (file-backed transmission id storage). Stripe catalog sync still outstanding.
-  - Next steps: add unit/integration tests and e2e webhook tests, enhance replay protection (use DB), add signature validation reporting and implement Stripe product/price catalog sync.
+- Description: PayPal webhook verification implemented using the `verify-webhook-signature` API, plus **DB-backed replay protection** (new `webhook_replays` table). Stripe catalog sync still outstanding.
+- Next steps: add unit/integration tests and e2e webhook tests, add signature validation reporting and implement Stripe product/price catalog sync.
 
 - **Audit logging for license actions**
   - Files: `lib/license_generator.rb` (note: TODO at line implementing proper separate audit logging mechanism)
@@ -58,7 +58,7 @@
 
 - **PayPal signature verification (implemented, tests required)**
   - Files: `lib/webhooks/paypal_webhook_handler.rb`
-  - Description: Server now verifies signatures using PayPal `/v1/notifications/verify-webhook-signature` API and includes simple replay protection; add tests for invalid signatures, replay attacks, and monitoring/reporting.
+  - Description: Server now verifies signatures using PayPal `/v1/notifications/verify-webhook-signature` API and includes **DB-backed replay protection**; add tests for invalid signatures, replay attacks, and monitoring/reporting.
 
 ---
 

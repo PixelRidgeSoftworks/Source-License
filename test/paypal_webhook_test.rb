@@ -78,6 +78,27 @@ class PaypalWebhookTest < Minitest::Test
     assert_predicate license, :active?
   end
 
+  def test_replay_detection_blocks_duplicates
+    payload = { id: 'evt_replay', event_type: 'PAYMENT.SALE.COMPLETED', resource: { id: 'sale_x' } }.to_json
+    headers = { 'PAYPAL-TRANSMISSION-ID' => 'tx_replay' }
+
+    # Stub verification to true so handler proceeds to replay check
+    Payments::PaypalProcessor.define_singleton_method(:verify_webhook_signature) do |_payload, _headers|
+      true
+    end
+
+    first = Webhooks::PaypalWebhookHandler.handle_webhook(payload, headers)
+
+    # First invocation should succeed (processing will be minimal since no license)
+    assert first[:success] || first[:message]
+
+    # Second invocation with same transmission id should be detected as a replay
+    second = Webhooks::PaypalWebhookHandler.handle_webhook(payload, headers)
+
+    refute second[:success]
+    assert_equal 'Invalid signature', second[:error]
+  end
+
   private
 
   def create_test_order

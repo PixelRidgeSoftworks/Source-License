@@ -179,6 +179,20 @@ def create_all_test_tables
     DateTime :last_seen_at, default: Sequel::CURRENT_TIMESTAMP
     DateTime :deactivated_at
   end
+
+  # Create webhook_replays table for durable webhook replay protection
+  DB.create_table?(:webhook_replays) do
+    primary_key :id
+    String :provider, size: 50, null: false
+    String :transmission_id, size: 255, null: false
+    String :event_id, size: 255
+    DateTime :processed_at, null: false, default: Sequel::CURRENT_TIMESTAMP
+    DateTime :created_at, null: false, default: Sequel::CURRENT_TIMESTAMP
+
+    index :provider
+    index :event_id
+    unique %i[provider transmission_id]
+  end
 end
 
 # Create tables before loading models
@@ -307,6 +321,22 @@ class Minitest::Test
     create_licenses_table
     create_subscriptions_table
     create_license_activations_table
+    create_webhook_replays_table
+  end
+
+  def create_webhook_replays_table
+    DB.create_table?(:webhook_replays) do
+      primary_key :id
+      String :provider, size: 50, null: false
+      String :transmission_id, size: 255, null: false
+      String :event_id, size: 255
+      DateTime :processed_at, null: false, default: Sequel::CURRENT_TIMESTAMP
+      DateTime :created_at, null: false, default: Sequel::CURRENT_TIMESTAMP
+
+      index :provider
+      index :event_id
+      unique %i[provider transmission_id]
+    end
   end
 
   def create_licenses_table

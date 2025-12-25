@@ -22,6 +22,7 @@ require_relative 'models/subscription_billing_history'
 require_relative 'models/tax'
 require_relative 'models/order_tax'
 require_relative 'models/billing_address'
+require_relative 'models/webhook_replay'
 
 # Conditionally load ProductCategory model only if table exists
 begin

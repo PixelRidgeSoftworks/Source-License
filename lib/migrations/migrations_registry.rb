@@ -47,6 +47,7 @@ class Migrations::MigrationsRegistry
         Migrations::Add2faFieldsToUsersTable,
         Migrations::Add2faSettingsToSettingsTable,
         Migrations::AddExpandedSettingsToSettingsTable,
+        Migrations::CreateWebhookReplaysTable,
       ]
     end
 
@@ -87,6 +88,7 @@ class Migrations::MigrationsRegistry
         031_add_2fa_fields_to_users_table
         032_add_2fa_settings_to_settings_table
         033_add_expanded_settings_to_settings_table
+        034_create_webhook_replays_table
       ]
     end
   end

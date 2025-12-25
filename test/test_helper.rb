@@ -67,13 +67,19 @@ end
 # As a safety-net, ensure Logger is defined
 unless defined?(Logger)
   class ::Logger
-
     def initialize(*); end
     def debug(*) end
     def info(*) end
     def warn(*) end
     def error(*) end
     def fatal(*) end
+  end
+end
+
+# Ensure Logger constants exist (some gems reference these directly)
+if defined?(Logger)
+  %i[DEBUG INFO WARN ERROR FATAL UNKNOWN].each do |const|
+    Logger.const_set(const, 0) unless Logger.const_defined?(const)
   end
 end
 

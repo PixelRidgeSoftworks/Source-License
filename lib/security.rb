@@ -344,13 +344,12 @@ class SecurityMiddleware
   def suspicious_request?(request)
     # Block requests with SQL injection patterns
     # Fixed: Use non-vulnerable regex patterns to prevent ReDoS attacks
+    # Use conservative, bounded patterns and avoid super-linear quantifiers to prevent ReDoS
     sql_injection_patterns = [
-      # Basic SQL injection characters (single quotes, comments)
-      /(?:%27|'|--|%23|#)/i,
-      # Equals followed by quotes or semicolons (non-greedy)
-      /(?:%3D|=).*?(?:%27|'|--|%3B|;)/i,
-      # OR statements in URLs
-      /\w*(?:%27|')(?:%6F|o|%4F)(?:%72|r|%52)/i,
+      # Match '=' or %3D followed by up to 200 non-space/non-& chars then an injection char (', --, ;)
+      /(?:%3D|=)(?:[^&\s]{0,200})(?:%27|'|--|%3B|;)/i,
+      # OR-like patterns using percent-encoding or plain chars (e.g., "' OR" or encoded equivalents)
+      /(?:%27|'|%22|")?(?:\s|%20)*(?:%6F|o|%4F)(?:%72|r|%52)(?:\s|%20)+/i,
     ]
 
     query_string = request.query_string || ''

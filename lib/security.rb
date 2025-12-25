@@ -357,7 +357,13 @@ class SecurityMiddleware
     # Limit input length to prevent ReDoS attacks
     return true if query_string.length > 2048
 
-    sql_injection_patterns.any? { |pattern| query_string.match?(pattern) }
+    # Fast token-based pre-check to avoid running regex engine on benign queries.
+    # This avoids unnecessary regex execution (and potential ReDoS) for typical inputs.
+    indicators = ["'", '%27', '--', '%23', '#', ';', '%3B', ' or ', '%20or%20', '%20OR%20']
+    return false unless indicators.any? { |tok| query_string.downcase.include?(tok.downcase) }
+
+    # Use Regexp#match? (no MatchData allocation) and only run on inputs that contain suspicious tokens
+    sql_injection_patterns.any? { |pattern| pattern.match?(query_string) }
   end
 
   def add_security_headers(headers)

@@ -280,6 +280,54 @@ class SecurityTest < Minitest::Test
     refute_includes last_response.body.downcase, 'exception'
   end
 
+  def test_suspicious_request_detects_basic_sql_injection
+    mw = SecurityMiddleware.new(->(_env) { [200, {}, ['ok']] })
+    req = Rack::Request.new({ 'QUERY_STRING' => "id=1' OR '1'='1", 'REQUEST_METHOD' => 'GET', 'PATH_INFO' => '/',
+                              'rack.input' => StringIO.new, })
+
+    assert mw.send(:suspicious_request?, req)
+  end
+
+  def test_suspicious_request_detects_percent_encoded_injection
+    mw = SecurityMiddleware.new(->(_env) { [200, {}, ['ok']] })
+    req = Rack::Request.new({ 'QUERY_STRING' => 'id=%27%20OR%20%271%27%3D%271', 'REQUEST_METHOD' => 'GET',
+                              'PATH_INFO' => '/', 'rack.input' => StringIO.new, })
+
+    assert mw.send(:suspicious_request?, req)
+  end
+
+  def test_suspicious_request_bounded_equal_pattern_matches_within_limit
+    mw = SecurityMiddleware.new(->(_env) { [200, {}, ['ok']] })
+    req = Rack::Request.new({ 'QUERY_STRING' => "param=#{'a' * 100}'", 'REQUEST_METHOD' => 'GET', 'PATH_INFO' => '/',
+                              'rack.input' => StringIO.new, })
+
+    assert mw.send(:suspicious_request?, req)
+  end
+
+  def test_suspicious_request_bounded_equal_pattern_rejects_far_injection
+    mw = SecurityMiddleware.new(->(_env) { [200, {}, ['ok']] })
+    req = Rack::Request.new({ 'QUERY_STRING' => "param=#{'a' * 500}'", 'REQUEST_METHOD' => 'GET', 'PATH_INFO' => '/',
+                              'rack.input' => StringIO.new, })
+
+    refute mw.send(:suspicious_request?, req)
+  end
+
+  def test_long_safe_query_does_not_trigger_detection
+    mw = SecurityMiddleware.new(->(_env) { [200, {}, ['ok']] })
+    req = Rack::Request.new({ 'QUERY_STRING' => 'a' * 2000, 'REQUEST_METHOD' => 'GET', 'PATH_INFO' => '/',
+                              'rack.input' => StringIO.new, })
+
+    refute mw.send(:suspicious_request?, req)
+  end
+
+  def test_overly_long_query_triggers_length_guard
+    mw = SecurityMiddleware.new(->(_env) { [200, {}, ['ok']] })
+    req = Rack::Request.new({ 'QUERY_STRING' => 'a' * 2050, 'REQUEST_METHOD' => 'GET', 'PATH_INFO' => '/',
+                              'rack.input' => StringIO.new, })
+
+    assert mw.send(:suspicious_request?, req)
+  end
+
   private
 
   def valid_email?(email)
